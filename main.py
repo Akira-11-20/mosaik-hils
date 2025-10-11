@@ -11,7 +11,6 @@ Mosaik HILS (Hardware-in-the-Loop Simulation) メインファイル
 - WebVis によるリアルタイム可視化
 """
 
-import os
 from datetime import datetime
 from pathlib import Path
 
@@ -37,6 +36,7 @@ def main():
     print("🔧 Deploying WebVis local assets...")
     try:
         from scripts.manage_webvis_assets import deploy_assets
+
         deploy_assets()
     except Exception as e:
         print(f"⚠️  Asset deployment failed: {e}")
@@ -72,10 +72,6 @@ def main():
         },
     }
 
-    skip_official_webvis = os.getenv("SKIP_MOSAIK_WEBVIS", "0") == "1"
-    if skip_official_webvis:
-        sim_config.pop("WebVis")
-
     # Prepare run directory - ログ出力用ディレクトリを作成
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_dir = Path("logs") / timestamp
@@ -91,9 +87,7 @@ def main():
     hardware_sim = world.start("HardwareSim", step_size=1)
     # 遅延シミュレーター: 高頻度実行で精密な遅延制御（1時間単位）
     delay_sim = world.start("DelaySim", step_size=1, time_resolution=1)
-    webvis = None
-    if not skip_official_webvis:
-        webvis = world.start("WebVis", start_date="2024-01-01 00:00:00", step_size=1)
+    webvis = world.start("WebVis", start_date="2024-01-01 00:00:00", step_size=1)
 
     # Create entities - 各シミュレーター内でエンティティ（モデル）を作成
     # 数値モデル: 初期値1.0、ステップサイズ0.5で正弦波を生成
@@ -147,7 +141,9 @@ def main():
             world, [hardware_interface], vis_topo, "sensor_value"
         )
         # 遅延ノードの統計データと遅延出力を可視化に接続
-        mosaik.util.connect_many_to_one(world, [delay_node], vis_topo, "stats", "delayed_output")
+        mosaik.util.connect_many_to_one(
+            world, [delay_node], vis_topo, "stats", "delayed_output"
+        )
         # mosaik.util.connect_many_to_one(
         #     world, [hardware_interface], vis_topo, "actuator_command"
         # )

@@ -126,7 +126,7 @@ class DelaySimulator(mosaik_api.Simulator):
                         stats = entity.get_stats()
                         if isinstance(stats, dict):
                             # 平均遅延を主要な数値として出力
-                            data[eid][attr] = float(stats.get('avg_delay', 0.0))
+                            data[eid][attr] = float(stats.get("avg_delay", 0.0))
                         else:
                             data[eid][attr] = 0.0
                     elif attr in ["input"]:  # パススルー属性

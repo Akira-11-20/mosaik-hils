@@ -63,25 +63,28 @@ class LocalAssetsWebVisSimulator(mosaik_api.Simulator):
         # 実際には、このシミュレーター自体がWebVis機能を提供
         print(f"✅ WebVis with Local Assets ready at: http://localhost:8002")
         print(f"🎨 Using customized assets from: {self.webvis_assets}")
-        
+
         # WebVisサーバープロセスを起動（実際のmosaik_web）
         serve_addr = sim_params.get("serve_addr", "127.0.0.1:8002")
         addr = sim_params.get("addr", "127.0.0.1:9999")  # mosaik接続用アドレス
-        
-        cmd = [sys.executable, "-m", "mosaik_web.mosaik", f"tcp://{addr}", f"--serve={serve_addr}"]
-        
+
+        cmd = [
+            sys.executable,
+            "-m",
+            "mosaik_web.mosaik",
+            f"tcp://{addr}",
+            f"--serve={serve_addr}",
+        ]
+
         print(f"🚀 Starting mosaik-web server: {' '.join(cmd)}")
-        
+
         self.proc = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
         )
-        
+
         # サーバー起動を待つ
         time.sleep(3)
-        
+
         # プロセスが正常に起動したかチェック
         if self.proc.poll() is not None:
             stdout, _ = self.proc.communicate()
