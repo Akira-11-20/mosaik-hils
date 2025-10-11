@@ -27,6 +27,7 @@ venv/
 ENV/
 env/
 .env
+.uv-cache/
 
 # IDE and editors
 .vscode/
