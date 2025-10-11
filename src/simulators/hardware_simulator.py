@@ -188,9 +188,12 @@ class HardwareSimulator(mosaik_api.Simulator):
         """
         # Simulate sending command to hardware actuator - ハードウェアアクチュエーターへのコマンド送信シミュレーション
         # In real implementation, this would control actual hardware - 実装時は実際のハードウェアを制御
-        print(
-            f"Hardware actuator command: {command:.3f}"
-        )  # コマンド値をコンソールに表示
+        if command is not None:
+            print(
+                f"Hardware actuator command: {command:.3f}"
+            )  # コマンド値をコンソールに表示
+        else:
+            print("Hardware actuator command: None (no data from delay node)")
 
 
 # スタンドアロン実行時の処理 - シミュレーターを直接起動

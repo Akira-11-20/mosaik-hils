@@ -2,174 +2,211 @@
 
 ## 概要 (Overview)
 
-このプロジェクトは、MosaikフレームワークをベースとしたHILS（Hardware-in-the-Loop Simulation）システムです。数値シミュレーション、ハードウェアインターフェース、データ収集、およびWebベースの可視化を統合したコシミュレーション環境を提供します。
+このプロジェクトは、MosaikフレームワークをベースとしたHILS（Hardware-in-the-Loop Simulation）システムです。数値シミュレーション、ハードウェアインターフェース、**通信遅延モデリング**、データ収集、および**カスタマイズ可能なWebベース可視化**を統合したコシミュレーション環境を提供します。
 
-This project implements a HILS (Hardware-in-the-Loop Simulation) system based on the Mosaik framework. It provides a co-simulation environment that integrates numerical simulation, hardware interfaces, data collection, and web-based visualization.
+This project implements a HILS (Hardware-in-the-Loop Simulation) system based on the Mosaik framework. It provides a co-simulation environment that integrates numerical simulation, hardware interfaces, **communication delay modeling**, data collection, and **customizable web-based visualization**.
 
-## システム構成 (System Architecture)
+## ✨ 主な機能 (Key Features)
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│  Numerical      │    │  Hardware       │    │  Data           │
-│  Simulator      │◄──►│  Simulator      │◄──►│  Collector      │
-│                 │    │                 │    │                 │
-│ - 正弦波生成      │    │ - センサー読取り │    │ - JSON保存      │
-│ - 数学的モデル   │    │ - アクチュエータ │    │ - リアルタイム  │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-                    ┌─────────────────┐
-                    │   WebVis        │
-                    │  Visualization  │
-                    │                 │
-                    │ - リアルタイム  │
-                    │   グラフ表示    │
-                    │ - ポート8002    │
-                    └─────────────────┘
-```
+- 🔢 **数値シミュレーション** - 正弦波信号生成
+- ⚙️ **ハードウェアシミュレーション** - センサー・アクチュエーターI/O
+- 🔄 **通信遅延モデリング** - ジッター・パケットロス対応
+- 📊 **リアルタイムデータ収集** - HDF5形式での保存
+- 🌐 **カスタマイズ可能WebVis** - 独自統計表示対応
 
-## ファイル構成 (File Structure)
+## 📁 プロジェクト構造 (Project Structure)
 
 ```
 mosaik-hils/
-├── main.py                 # メインシナリオファイル (Main scenario file)
-├── numerical_simulator.py  # 数値シミュレーター (Numerical simulator)
-├── hardware_simulator.py   # ハードウェアシミュレーター (Hardware simulator)
-├── data_collector.py       # データ収集器 (Data collector)
-├── pyproject.toml          # プロジェクト設定 (Project configuration)
-├── uv.lock                 # 依存関係ロック (Dependency lock file)
-└── README.md               # このファイル (This file)
+├── src/                      # ソースコード
+│   ├── simulators/           # Mosaikシミュレーター群
+│   │   ├── numerical_simulator.py
+│   │   ├── hardware_simulator.py
+│   │   ├── delay_simulator.py     # 🆕 遅延モデリング
+│   │   └── data_collector.py
+│   └── webvis/               # WebVis関連
+│       ├── customize_webvis.py    # 🆕 WebVisカスタマイズ
+│       └── custom_webvis.py
+├── scripts/                  # 実行スクリプト
+│   ├── run_simulation.py
+│   └── setup_webvis.py
+├── docs/                     # ドキュメント
+│   ├── PROJECT_STRUCTURE.md
+│   └── WEBVIS_CUSTOMIZATION.md
+├── logs/                     # シミュレーション結果
+└── main.py                   # メインファイル
 ```
 
-## 各コンポーネントの説明 (Component Description)
+詳細な構造については [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md) を参照してください。
 
-### 1. メインシナリオ (`main.py`)
-- 全シミュレーターの統合管理
-- エンティティ間の接続設定
-- WebVis可視化の設定
-- シミュレーション実行制御
+## 🚀 クイックスタート (Quick Start)
 
-### 2. 数値シミュレーター (`numerical_simulator.py`)
-- **機能**: 正弦波生成による数学的モデル
-- **入力**: ハードウェアからのフィードバック（オプション）
-- **出力**: `sin(time * step_size * 0.1)` による正弦波
-- **用途**: 制御信号やセンサー信号のシミュレーション
-
-### 3. ハードウェアシミュレーター (`hardware_simulator.py`)
-- **機能**: 物理デバイスとのインターフェースをシミュレート
-- **センサー**: 0.5V～1.5Vのランダム値生成
-- **アクチュエータ**: 数値シミュレーターからのコマンド受信
-- **接続**: シリアル接続のシミュレーション
-
-### 4. データコレクター (`data_collector.py`)
-- **機能**: 全シミュレーターからのデータ収集
-- **保存形式**: HDF5形式（`simulation_data.h5`）
-- **表示**: リアルタイムコンソール出力
-- **データ構造**: 時刻 + 属性_ソースID の形式
-
-## 実行方法 (How to Run)
-
-### 必要条件 (Prerequisites)
-- Python 3.9以上
-- uv（Pythonパッケージマネージャー）
-
-### インストール (Installation)
+### 1. 環境構築
 ```bash
-# リポジトリをクローン
-git clone <repository-url>
-cd mosaik-hils
-
-# 依存関係をインストール
+# 依存関係のインストール
 uv sync
+
+# WebVisカスタマイズの初期設定
+python scripts/setup_webvis.py --apply
 ```
 
-### 実行 (Execution)
+### 2. シミュレーション実行
 ```bash
-# シミュレーション実行
+# 基本実行
 uv run python main.py
+
+# スクリプト経由（オプション指定可能）
+python scripts/run_simulation.py --steps 100 --delay 5.0 --jitter 2.0
 ```
 
-### 可視化アクセス (Visualization Access)
-シミュレーション実行後、以下のURLにアクセス:
+### 3. 結果確認
+- **WebVis**: http://localhost:8002 (カスタム統計表示付き)
+- **ログファイル**: `logs/YYYYMMDD-HHMMSS/simulation_data.h5`
+
+## 🔧 システム構成 (System Architecture)
+
+### データフロー
 ```
-http://localhost:8002
+NumericalSim → DelayNode → HardwareSim
+     ↓            ↓           ↓
+     DataCollector ← ← ← ← ← ← ←
+            ↓
+       HDF5 File + WebVis
 ```
 
-## 出力ファイル (Output Files)
+### 主要コンポーネント
 
-### `simulation_data.h5`
-収集された時系列データは HDF5 ファイルとして保存され、`/steps` グループ配下に
-`time`, `output_NumSim_0`, `sensor_value_HW_0`, `actuator_command_HW_0` といった列名で
-データセットが生成されます。Python からの読み取り例:
+1. **NumericalSimulator** (`src/simulators/numerical_simulator.py`)
+   - 正弦波信号の生成
+   - パラメータ調整可能な数値モデル
+
+2. **DelaySimulator** (`src/simulators/delay_simulator.py`) 🆕
+   - 通信遅延のモデリング
+   - ガウシアンジッター対応
+   - パケットロス・順序制御
+
+3. **HardwareSimulator** (`src/simulators/hardware_simulator.py`)
+   - センサー読取りシミュレーション
+   - アクチュエーター制御シミュレーション
+
+4. **DataCollector** (`src/simulators/data_collector.py`)
+   - HDF5形式でのデータ保存
+   - リアルタイムコンソール出力
+
+5. **CustomWebVis** (`src/webvis/`) 🆕
+   - WebVisのカスタマイズ機能
+   - 遅延統計の表示
+   - uv sync後の永続化対応
+
+## 🎛️ 実行オプション (Execution Options)
+
+### 基本実行
+```bash
+# 通常実行
+uv run python main.py
+
+# WebVisなし
+SKIP_MOSAIK_WEBVIS=1 uv run python main.py
+```
+
+### 高度な実行オプション
+```bash
+# スクリプト経由
+python scripts/run_simulation.py \
+  --steps 200 \           # シミュレーションステップ数
+  --rt-factor 0.1 \       # リアルタイムファクター
+  --delay 5.0 \           # 基本遅延（ステップ）
+  --jitter 1.5 \          # ジッター標準偏差
+  --packet-loss 0.005 \   # パケットロス率
+  --no-webvis             # WebVis無効化
+```
+
+## 📊 データ分析 (Data Analysis)
+
+### HDF5データ構造
 ```python
 import h5py
 
-with h5py.File("simulation_data.h5", "r") as f:
-    time = f["steps/time"][:]
-    numerical = f["steps/output_NumSim_0"][:]
-    sensor = f["steps/sensor_value_HW_0"][:]
+with h5py.File('logs/YYYYMMDD-HHMMSS/simulation_data.h5', 'r') as f:
+    steps = f['steps']
+    print(f"Time: {steps['time'][:]}")
+    print(f"Numerical Output: {steps['output_NumericalSim-0.NumSim_0'][:]}")
+    print(f"Delayed Output: {steps['delayed_output_DelaySim-0.DelayNode_0'][:]}")
+    print(f"Hardware Sensor: {steps['sensor_value_HardwareSim-0.HW_0'][:]}")
 ```
 
-### `execution_time.png` (オプション)
-matplotlibが利用可能な場合、実行時間のプロットが生成されます。
+### 統計情報
+遅延ノードの詳細統計は、WebVis右上パネルまたはHDF5の`stats`フィールドで確認できます。
 
-## 設定パラメータ (Configuration Parameters)
+## 🎨 WebVisカスタマイズ (WebVis Customization)
 
-### シミュレーション設定
-- **実行時間**: 300ステップ
-- **リアルタイムファクター**: 0.5（実時間より高速）
-- **ステップサイズ**: 1秒
-
-### カスタマイズ可能な値
-- 数値モデル初期値: `initial_value=1.0`
-- 数値モデルステップサイズ: `step_size=0.5`
-- ハードウェアデバイスID: `device_id="sensor_01"`
-- 接続タイプ: `connection_type="serial"`
-
-## 開発・拡張 (Development & Extension)
-
-### 新しいシミュレーターの追加
-1. `mosaik_api.Simulator`を継承したクラスを作成
-2. `meta`辞書でモデル仕様を定義
-3. `init`, `create`, `step`, `get_data`メソッドを実装
-4. `main.py`の`sim_config`に追加
-
-### 実ハードウェアとの接続
-`hardware_simulator.py`の以下のメソッドを実装:
-- `_read_sensor_data()`: 実際のセンサーからデータ読み取り
-- `_send_actuator_command()`: 実際のアクチュエーターに制御信号送信
-
-## トラブルシューティング (Troubleshooting)
-
-### よくある問題
-
-**ポート8002が使用中**
+### 自動カスタマイズ
 ```bash
-# ポート使用状況確認
-lsof -i :8002
-# プロセス終了
-kill -9 <PID>
+# main.py実行時に自動適用
+uv run python main.py
+
+# 手動適用
+python scripts/setup_webvis.py --apply
+
+# 状態確認
+python scripts/setup_webvis.py --check
+
+# 元に戻す
+python scripts/setup_webvis.py --restore
 ```
 
-**依存関係エラー**
-```bash
-# 依存関係を再インストール
-uv sync --reinstall
-```
+### カスタマイズ内容
+- タイトル変更: "mosaik-web (HILS Custom)"
+- 遅延統計パネル: 右上に詳細統計表示
+- uv sync対応: パッケージ更新後も自動再適用
 
-**WebVis表示されない**
-- ブラウザで `http://localhost:8002` にアクセス
-- ファイアウォール設定を確認
-- シミュレーション実行中かどうか確認
+詳細は [`docs/WEBVIS_CUSTOMIZATION.md`](docs/WEBVIS_CUSTOMIZATION.md) を参照してください。
 
-## ライセンス (License)
+## 🔬 開発ガイド (Development Guide)
+
+### 新しいシミュレーター追加
+1. `src/simulators/` にファイル作成
+2. `mosaik_api.Simulator` を継承
+3. `main.py` の `sim_config` に追加
+
+### WebVisカスタマイズ拡張
+1. `src/webvis/customize_webvis.py` を編集
+2. HTML/CSS/JavaScript追加
+
+### 詳細情報
+- 📄 [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md) - 詳細な構造説明
+- 🤖 [`CLAUDE.md`](CLAUDE.md) - AI開発ガイド
+
+## 📝 使用技術 (Technologies)
+
+- **Python 3.9+** - プログラミング言語
+- **Mosaik 3.5+** - コシミュレーションフレームワーク
+- **HDF5** - データ保存形式
+- **uv** - 依存関係管理
+- **D3.js** - WebVis可視化
+- **WebSocket** - リアルタイム通信
+
+## 📈 パフォーマンス
+
+- **リアルタイムファクター**: 0.5（2倍速実行）
+- **遅延精度**: ステップレベル（設定可能）
+- **データレート**: 毎秒数百ポイント
+- **メモリ使用量**: 通常100MB以下
+
+## 🤝 コントリビューション
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
+
+## 📜 ライセンス
 
 このプロジェクトはMITライセンスの下で公開されています。
 
-## 参考資料 (References)
+## 🆕 更新履歴
 
-- [Mosaik Documentation](https://mosaik.readthedocs.io/)
-- [Mosaik API Reference](https://mosaik-api.readthedocs.io/)
-- [HILS概要](https://en.wikipedia.org/wiki/Hardware-in-the-loop_simulation)
+- **v2.0** - 通信遅延モデリング機能追加
+- **v2.1** - WebVisカスタマイズ機能追加
+- **v2.2** - プロジェクト構造整理とスクリプト化

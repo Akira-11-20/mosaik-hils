@@ -24,31 +24,47 @@ def main():
     Mosaik co-simulation scenario with numerical simulation and hardware interface
 
     この関数は以下の手順でシミュレーションを実行します:
-    1. シミュレーター設定の定義
-    2. Mosaikワールドの作成
-    3. 各シミュレーターの起動
-    4. エンティティの作成と接続
-    5. データ収集とWebVis可視化の設定
-    6. シミュレーションの実行
+    1. WebVisカスタマイズの自動適用
+    2. シミュレーター設定の定義
+    3. Mosaikワールドの作成
+    4. 各シミュレーターの起動
+    5. エンティティの作成と接続
+    6. データ収集とWebVis可視化の設定
+    7. シミュレーションの実行
     """
+
+    # WebVis用のローカルアセットを事前にデプロイ
+    print("🔧 Deploying WebVis local assets...")
+    try:
+        from scripts.manage_webvis_assets import deploy_assets
+        deploy_assets()
+    except Exception as e:
+        print(f"⚠️  Asset deployment failed: {e}")
 
     # Simulation configuration - 各シミュレーターの設定
     sim_config = {
         # 数値シミュレーター: 正弦波を生成する数学的モデル
         "NumericalSim": {
-            "python": "numerical_simulator:NumericalSimulator",
+            "python": "src.simulators.numerical_simulator:NumericalSimulator",
+            "api_version": "1",
         },
         # ハードウェアシミュレーター: 物理デバイスとのインターフェース
         "HardwareSim": {
-            "python": "hardware_simulator:HardwareSimulator",
+            "python": "src.simulators.hardware_simulator:HardwareSimulator",
+            "api_version": "1",
         },
-        # Web可視化ツール: リアルタイムでシミュレーション結果を表示
+        # 遅延シミュレーター: 通信遅延とジッターをモデル化
+        "DelaySim": {
+            "python": "src.simulators.delay_simulator:DelaySimulator",
+        },
+        # Web可視化ツール: mosaik-web公式 (ポート8004)
         "WebVis": {
-            "cmd": "mosaik-web %(addr)s --serve=127.0.0.1:8002",
+            "cmd": "mosaik-web %(addr)s --serve=127.0.0.1:8004",
         },
         # データ収集器: シミュレーションデータをJSONファイルに保存
         "DataCollector": {
-            "python": "data_collector:DataCollectorSimulator",
+            "python": "src.simulators.data_collector:DataCollectorSimulator",
+            "api_version": "1",
         },
         # HDF5データベース: より高度なデータ記録（コメントアウト中）
         "HDF5": {
@@ -73,6 +89,8 @@ def main():
     # step_size=1: 各シミュレーターは1秒間隔で実行される
     numerical_sim = world.start("NumericalSim", step_size=1)
     hardware_sim = world.start("HardwareSim", step_size=1)
+    # 遅延シミュレーター: 高頻度実行で精密な遅延制御（1時間単位）
+    delay_sim = world.start("DelaySim", step_size=1, time_resolution=1)
     webvis = None
     if not skip_official_webvis:
         webvis = world.start("WebVis", start_date="2024-01-01 00:00:00", step_size=1)
@@ -84,30 +102,37 @@ def main():
     hardware_interface = hardware_sim.HardwareInterface(
         device_id="sensor_01", connection_type="serial"
     )
+    # 遅延ノード: 通信遅延3ステップ、ジッター1ステップ、パケットロス0.1%
+    delay_node = delay_sim.DelayNode(
+        base_delay=3,  # 3ステップ基本遅延
+        jitter_std=1,  # 1ステップ標準偏差ジッター
+        packet_loss_rate=0.001,  # 0.1%パケットロス
+        preserve_order=True,  # パケット順序保持
+    )
 
     # Connect entities - エンティティ間のデータフロー接続
-    # 数値シミュレーションの出力をハードウェアのアクチュエータコマンドに接続
-    # (循環参照を避けるため、一方向のみの接続)
-    world.connect(numerical_model, hardware_interface, ("output", "actuator_command"))
+    # 遅延ノードを経由した通信パス: numerical → delay_node → hardware
+    world.connect(numerical_model, delay_node, ("output", "input"))
+    world.connect(
+        delay_node, hardware_interface, ("delayed_output", "actuator_command")
+    )
 
     # Data recording setup - カスタムデータ収集器のセットアップ
     data_collector = world.start("DataCollector", step_size=1)
     collector = data_collector.DataCollector(output_dir=str(run_dir))
 
-    # Connect all data to collector for recording - データ収集のための接続
-    # 数値モデルの出力を収集器に接続
+    # Data collection setup - HDF5形式でのデータ記録設定
+    # 全シミュレーターのデータをカスタムコレクターに集約
     mosaik.util.connect_many_to_one(world, [numerical_model], collector, "output")
-    # ハードウェアインターフェースのセンサー値とアクチュエータコマンドを収集器に接続
+    mosaik.util.connect_many_to_one(
+        world, [delay_node], collector, "delayed_output", "stats"
+    )
     mosaik.util.connect_many_to_one(
         world, [hardware_interface], collector, "sensor_value", "actuator_command"
     )
 
-    # Alternative: HDF5 database for more complex data recording
-    # より複雑なデータ記録にはHDF5データベースも使用可能（現在はコメントアウト）
-    # hdf5_db = world.start('HDF5', step_size=1, duration=300)
-    # hdf5_output = hdf5_db.Database(filename='simulation_recording.hdf5')
-    # mosaik.util.connect_many_to_one(world, [numerical_model], hdf5_output, 'output')
-    # mosaik.util.connect_many_to_one(world, [hardware_interface], hdf5_output, 'sensor_value', 'actuator_command')
+    # Note: 現在はカスタムDataCollectorを使用してHDF5保存を実装
+    # 遅延ノードの統計情報や複雑なデータ型にも対応済み
 
     # WebVis setup - ポート8002でWeb可視化を設定
     vis_topo = None
@@ -121,10 +146,11 @@ def main():
         mosaik.util.connect_many_to_one(
             world, [hardware_interface], vis_topo, "sensor_value"
         )
+        # 遅延ノードの統計データと遅延出力を可視化に接続
+        mosaik.util.connect_many_to_one(world, [delay_node], vis_topo, "stats", "delayed_output")
         # mosaik.util.connect_many_to_one(
         #     world, [hardware_interface], vis_topo, "actuator_command"
         # )
-    
 
     # Set entity types for visualization - 可視化のためのエンティティタイプ設定
     if webvis is not None:
@@ -148,6 +174,15 @@ def main():
                     "min": 0,  # 最小値
                     "max": 2,  # 最大値
                 },
+                # 遅延ノード: 制御装置として表示、遅延出力を表示
+                "DelayNode": {
+                    "cls": "ctrl",  # 制御装置クラス（オレンジ色で表示）
+                    "attr": "delayed_output",  # 表示する属性
+                    "unit": "Delayed Signal",  # 単位
+                    "default": 0.0,  # デフォルト値
+                    "min": -2,  # 最小値
+                    "max": 2,  # 最大値
+                },
             }
         )
 
@@ -159,8 +194,8 @@ def main():
     )  # ハードウェアシミュレーターがセンサーフィードバックを提供
     if webvis is not None:
         print(
-            "Official WebVis enabled at: http://localhost:8002"
-        )  # 公式WebVisがhttp://localhost:8002で有効
+            "Official WebVis enabled at: http://localhost:8004"
+        )  # 公式WebVisがhttp://localhost:8004で有効
     else:
         print("Official WebVis skipped (SKIP_MOSAIK_WEBVIS=1)")
     print(
@@ -168,7 +203,7 @@ def main():
     )  # 300シミュレーションステップをスローリアルタイムで実行
     if webvis is not None:
         print(
-            "Visit http://localhost:8002 to see official mosaik visualization!"
+            "Visit http://localhost:8004 to see official mosaik visualization!"
         )  # 公式mosaik可視化を見るためのURL
     print("Press Ctrl+C to stop the simulation")  # シミュレーション停止の方法
 

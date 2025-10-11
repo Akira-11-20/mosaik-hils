@@ -34,6 +34,8 @@ meta = {
                 "output",
                 "sensor_value",
                 "actuator_command",
+                "delayed_output",
+                "stats",
             ],  # 収集可能な属性
         },
     },
@@ -123,7 +125,12 @@ class DataCollectorSimulator(mosaik_api.Simulator):
                             value  # "属性_ソースID"の形式でデータを保存
                         )
                         # リアルタイムデータ表示（コンソールログ）
-                        print(f"Time {time}: {attr} from {source_eid} = {value:.3f}")
+                        if isinstance(value, (int, float)):
+                            print(
+                                f"Time {time}: {attr} from {source_eid} = {value:.3f}"
+                            )
+                        else:
+                            print(f"Time {time}: {attr} from {source_eid} = {value}")
 
                 entity["data"].append(data_point)  # エンティティのデータリストに追加
                 self.data_log.append(data_point)  # グローバルデータログに追加
@@ -173,10 +180,10 @@ class DataCollectorSimulator(mosaik_api.Simulator):
         # Save collected data to file - 収集データをファイルに保存
         first_entity = next(iter(self.entities.values()))
         output_dir: Path = first_entity["output_dir"]
-        
+
         # ディレクトリが存在することを確認
         output_dir.mkdir(parents=True, exist_ok=True)
-        
+
         output_path = output_dir / "simulation_data.h5"
 
         keys = sorted({key for entry in self.data_log for key in entry.keys()})
@@ -187,8 +194,24 @@ class DataCollectorSimulator(mosaik_api.Simulator):
                 column = []
                 for entry in self.data_log:
                     value = entry.get(key)
-                    column.append(float("nan") if value is None else float(value))
-                steps_group.create_dataset(name=key, data=column)
+                    if value is None:
+                        column.append(float("nan"))
+                    elif isinstance(value, dict):
+                        # 辞書の場合は文字列表現を保存（statsなど）
+                        column.append(str(value))
+                    elif isinstance(value, (int, float)):
+                        column.append(float(value))
+                    else:
+                        column.append(str(value))
+                # データ型に応じてHDF5データセットを作成
+                if column and isinstance(column[0], str):
+                    # 文字列データの場合
+                    steps_group.create_dataset(
+                        name=key, data=column, dtype=h5py.string_dtype()
+                    )
+                else:
+                    # 数値データの場合
+                    steps_group.create_dataset(name=key, data=column)
 
             steps_group.attrs["created_at"] = datetime.utcnow().isoformat() + "Z"
             steps_group.attrs["num_steps"] = len(self.data_log)
