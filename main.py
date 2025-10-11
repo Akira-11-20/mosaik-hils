@@ -18,7 +18,7 @@ import mosaik.util
 def main():
     """
     Mosaik co-simulation scenario with numerical simulation and hardware interface
-    
+
     この関数は以下の手順でシミュレーションを実行します:
     1. シミュレーター設定の定義
     2. Mosaikワールドの作成
@@ -109,33 +109,41 @@ def main():
         {
             # 数値モデル: 負荷として表示、出力値を-2から2の範囲で表示
             "NumericalModel": {
-                "cls": "load",          # 負荷クラス（青色で表示）
-                "attr": "output",       # 表示する属性
-                "unit": "Signal",       # 単位
-                "default": 0,           # デフォルト値
-                "min": -2,              # 最小値
-                "max": 2,               # 最大値
+                "cls": "load",  # 負荷クラス（青色で表示）
+                "attr": "output",  # 表示する属性
+                "unit": "Signal",  # 単位
+                "default": 0,  # デフォルト値
+                "min": -2,  # 最小値
+                "max": 2,  # 最大値
             },
             # ハードウェアインターフェース: 発電機として表示、センサー値を0から2Vの範囲で表示
             "HardwareInterface": {
-                "cls": "gen",           # 発電機クラス（緑色で表示）
-                "attr": "sensor_value", # 表示する属性
-                "unit": "Sensor [V]",   # 単位（ボルト）
-                "default": 1,           # デフォルト値
-                "min": 0,               # 最小値
-                "max": 2,               # 最大値
+                "cls": "gen",  # 発電機クラス（緑色で表示）
+                "attr": "sensor_value",  # 表示する属性
+                "unit": "Sensor [V]",  # 単位（ボルト）
+                "default": 1,  # デフォルト値
+                "min": 0,  # 最小値
+                "max": 2,  # 最大値
             },
         }
     )
 
     # Run simulation with progress monitoring - シミュレーション実行とプログレス監視
-    print("Starting mosaik co-simulation...")                               # Mosaikコシミュレーション開始
-    print("Numerical simulator generates sine wave")                        # 数値シミュレーターが正弦波を生成
-    print("Hardware simulator provides sensor feedback")                   # ハードウェアシミュレーターがセンサーフィードバックを提供
-    print("Official WebVis enabled at: http://localhost:8002")            # 公式WebVisがhttp://localhost:8002で有効
-    print("Running for 300 simulation steps in slow real-time (10x slower)...")  # 300シミュレーションステップをスローリアルタイムで実行
-    print("Visit http://localhost:8002 to see official mosaik visualization!") # 公式mosaik可視化を見るためのURL
-    print("Press Ctrl+C to stop the simulation")                          # シミュレーション停止の方法
+    print("Starting mosaik co-simulation...")  # Mosaikコシミュレーション開始
+    print("Numerical simulator generates sine wave")  # 数値シミュレーターが正弦波を生成
+    print(
+        "Hardware simulator provides sensor feedback"
+    )  # ハードウェアシミュレーターがセンサーフィードバックを提供
+    print(
+        "Official WebVis enabled at: http://localhost:8002"
+    )  # 公式WebVisがhttp://localhost:8002で有効
+    print(
+        "Running for 300 simulation steps in slow real-time (10x slower)..."
+    )  # 300シミュレーションステップをスローリアルタイムで実行
+    print(
+        "Visit http://localhost:8002 to see official mosaik visualization!"
+    )  # 公式mosaik可視化を見るためのURL
+    print("Press Ctrl+C to stop the simulation")  # シミュレーション停止の方法
 
     # Use mosaik.util for connection patterns - 接続パターンのためのmosaik.util使用
     # 必要に応じてutil関数で複数エンティティを接続
@@ -144,9 +152,11 @@ def main():
     # シミュレーション実行: 300ステップまで、リアルタイムファクター1（通常速度）
     world.run(until=300, rt_factor=1)
 
-    print("Co-simulation completed successfully!")                        # コシミュレーション成功完了
-    print("Simulation data recorded to: simulation_data.json")            # シミュレーションデータのJSONファイル保存先
-    print("You can replay/analyze the data later!")                       # 後からデータを再生/分析可能
+    print("Co-simulation completed successfully!")  # コシミュレーション成功完了
+    print(
+        "Simulation data recorded to: simulation_data.json"
+    )  # シミュレーションデータのJSONファイル保存先
+    print("You can replay/analyze the data later!")  # 後からデータを再生/分析可能
 
     # Optional: Create execution time plot using mosaik.util - オプションで実行時間プロットを作成
     try:
@@ -155,9 +165,13 @@ def main():
         # mosaik.utilを使用して実行時間をプロット
         mosaik.util.plot_execution_time(world)
         plt.savefig("execution_time.png")
-        print("Execution time plot saved to execution_time.png")           # 実行時間プロットをPNGファイルに保存
+        print(
+            "Execution time plot saved to execution_time.png"
+        )  # 実行時間プロットをPNGファイルに保存
     except ImportError:
-        print("matplotlib not available for plotting")                     # matplotlibが利用不可の場合のメッセージ
+        print(
+            "matplotlib not available for plotting"
+        )  # matplotlibが利用不可の場合のメッセージ
 
 
 if __name__ == "__main__":
