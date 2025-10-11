@@ -173,6 +173,10 @@ class DataCollectorSimulator(mosaik_api.Simulator):
         # Save collected data to file - 収集データをファイルに保存
         first_entity = next(iter(self.entities.values()))
         output_dir: Path = first_entity["output_dir"]
+        
+        # ディレクトリが存在することを確認
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
         output_path = output_dir / "simulation_data.h5"
 
         keys = sorted({key for entry in self.data_log for key in entry.keys()})

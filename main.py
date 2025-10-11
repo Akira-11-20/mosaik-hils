@@ -11,6 +11,7 @@ Mosaik HILS (Hardware-in-the-Loop Simulation) メインファイル
 - WebVis によるリアルタイム可視化
 """
 
+import os
 from datetime import datetime
 from pathlib import Path
 
@@ -55,6 +56,10 @@ def main():
         },
     }
 
+    skip_official_webvis = os.getenv("SKIP_MOSAIK_WEBVIS", "0") == "1"
+    if skip_official_webvis:
+        sim_config.pop("WebVis")
+
     # Prepare run directory - ログ出力用ディレクトリを作成
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_dir = Path("logs") / timestamp
@@ -68,7 +73,9 @@ def main():
     # step_size=1: 各シミュレーターは1秒間隔で実行される
     numerical_sim = world.start("NumericalSim", step_size=1)
     hardware_sim = world.start("HardwareSim", step_size=1)
-    webvis = world.start("WebVis", start_date="2024-01-01 00:00:00", step_size=1)
+    webvis = None
+    if not skip_official_webvis:
+        webvis = world.start("WebVis", start_date="2024-01-01 00:00:00", step_size=1)
 
     # Create entities - 各シミュレーター内でエンティティ（モデル）を作成
     # 数値モデル: 初期値1.0、ステップサイズ0.5で正弦波を生成
@@ -103,39 +110,46 @@ def main():
     # mosaik.util.connect_many_to_one(world, [hardware_interface], hdf5_output, 'sensor_value', 'actuator_command')
 
     # WebVis setup - ポート8002でWeb可視化を設定
-    vis_topo = webvis.Topology()
+    vis_topo = None
+    if webvis is not None:
+        vis_topo = webvis.Topology()
 
-    # Connect to visualization using many_to_one pattern - 可視化への接続
-    # 数値モデルの出力を可視化に接続
-    mosaik.util.connect_many_to_one(world, [numerical_model], vis_topo, "output")
-    # ハードウェアインターフェースのセンサー値を可視化に接続
-    mosaik.util.connect_many_to_one(
-        world, [hardware_interface], vis_topo, "sensor_value"
-    )
+        # Connect to visualization using many_to_one pattern - 可視化への接続
+        # 数値モデルの出力を可視化に接続
+        mosaik.util.connect_many_to_one(world, [numerical_model], vis_topo, "output")
+        # ハードウェアインターフェースのセンサー値を可視化に接続
+        mosaik.util.connect_many_to_one(
+            world, [hardware_interface], vis_topo, "sensor_value"
+        )
+        # mosaik.util.connect_many_to_one(
+        #     world, [hardware_interface], vis_topo, "actuator_command"
+        # )
+    
 
     # Set entity types for visualization - 可視化のためのエンティティタイプ設定
-    webvis.set_etypes(
-        {
-            # 数値モデル: 負荷として表示、出力値を-2から2の範囲で表示
-            "NumericalModel": {
-                "cls": "load",  # 負荷クラス（青色で表示）
-                "attr": "output",  # 表示する属性
-                "unit": "Signal",  # 単位
-                "default": 0,  # デフォルト値
-                "min": -2,  # 最小値
-                "max": 2,  # 最大値
-            },
-            # ハードウェアインターフェース: 発電機として表示、センサー値を0から2Vの範囲で表示
-            "HardwareInterface": {
-                "cls": "gen",  # 発電機クラス（緑色で表示）
-                "attr": "sensor_value",  # 表示する属性
-                "unit": "Sensor [V]",  # 単位（ボルト）
-                "default": 1,  # デフォルト値
-                "min": 0,  # 最小値
-                "max": 2,  # 最大値
-            },
-        }
-    )
+    if webvis is not None:
+        webvis.set_etypes(
+            {
+                # 数値モデル: 負荷として表示、出力値を-2から2の範囲で表示
+                "NumericalModel": {
+                    "cls": "load",  # 負荷クラス（青色で表示）
+                    "attr": "output",  # 表示する属性
+                    "unit": "Signal",  # 単位
+                    "default": 0,  # デフォルト値
+                    "min": -2,  # 最小値
+                    "max": 2,  # 最大値
+                },
+                # ハードウェアインターフェース: 発電機として表示、センサー値を0から2Vの範囲で表示
+                "HardwareInterface": {
+                    "cls": "gen",  # 発電機クラス（緑色で表示）
+                    "attr": "sensor_value",  # 表示する属性
+                    "unit": "Sensor [V]",  # 単位（ボルト）
+                    "default": 1,  # デフォルト値
+                    "min": 0,  # 最小値
+                    "max": 2,  # 最大値
+                },
+            }
+        )
 
     # Run simulation with progress monitoring - シミュレーション実行とプログレス監視
     print("Starting mosaik co-simulation...")  # Mosaikコシミュレーション開始
@@ -143,15 +157,19 @@ def main():
     print(
         "Hardware simulator provides sensor feedback"
     )  # ハードウェアシミュレーターがセンサーフィードバックを提供
-    print(
-        "Official WebVis enabled at: http://localhost:8002"
-    )  # 公式WebVisがhttp://localhost:8002で有効
+    if webvis is not None:
+        print(
+            "Official WebVis enabled at: http://localhost:8002"
+        )  # 公式WebVisがhttp://localhost:8002で有効
+    else:
+        print("Official WebVis skipped (SKIP_MOSAIK_WEBVIS=1)")
     print(
         "Running for 300 simulation steps in slow real-time (10x slower)..."
     )  # 300シミュレーションステップをスローリアルタイムで実行
-    print(
-        "Visit http://localhost:8002 to see official mosaik visualization!"
-    )  # 公式mosaik可視化を見るためのURL
+    if webvis is not None:
+        print(
+            "Visit http://localhost:8002 to see official mosaik visualization!"
+        )  # 公式mosaik可視化を見るためのURL
     print("Press Ctrl+C to stop the simulation")  # シミュレーション停止の方法
 
     # Use mosaik.util for connection patterns - 接続パターンのためのmosaik.util使用

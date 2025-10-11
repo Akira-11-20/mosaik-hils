@@ -123,7 +123,7 @@ class HardwareSimulator(mosaik_api.Simulator):
             # Process commands from numerical simulation - 数値シミュレーションからのコマンド処理
             if eid in inputs:
                 for attr, values in inputs[eid].items():
-                    if attr == "output":  # 数値シミュレーターの出力を受信
+                    if attr == "actuator_command":  # アクチュエーターコマンドを受信
                         # Receive numerical simulation output as actuator command - 数値シミュレーション出力をアクチュエーターコマンドとして受信
                         sim_output = list(values.values())[
                             0
