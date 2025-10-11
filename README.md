@@ -65,7 +65,7 @@ mosaik-hils/
 
 ### 4. データコレクター (`data_collector.py`)
 - **機能**: 全シミュレーターからのデータ収集
-- **保存形式**: JSON形式（`simulation_data.json`）
+- **保存形式**: HDF5形式（`simulation_data.h5`）
 - **表示**: リアルタイムコンソール出力
 - **データ構造**: 時刻 + 属性_ソースID の形式
 
@@ -99,23 +99,17 @@ http://localhost:8002
 
 ## 出力ファイル (Output Files)
 
-### `simulation_data.json`
-収集された時系列データが以下の形式で保存されます:
-```json
-[
-  {
-    "time": 0,
-    "output_NumSim_0": 0.0,
-    "sensor_value_HW_0": 1.234,
-    "actuator_command_HW_0": 0.0
-  },
-  {
-    "time": 1,
-    "output_NumSim_0": 0.0998,
-    "sensor_value_HW_0": 0.987,
-    "actuator_command_HW_0": 0.0998
-  }
-]
+### `simulation_data.h5`
+収集された時系列データは HDF5 ファイルとして保存され、`/steps` グループ配下に
+`time`, `output_NumSim_0`, `sensor_value_HW_0`, `actuator_command_HW_0` といった列名で
+データセットが生成されます。Python からの読み取り例:
+```python
+import h5py
+
+with h5py.File("simulation_data.h5", "r") as f:
+    time = f["steps/time"][:]
+    numerical = f["steps/output_NumSim_0"][:]
+    sensor = f["steps/sensor_value_HW_0"][:]
 ```
 
 ### `execution_time.png` (オプション)
@@ -124,8 +118,8 @@ matplotlibが利用可能な場合、実行時間のプロットが生成され�
 ## 設定パラメータ (Configuration Parameters)
 
 ### シミュレーション設定
-- **実行時間**: 300ステップ（約5分）
-- **リアルタイムファクター**: 1（通常速度）
+- **実行時間**: 300ステップ
+- **リアルタイムファクター**: 0.5（実時間より高速）
 - **ステップサイズ**: 1秒
 
 ### カスタマイズ可能な値

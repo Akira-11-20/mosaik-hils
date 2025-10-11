@@ -7,9 +7,12 @@ Mosaik HILS (Hardware-in-the-Loop Simulation) メインファイル
 主な機能:
 - 数値シミュレーション（正弦波生成）
 - ハードウェアシミュレーション（センサー読取り・アクチュエータ制御）
-- データ収集とJSON保存
+- データ収集とHDF5保存
 - WebVis によるリアルタイム可視化
 """
+
+from datetime import datetime
+from pathlib import Path
 
 import mosaik
 import mosaik.util
@@ -52,8 +55,14 @@ def main():
         },
     }
 
+    # Prepare run directory - ログ出力用ディレクトリを作成
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    run_dir = Path("logs") / timestamp
+    run_dir.mkdir(parents=True, exist_ok=True)
+
     # Create World - Mosaikワールドの作成（全シミュレーターを管理）
-    world = mosaik.World(sim_config)
+    # debug=True enables execution graph tracking required by util plotting helpers.
+    world = mosaik.World(sim_config, debug=True)
 
     # Start simulators - 各シミュレーターの起動
     # step_size=1: 各シミュレーターは1秒間隔で実行される
@@ -76,7 +85,7 @@ def main():
 
     # Data recording setup - カスタムデータ収集器のセットアップ
     data_collector = world.start("DataCollector", step_size=1)
-    collector = data_collector.DataCollector()
+    collector = data_collector.DataCollector(output_dir=str(run_dir))
 
     # Connect all data to collector for recording - データ収集のための接続
     # 数値モデルの出力を収集器に接続
@@ -149,29 +158,29 @@ def main():
     # 必要に応じてutil関数で複数エンティティを接続
     # world.connectはmosaik.util.connect_randomlyやconnect_many_to_oneで置き換え可能
 
-    # シミュレーション実行: 300ステップまで、リアルタイムファクター1（通常速度）
-    world.run(until=300, rt_factor=1)
+    # シミュレーション実行: 300ステップまで、リアルタイムファクター0.5（約2倍速）
+    world.run(until=300, rt_factor=0.5)
 
     print("Co-simulation completed successfully!")  # コシミュレーション成功完了
     print(
-        "Simulation data recorded to: simulation_data.json"
-    )  # シミュレーションデータのJSONファイル保存先
+        f"Simulation data recorded to: {run_dir / 'simulation_data.h5'}"
+    )  # シミュレーションデータのHDF5ファイル保存先
     print("You can replay/analyze the data later!")  # 後からデータを再生/分析可能
 
-    # Optional: Create execution time plot using mosaik.util - オプションで実行時間プロットを作成
-    try:
-        import matplotlib.pyplot as plt
+    # Optional: Generate mosaik.util visualizations if dependencies are available
+    figures_dir = run_dir
 
-        # mosaik.utilを使用して実行時間をプロット
-        mosaik.util.plot_execution_time(world)
-        plt.savefig("execution_time.png")
-        print(
-            "Execution time plot saved to execution_time.png"
-        )  # 実行時間プロットをPNGファイルに保存
-    except ImportError:
-        print(
-            "matplotlib not available for plotting"
-        )  # matplotlibが利用不可の場合のメッセージ
+    try:
+        plot_kwargs = {"folder": str(figures_dir), "show_plot": False}
+        mosaik.util.plot_dataflow_graph(world, **plot_kwargs)
+        mosaik.util.plot_execution_graph(world, **plot_kwargs)
+        mosaik.util.plot_execution_time(world, **plot_kwargs)
+        mosaik.util.plot_execution_time_per_simulator(world, **plot_kwargs)
+        print(f"Additional plots saved under {figures_dir}/")
+    except ImportError as exc:
+        print(f"Optional mosaik visualizations skipped (missing dependency): {exc}")
+    except Exception as exc:  # noqa: BLE001 - diagnostics for optional tooling
+        print(f"Could not generate mosaik visualizations: {exc}")
 
 
 if __name__ == "__main__":

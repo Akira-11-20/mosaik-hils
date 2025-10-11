@@ -2,18 +2,24 @@
 データコレクターシミュレーター (Data Collector Simulator)
 
 シミュレーション実行中に各シミュレーターからのデータを収集し、
-JSONファイルに保存するMosaikシミュレーター。
+HDF5 形式で保存する mosaik シミュレーター。
 
 主な機能:
 - 数値シミュレーターの出力データ収集
 - ハードウェアシミュレーターのセンサー値・アクチュエーターコマンド収集
-- 時系列データのJSONファイル出力
+- 時系列データを HDF5 ファイルにエクスポート
 - リアルタイムコンソール表示
 """
 
+from datetime import datetime
+from pathlib import Path
+
 import mosaik_api
-import json
-import time
+
+try:
+    import h5py
+except ImportError:  # h5py is an optional dependency
+    h5py = None
 
 
 # Mosaikシミュレーターメタデータ - データコレクターの仕様を定義
@@ -22,7 +28,7 @@ meta = {
     "models": {
         "DataCollector": {  # データコレクターモデル
             "public": True,  # 他のシミュレーターから利用可能
-            "params": [],  # 初期化パラメータ（なし）
+            "params": ["output_dir"],  # 出力先ディレクトリ（オプション）
             "attrs": [
                 "data",
                 "output",
@@ -39,7 +45,7 @@ class DataCollectorSimulator(mosaik_api.Simulator):
     データコレクターシミュレーター実装クラス
 
     他のシミュレーターからのデータを収集し、
-    JSONファイルとして保存します。
+    HDF5 ファイルとして保存します。
     """
 
     def __init__(self):
@@ -65,7 +71,7 @@ class DataCollectorSimulator(mosaik_api.Simulator):
         self.step_size = step_size
         return meta
 
-    def create(self, num, model):
+    def create(self, num, model, output_dir=None):
         """
         データコレクターエンティティの作成
 
@@ -79,10 +85,13 @@ class DataCollectorSimulator(mosaik_api.Simulator):
         entities = []
         for i in range(num):
             eid = f"{self.eid_prefix}{i}"  # ユニークなエンティティID生成
+            target_dir = Path(output_dir) if output_dir else Path.cwd()
+            target_dir.mkdir(parents=True, exist_ok=True)
             # データコレクターの状態データを初期化
             self.entities[eid] = {
                 "data": [],  # 収集したデータのリスト
                 "current_time": 0,  # 現在のシミュレーション時刻
+                "output_dir": target_dir,
             }
             entities.append({"eid": eid, "type": model})
         return entities
@@ -145,14 +154,43 @@ class DataCollectorSimulator(mosaik_api.Simulator):
         """
         シミュレーション終了時の処理
 
-        収集した全データをJSONファイルに保存します。
-        このメソッドはMosaikがシミュレーション終了時に自動的に呼び出します。
+        収集した全データを HDF5 ファイルに保存します。
+        このメソッドは mosaik がシミュレーション終了時に自動的に呼び出します。
         """
+        if not self.entities:
+            return
+
+        if h5py is None:
+            print(
+                "h5py not available; skipped HDF5 export."
+            )  # 依存欠如時にスキップを通知
+            return
+
+        if not self.data_log:
+            print("No data collected; nothing to write to HDF5.")
+            return
+
         # Save collected data to file - 収集データをファイルに保存
-        with open("simulation_data.json", "w") as f:
-            json.dump(self.data_log, f, indent=2)  # 美しいフォーマットでJSON出力
+        first_entity = next(iter(self.entities.values()))
+        output_dir: Path = first_entity["output_dir"]
+        output_path = output_dir / "simulation_data.h5"
+
+        keys = sorted({key for entry in self.data_log for key in entry.keys()})
+
+        with h5py.File(output_path, "w") as h5_file:
+            steps_group = h5_file.create_group("steps")
+            for key in keys:
+                column = []
+                for entry in self.data_log:
+                    value = entry.get(key)
+                    column.append(float("nan") if value is None else float(value))
+                steps_group.create_dataset(name=key, data=column)
+
+            steps_group.attrs["created_at"] = datetime.utcnow().isoformat() + "Z"
+            steps_group.attrs["num_steps"] = len(self.data_log)
+
         print(
-            f"Saved {len(self.data_log)} data points to simulation_data.json"
+            f"Saved {len(self.data_log)} data points to {output_path}"
         )  # 保存結果をコンソールに表示
 
 
