@@ -71,6 +71,7 @@ class DataCollectorSimulator(mosaik_api.Simulator):
             meta: シミュレーターメタデータ
         """
         self.step_size = step_size
+        self.time_resolution = time_resolution
         return meta
 
     def create(self, num, model, output_dir=None):
@@ -118,7 +119,8 @@ class DataCollectorSimulator(mosaik_api.Simulator):
 
             # Collect all input data - 全ての入力データを収集
             if eid in inputs:
-                data_point = {"time": time}  # 時刻情報を含むデータポイントを作成
+                real_time = time * self.time_resolution  # 実際の秒単位時間に変換
+                data_point = {"time": real_time}  # 時刻情報を含むデータポイントを作成
                 for attr, values in inputs[eid].items():  # 各属性に対して
                     for source_eid, value in values.items():  # 各ソースからの値に対して
                         data_point[f"{attr}_{source_eid}"] = (
@@ -127,10 +129,10 @@ class DataCollectorSimulator(mosaik_api.Simulator):
                         # リアルタイムデータ表示（コンソールログ）
                         if isinstance(value, (int, float)):
                             print(
-                                f"Time {time}: {attr} from {source_eid} = {value:.3f}"
+                                f"Time {real_time:.1f}s: {attr} from {source_eid} = {value:.3f}"
                             )
                         else:
-                            print(f"Time {time}: {attr} from {source_eid} = {value}")
+                            print(f"Time {real_time:.1f}s: {attr} from {source_eid} = {value}")
 
                 entity["data"].append(data_point)  # エンティティのデータリストに追加
                 self.data_log.append(data_point)  # グローバルデータログに追加

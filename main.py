@@ -17,6 +17,17 @@ from pathlib import Path
 import mosaik
 import mosaik.util
 
+# === SIMULATION CONFIGURATION ===
+# 通信遅延設定
+COMMUNICATION_DELAY = 5      # 基本遅延 (秒)
+JITTER_STD = 1              # ジッター標準偏差 (秒)
+PACKET_LOSS_RATE = 0.01     # パケットロス率 (0.01 = 1%)
+
+# シミュレーション設定  
+SIMULATION_STEPS = 30       # シミュレーションステップ数
+TIME_RESOLUTION = 1         # 時間解像度 (秒)
+RT_FACTOR = 1              # リアルタイムファクター
+
 
 def main():
     """
@@ -57,9 +68,9 @@ def main():
         "DelaySim": {
             "python": "src.simulators.delay_simulator:DelaySimulator",
         },
-        # Web可視化ツール: mosaik-web公式 (ポート8004)
+        # Web可視化ツール: mosaik-web公式 (ポート9000)
         "WebVis": {
-            "cmd": "mosaik-web %(addr)s --serve=127.0.0.1:8004",
+            "cmd": "mosaik-web %(addr)s --serve=127.0.0.1:9000",
         },
         # データ収集器: シミュレーションデータをJSONファイルに保存
         "DataCollector": {
@@ -79,28 +90,26 @@ def main():
 
     # Create World - Mosaikワールドの作成（全シミュレーターを管理）
     # debug=True enables execution graph tracking required by util plotting helpers.
-    world = mosaik.World(sim_config, debug=True)
+    world = mosaik.World(sim_config, debug=True, time_resolution=TIME_RESOLUTION)
 
     # Start simulators - 各シミュレーターの起動
-    # step_size=1: 各シミュレーターは1秒間隔で実行される
-    numerical_sim = world.start("NumericalSim", step_size=1)
-    hardware_sim = world.start("HardwareSim", step_size=1)
-    # 遅延シミュレーター: 高頻度実行で精密な遅延制御（1時間単位）
-    delay_sim = world.start("DelaySim", step_size=1, time_resolution=1)
+    # 異なる時間軸でのシミュレーション実行
+    numerical_sim = world.start("NumericalSim", step_size=10)    # 10ms毎
+    hardware_sim = world.start("HardwareSim", step_size=10)      # 10ms毎
+    # 遅延シミュレーター: 高頻度実行で精密な遅延制御
+    delay_sim = world.start("DelaySim", step_size=1)
     webvis = world.start("WebVis", start_date="2024-01-01 00:00:00", step_size=1)
 
     # Create entities - 各シミュレーター内でエンティティ（モデル）を作成
     # 数値モデル: 初期値1.0、ステップサイズ0.5で正弦波を生成
     numerical_model = numerical_sim.NumericalModel(initial_value=1.0, step_size=0.5)
     # ハードウェアインターフェース: センサー01をシリアル接続でシミュレート
-    hardware_interface = hardware_sim.HardwareInterface(
-        device_id="sensor_01", connection_type="serial"
-    )
-    # 遅延ノード: 通信遅延3ステップ、ジッター1ステップ、パケットロス0.1%
+    hardware_interface = hardware_sim.HardwareInterface(device_id="sensor_01", connection_type="serial")
+    # 遅延ノード: 任意の通信遅延を設定可能
     delay_node = delay_sim.DelayNode(
-        base_delay=3,  # 3ステップ基本遅延
-        jitter_std=1,  # 1ステップ標準偏差ジッター
-        packet_loss_rate=0.001,  # 0.1%パケットロス
+        base_delay=COMMUNICATION_DELAY,
+        jitter_std=JITTER_STD,
+        packet_loss_rate=PACKET_LOSS_RATE,
         preserve_order=True,  # パケット順序保持
     )
 
@@ -128,7 +137,7 @@ def main():
     # Note: 現在はカスタムDataCollectorを使用してHDF5保存を実装
     # 遅延ノードの統計情報や複雑なデータ型にも対応済み
 
-    # WebVis setup - ポート8002でWeb可視化を設定
+    # WebVis setup - Web可視化を設定
     vis_topo = None
     if webvis is not None:
         vis_topo = webvis.Topology()
@@ -184,37 +193,21 @@ def main():
 
     # Run simulation with progress monitoring - シミュレーション実行とプログレス監視
     print("Starting mosaik co-simulation...")  # Mosaikコシミュレーション開始
-    print("Numerical simulator generates sine wave")  # 数値シミュレーターが正弦波を生成
-    print(
-        "Hardware simulator provides sensor feedback"
-    )  # ハードウェアシミュレーターがセンサーフィードバックを提供
-    if webvis is not None:
-        print(
-            "Official WebVis enabled at: http://localhost:8004"
-        )  # 公式WebVisがhttp://localhost:8004で有効
-    else:
-        print("Official WebVis skipped (SKIP_MOSAIK_WEBVIS=1)")
-    print(
-        "Running for 300 simulation steps in slow real-time (10x slower)..."
-    )  # 300シミュレーションステップをスローリアルタイムで実行
-    if webvis is not None:
-        print(
-            "Visit http://localhost:8004 to see official mosaik visualization!"
-        )  # 公式mosaik可視化を見るためのURL
+
+    print("Visit http://localhost:9000 to see official mosaik visualization!")  # 公式mosaik可視化を見るためのURL
     print("Press Ctrl+C to stop the simulation")  # シミュレーション停止の方法
 
     # Use mosaik.util for connection patterns - 接続パターンのためのmosaik.util使用
     # 必要に応じてutil関数で複数エンティティを接続
     # world.connectはmosaik.util.connect_randomlyやconnect_many_to_oneで置き換え可能
 
-    # シミュレーション実行: 300ステップまで、リアルタイムファクター0.5（約2倍速）
-    world.run(until=300, rt_factor=0.5)
+    # シミュレーション実行
+    world.run(until=SIMULATION_STEPS, rt_factor=RT_FACTOR)
 
     print("Co-simulation completed successfully!")  # コシミュレーション成功完了
     print(
         f"Simulation data recorded to: {run_dir / 'simulation_data.h5'}"
     )  # シミュレーションデータのHDF5ファイル保存先
-    print("You can replay/analyze the data later!")  # 後からデータを再生/分析可能
 
     # Optional: Generate mosaik.util visualizations if dependencies are available
     figures_dir = run_dir

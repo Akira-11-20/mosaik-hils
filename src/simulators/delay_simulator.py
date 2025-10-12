@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import mosaik_api
 
 
-META = {
+meta = {
     "type": "time-based",
     "models": {
         "DelayNode": {
@@ -41,7 +41,7 @@ class DelaySimulator(mosaik_api.Simulator):
     """
 
     def __init__(self):
-        super().__init__(META)
+        super().__init__(meta)
         self.entities = {}
         self.time = 0
 
@@ -102,7 +102,7 @@ class DelaySimulator(mosaik_api.Simulator):
             entity.step(time, entity_inputs)
 
         # 次のステップまでの時間（高頻度実行）
-        return self.time + self.time_resolution
+        return self.time + 1
 
     def get_data(self, outputs):
         """
