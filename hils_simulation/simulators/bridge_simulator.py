@@ -170,9 +170,7 @@ class BridgeSimulator(mosaik_api.Simulator):
                     entity["stats"]["packets_dropped"] += 1
 
             # 2. 出力準備ができたパケットの処理
-            ready_packets = [
-                pkt for pkt in entity["packet_buffer"] if pkt[2] <= time
-            ]
+            ready_packets = [pkt for pkt in entity["packet_buffer"] if pkt[2] <= time]
 
             if ready_packets:
                 if entity["preserve_order"]:
@@ -205,9 +203,7 @@ class BridgeSimulator(mosaik_api.Simulator):
 
             # 3. 統計情報の更新
             if entity["packet_buffer"]:
-                total_delay = sum(
-                    pkt[2] - pkt[0] for pkt in entity["packet_buffer"]
-                )
+                total_delay = sum(pkt[2] - pkt[0] for pkt in entity["packet_buffer"])
                 entity["stats"]["avg_delay"] = total_delay / len(
                     entity["packet_buffer"]
                 )

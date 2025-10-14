@@ -2,12 +2,13 @@
 HILS Simulation Main Scenario - 1DOF版
 
 模擬HILS構成:
-    Controller → Bridge(cmd) → Plant → Bridge(sense) → Env → Controller (time-shifted)
+    Env → Controller (同一ステップ) → Bridge(cmd) → Plant (次ステップで実行) → Bridge(sense) → Env
 
 特徴:
 - 1ms時間解像度
 - cmd/sense経路で非対称な遅延設定
-- time-shifted接続で循環依存を解決
+- Controller → Plant間にtime-shifted接続（Plantの物理実行は次ステップ）
+- Env → Controllerは同一ステップで計算（より現実的な制御ループ）
 - 初期実装: 補償機能なし
 """
 
@@ -21,23 +22,25 @@ import mosaik.util
 # === SIMULATION CONFIGURATION ===
 
 # 通信遅延設定
-CMD_DELAY = 50          # 制御指令経路の遅延 [ms]
-CMD_JITTER = 10         # 制御指令経路のジッター標準偏差 [ms]
-CMD_LOSS_RATE = 0.01    # 制御指令経路のパケットロス率（1%）
+CMD_DELAY = 50  # 制御指令経路の遅延 [ms]
+CMD_JITTER = 10  # 制御指令経路のジッター標準偏差 [ms]
+CMD_LOSS_RATE = 0.01  # 制御指令経路のパケットロス率（1%）
 
-SENSE_DELAY = 100       # 測定経路の遅延 [ms]
-SENSE_JITTER = 20       # 測定経路のジッター標準偏差 [ms]
+SENSE_DELAY = 100  # 測定経路の遅延 [ms]
+SENSE_JITTER = 20  # 測定経路のジッター標準偏差 [ms]
 SENSE_LOSS_RATE = 0.02  # 測定経路のパケットロス率（2%）
 
 # シミュレーション設定
-SIMULATION_TIME = 0.5   # シミュレーション時間 [秒] = 0.5秒（テスト用）
-TIME_RESOLUTION = 0.001 # 時間解像度 [秒/step] = 1step = 1ms
-SIMULATION_STEP = int(SIMULATION_TIME / TIME_RESOLUTION)  # シミュレーションステップ数（0.5秒 / 0.001 = 500ステップ）
-RT_FACTOR = None        # 実時間比率（None = 最高速、1.0 = 実時間、0.5 = 2倍速）
+SIMULATION_TIME = 0.5  # シミュレーション時間 [秒] = 0.5秒（テスト用）
+TIME_RESOLUTION = 0.001  # 時間解像度 [秒/step] = 1step = 1ms
+SIMULATION_STEP = int(
+    SIMULATION_TIME / TIME_RESOLUTION
+)  # シミュレーションステップ数（0.5秒 / 0.001 = 500ステップ）
+RT_FACTOR = None  # 実時間比率（None = 最高速、1.0 = 実時間、0.5 = 2倍速）
 
 # 制御パラメータ
-CONTROL_PERIOD = 10     # 制御周期 [ms]
-KP = 20.0                # 比例ゲイン
+CONTROL_PERIOD = 10  # 制御周期 [ms]
+KP = 20.0  # 比例ゲイン
 KD = 5.0  # 微分ゲイン
 TARGET_POSITION = 5.0  # 目標位置 [m]
 MAX_THRUST = 100.0  # 最大推力 [N]
@@ -144,11 +147,16 @@ def main():
     # データフローの接続
     print("\n🔗 Connecting data flows...")
 
-    # 1. Controller → Bridge(cmd) - 制御指令経路（通常接続）
+    # 1. Controller → Bridge(cmd) - 制御指令経路（次ステップで実行）
+    print(
+        "   ⏱️  Controller → Bridge(cmd): time-shifted connection (execution on next step)"
+    )
     world.connect(
         controller,
         bridge_cmd,
         ("command", "input"),
+        time_shifted=True,
+        initial_data={"command": {"thrust": 0.0, "duration": CONTROL_PERIOD}},
     )
 
     # 2. Bridge(cmd) → Plant - 遅延後の制御指令（パッケージ化コマンド）
@@ -172,18 +180,13 @@ def main():
         ("delayed_output", "force"),
     )
 
-    # 5. Env → Controller - 状態フィードバック（time-shifted for circular dependency）
-    print("   ⏱️  Using time-shifted connection for Env → Controller (resolves circular dependency)")
+    # 5. Env → Controller - 状態フィードバック（同一ステップで送信）
+    print("   📡 Env → Controller: same-step connection (state feedback)")
     world.connect(
         spacecraft,
         controller,
         "position",
         "velocity",
-        time_shifted=True,
-        initial_data={
-            "position": 0.0,
-            "velocity": 0.0,
-        },
     )
 
     # 6. データ収集の設定
@@ -229,10 +232,14 @@ def main():
     )
 
     print("\n✅ Data flow configured:")
-    print("   Controller → Bridge(cmd) → Plant → Bridge(sense) → Env")
-    print("   Env → Controller (time-shifted: resolves circular dependency + step_size sync)")
+    print("   Env → Controller (same step)")
+    print("   Controller → Bridge(cmd) → Plant (time-shifted: next step execution)")
+    print("   Plant → Bridge(sense) → Env")
     print("   All data → DataCollector → HDF5")
     print("   ℹ️  Command format: JSON/dict {thrust, duration}")
+    print(
+        "   ⏱️  Timing: Env & Controller compute in step N, Plant executes in step N+1"
+    )
 
     # シミュレーション実行
     print(

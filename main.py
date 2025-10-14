@@ -19,14 +19,14 @@ import mosaik.util
 
 # === SIMULATION CONFIGURATION ===
 # 通信遅延設定
-COMMUNICATION_DELAY = 5      # 基本遅延 (秒)
-JITTER_STD = 1              # ジッター標準偏差 (秒)
-PACKET_LOSS_RATE = 0.01     # パケットロス率 (0.01 = 1%)
+COMMUNICATION_DELAY = 5  # 基本遅延 (秒)
+JITTER_STD = 1  # ジッター標準偏差 (秒)
+PACKET_LOSS_RATE = 0.01  # パケットロス率 (0.01 = 1%)
 
-# シミュレーション設定  
-SIMULATION_STEPS = 30       # シミュレーションステップ数
-TIME_RESOLUTION = 1         # 時間解像度 (秒)
-RT_FACTOR = 1              # リアルタイムファクター
+# シミュレーション設定
+SIMULATION_STEPS = 30  # シミュレーションステップ数
+TIME_RESOLUTION = 1  # 時間解像度 (秒)
+RT_FACTOR = 1  # リアルタイムファクター
 
 
 def main():
@@ -94,8 +94,8 @@ def main():
 
     # Start simulators - 各シミュレーターの起動
     # 異なる時間軸でのシミュレーション実行
-    numerical_sim = world.start("NumericalSim", step_size=10)    # 10ms毎
-    hardware_sim = world.start("HardwareSim", step_size=10)      # 10ms毎
+    numerical_sim = world.start("NumericalSim", step_size=10)  # 10ms毎
+    hardware_sim = world.start("HardwareSim", step_size=10)  # 10ms毎
     # 遅延シミュレーター: 高頻度実行で精密な遅延制御
     delay_sim = world.start("DelaySim", step_size=1)
     webvis = world.start("WebVis", start_date="2024-01-01 00:00:00", step_size=1)
@@ -104,7 +104,9 @@ def main():
     # 数値モデル: 初期値1.0、ステップサイズ0.5で正弦波を生成
     numerical_model = numerical_sim.NumericalModel(initial_value=1.0, step_size=0.5)
     # ハードウェアインターフェース: センサー01をシリアル接続でシミュレート
-    hardware_interface = hardware_sim.HardwareInterface(device_id="sensor_01", connection_type="serial")
+    hardware_interface = hardware_sim.HardwareInterface(
+        device_id="sensor_01", connection_type="serial"
+    )
     # 遅延ノード: 任意の通信遅延を設定可能
     delay_node = delay_sim.DelayNode(
         base_delay=COMMUNICATION_DELAY,
@@ -194,7 +196,9 @@ def main():
     # Run simulation with progress monitoring - シミュレーション実行とプログレス監視
     print("Starting mosaik co-simulation...")  # Mosaikコシミュレーション開始
 
-    print("Visit http://localhost:9000 to see official mosaik visualization!")  # 公式mosaik可視化を見るためのURL
+    print(
+        "Visit http://localhost:9000 to see official mosaik visualization!"
+    )  # 公式mosaik可視化を見るためのURL
     print("Press Ctrl+C to stop the simulation")  # シミュレーション停止の方法
 
     # Use mosaik.util for connection patterns - 接続パターンのためのmosaik.util使用

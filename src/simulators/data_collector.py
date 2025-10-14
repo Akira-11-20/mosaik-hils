@@ -132,7 +132,9 @@ class DataCollectorSimulator(mosaik_api.Simulator):
                                 f"Time {real_time:.1f}s: {attr} from {source_eid} = {value:.3f}"
                             )
                         else:
-                            print(f"Time {real_time:.1f}s: {attr} from {source_eid} = {value}")
+                            print(
+                                f"Time {real_time:.1f}s: {attr} from {source_eid} = {value}"
+                            )
 
                 entity["data"].append(data_point)  # エンティティのデータリストに追加
                 self.data_log.append(data_point)  # グローバルデータログに追加

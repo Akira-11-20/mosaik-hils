@@ -17,10 +17,10 @@ meta = {
             "public": True,
             "params": ["stand_id"],
             "attrs": [
-                "thrust_cmd",      # 入力: 推力指令 [N]
-                "duration_cmd",    # 入力: 持続時間指令 [ms]
-                "measured_thrust", # 出力: 測定された推力 [N]
-                "status",          # 状態: "idle", "thrusting"
+                "thrust_cmd",  # 入力: 推力指令 [N]
+                "duration_cmd",  # 入力: 持続時間指令 [ms]
+                "measured_thrust",  # 出力: 測定された推力 [N]
+                "status",  # 状態: "idle", "thrusting"
             ],
         },
     },
@@ -76,12 +76,12 @@ class PlantSimulator(mosaik_api.Simulator):
 
             self.entities[eid] = {
                 "stand_id": stand_id,
-                "thrust_cmd": 0.0,          # 現在の推力指令
-                "duration_cmd": 0.0,        # 持続時間指令
-                "measured_thrust": 0.0,     # 測定値（出力）
-                "status": "idle",           # 初期状態
+                "thrust_cmd": 0.0,  # 現在の推力指令
+                "duration_cmd": 0.0,  # 持続時間指令
+                "measured_thrust": 0.0,  # 測定値（出力）
+                "status": "idle",  # 初期状態
                 "thrust_start_time": None,  # 推力開始時刻
-                "thrust_end_time": None,    # 推力終了時刻
+                "thrust_end_time": None,  # 推力終了時刻
             }
 
             entities.append({"eid": eid, "type": model})
@@ -117,12 +117,17 @@ class PlantSimulator(mosaik_api.Simulator):
                         entity["thrust_start_time"] = time
                         entity["thrust_end_time"] = time + new_duration
                         entity["status"] = "thrusting"
-                        print(f"[PlantSim] {eid}: Thrust {new_thrust:.3f}N for {new_duration}ms")
+                        print(
+                            f"[PlantSim] {eid}: Thrust {new_thrust:.3f}N for {new_duration}ms"
+                        )
 
             # 推力測定ロジック（理想応答、ノイズなし）
             if entity["status"] == "thrusting":
                 # 推力持続時間内かチェック
-                if entity["thrust_end_time"] is not None and time < entity["thrust_end_time"]:
+                if (
+                    entity["thrust_end_time"] is not None
+                    and time < entity["thrust_end_time"]
+                ):
                     # 指令通りの推力を出力（理想的な応答）
                     entity["measured_thrust"] = entity["thrust_cmd"]
                 else:

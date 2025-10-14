@@ -17,10 +17,10 @@ meta = {
             "public": True,
             "params": ["mass", "initial_position", "initial_velocity"],
             "attrs": [
-                "force",       # 入力: 推力 [N]
-                "position",    # 出力: 位置 [m]
-                "velocity",    # 出力: 速度 [m/s]
-                "acceleration",# 出力: 加速度 [m/s^2]
+                "force",  # 入力: 推力 [N]
+                "position",  # 出力: 位置 [m]
+                "velocity",  # 出力: 速度 [m/s]
+                "acceleration",  # 出力: 加速度 [m/s^2]
             ],
         },
     },
@@ -66,7 +66,9 @@ class EnvSimulator(mosaik_api.Simulator):
         self.step_size = step_size
         return self.meta
 
-    def create(self, num, model, mass=100.0, initial_position=0.0, initial_velocity=0.0):
+    def create(
+        self, num, model, mass=100.0, initial_position=0.0, initial_velocity=0.0
+    ):
         """
         宇宙機エンティティの作成
 
@@ -91,7 +93,9 @@ class EnvSimulator(mosaik_api.Simulator):
             }
 
             entities.append({"eid": eid, "type": model})
-            print(f"[EnvSim] Created {eid} (mass={mass}kg, x0={initial_position}m, v0={initial_velocity}m/s)")
+            print(
+                f"[EnvSim] Created {eid} (mass={mass}kg, x0={initial_position}m, v0={initial_velocity}m/s)"
+            )
 
         return entities
 

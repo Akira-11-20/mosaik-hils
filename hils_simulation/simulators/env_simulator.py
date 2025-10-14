@@ -133,9 +133,7 @@ class EnvSimulator(mosaik_api.Simulator):
             # 入力: 推力の受信
             if eid in inputs and "force" in inputs[eid]:
                 force_value = list(inputs[eid]["force"].values())[0]
-                entity["force"] = (
-                    force_value if force_value is not None else 0.0
-                )
+                entity["force"] = force_value if force_value is not None else 0.0
             else:
                 # 入力がない場合は推力ゼロ
                 entity["force"] = 0.0

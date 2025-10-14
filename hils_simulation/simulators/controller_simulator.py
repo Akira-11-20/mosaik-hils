@@ -159,9 +159,7 @@ class ControllerSimulator(mosaik_api.Simulator):
             entity["error"] = error
 
             # 推力指令計算: F = Kp * error - Kd * velocity
-            thrust = (
-                entity["kp"] * error - entity["kd"] * entity["velocity"]
-            )
+            thrust = entity["kp"] * error - entity["kd"] * entity["velocity"]
 
             # 推力制限（飽和処理）
             if thrust > entity["max_thrust"]:

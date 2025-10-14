@@ -10,6 +10,7 @@ DataCollectorSimulator - HILS用データ収集器
 - Bridge(sense): stats
 - Env: position, velocity, acceleration, force
 """
+
 import json
 from datetime import datetime
 from pathlib import Path
@@ -179,15 +180,11 @@ class DataCollectorSimulator(mosaik_api.Simulator):
             return
 
         if h5py is None:
-            print(
-                "[DataCollector] ⚠️  h5py not available; skipped HDF5 export."
-            )
+            print("[DataCollector] ⚠️  h5py not available; skipped HDF5 export.")
             return
 
         if not self.data_log:
-            print(
-                "[DataCollector] No data collected; nothing to write."
-            )
+            print("[DataCollector] No data collected; nothing to write.")
             return
 
         # 出力先ディレクトリ
@@ -202,15 +199,11 @@ class DataCollectorSimulator(mosaik_api.Simulator):
         )
 
         # 全キーを収集
-        all_keys = sorted(
-            {key for entry in self.data_log for key in entry.keys()}
-        )
+        all_keys = sorted({key for entry in self.data_log for key in entry.keys()})
 
         with h5py.File(output_path, "w") as h5_file:
             # メタデータ
-            h5_file.attrs["created_at"] = (
-                datetime.utcnow().isoformat() + "Z"
-            )
+            h5_file.attrs["created_at"] = datetime.utcnow().isoformat() + "Z"
             h5_file.attrs["num_samples"] = len(self.data_log)
             h5_file.attrs["time_resolution"] = self.time_resolution
 
@@ -253,49 +246,6 @@ class DataCollectorSimulator(mosaik_api.Simulator):
             for key in sorted(data_group.keys()):
                 dataset = data_group[key]
                 print(f"  - {key}: {dataset.shape} {dataset.dtype}")
-
-            # data_with_time_s グループを作成（time_s を x軸として対応付け）
-            if "time_s" in data_group:
-                print(f"\n[DataCollector] 📊 Creating data_with_time_s group...")
-                time_s_data = data_group["time_s"][:]
-
-                data_with_time = h5_file.create_group("data_with_time_s")
-                data_with_time.attrs["description"] = "Datasets paired with time_s axis"
-                data_with_time.attrs["source_group"] = "data"
-
-                skip_keys = ["time_s", "time_ms"]
-                created_count = 0
-
-                for key in all_keys:
-                    if key in skip_keys:
-                        continue
-
-                    # object型（文字列）はスキップ
-                    dataset = data_group[key]
-                    try:
-                        # 数値型かチェック
-                        if not np.issubdtype(dataset.dtype, np.number):
-                            continue
-                    except TypeError:
-                        continue
-
-                    # 2次元配列として作成: (N, 2) where [:, 0]=time_s, [:, 1]=value
-                    combined_data = np.column_stack((time_s_data, dataset[:]))
-
-                    data_with_time.create_dataset(
-                        name=key,
-                        data=combined_data,
-                        dtype=np.float64
-                    )
-                    data_with_time[key].attrs["columns"] = "time_s, value"
-                    data_with_time[key].attrs["unit"] = key.split("_")[0]
-                    created_count += 1
-
-                print(f"[DataCollector] ✅ Created {created_count} datasets in data_with_time_s/ (Nx2 format)")
-
-                # 説明を更新
-                data_with_time.attrs["description"] = "Datasets with time_s as x-axis (Nx2 arrays)"
-                data_with_time.attrs["format"] = "Each dataset is (N, 2) where [:, 0]=time_s, [:, 1]=value"
 
         print(f"[DataCollector] 📁 Output: {output_path}")
 
