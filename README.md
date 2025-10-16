@@ -2,204 +2,294 @@
 
 ## 概要 (Overview)
 
-このプロジェクトは、MosaikフレームワークをベースとしたHILS（Hardware-in-the-Loop Simulation）システムです。数値シミュレーション、ハードウェアインターフェース、**通信遅延モデリング**、データ収集、および**カスタマイズ可能なWebベース可視化**を統合したコシミュレーション環境を提供します。
+このプロジェクトは、MosaikフレームワークをベースとしたHILS（Hardware-in-the-Loop Simulation）システムです。1自由度の宇宙機運動制御を模擬した環境で、通信遅延・ジッター・パケットロスを含むリアルタイム制御シミュレーションを提供します。
 
-This project implements a HILS (Hardware-in-the-Loop Simulation) system based on the Mosaik framework. It provides a co-simulation environment that integrates numerical simulation, hardware interfaces, **communication delay modeling**, data collection, and **customizable web-based visualization**.
+This project implements a HILS (Hardware-in-the-Loop Simulation) system based on the Mosaik framework. It provides a 1-DOF spacecraft motion control simulation environment with communication delay, jitter, and packet loss modeling.
 
 ## ✨ 主な機能 (Key Features)
 
-- 🔢 **数値シミュレーション** - 正弦波信号生成
-- ⚙️ **ハードウェアシミュレーション** - センサー・アクチュエーターI/O
-- 🔄 **通信遅延モデリング** - ジッター・パケットロス対応
-- 📊 **リアルタイムデータ収集** - HDF5形式での保存
-- 🌐 **カスタマイズ可能WebVis** - 独自統計表示対応
+- 🚀 **1自由度宇宙機シミュレーション** - 推力制御による位置制御
+- 🎮 **PD制御器** - 比例微分制御による目標位置追従
+- 🔄 **通信遅延モデリング** - 制御指令経路・測定経路の独立した遅延設定
+- 📡 **通信ブリッジ** - ジッター・パケットロス・順序保持機能
+- 📊 **HDF5データ収集** - 全シミュレーションデータの自動記録
+- 📈 **データ解析ツール** - 統計情報とグラフの自動生成
 
 ## 📁 プロジェクト構造 (Project Structure)
 
 ```
 mosaik-hils/
-├── src/                      # ソースコード
+├── hils_simulation/          # メインシミュレーションディレクトリ
 │   ├── simulators/           # Mosaikシミュレーター群
-│   │   ├── numerical_simulator.py
-│   │   ├── hardware_simulator.py
-│   │   ├── delay_simulator.py     # 🆕 遅延モデリング
-│   │   └── data_collector.py
-│   └── webvis/               # WebVis関連
-│       ├── customize_webvis.py    # 🆕 WebVisカスタマイズ
-│       └── custom_webvis.py
-├── scripts/                  # 実行スクリプト
-│   ├── run_simulation.py
-│   └── setup_webvis.py
-├── docs/                     # ドキュメント
-│   ├── PROJECT_STRUCTURE.md
-│   └── WEBVIS_CUSTOMIZATION.md
-├── logs/                     # シミュレーション結果
-└── main.py                   # メインファイル
+│   │   ├── controller_simulator.py   # PD制御器
+│   │   ├── plant_simulator.py        # 推力測定器（スラストスタンド）
+│   │   ├── env_simulator.py          # 環境シミュレーター（1DOF運動）
+│   │   ├── bridge_simulator.py       # 通信ブリッジ（遅延・ジッター）
+│   │   └── data_collector.py         # データ収集器（HDF5）
+│   ├── utils/                # ユーティリティ
+│   │   ├── plot_utils.py     # プロット関数
+│   │   └── event_logger.py   # イベントログ
+│   ├── docs/                 # ドキュメント
+│   │   ├── README.md         # 詳細なガイド
+│   │   ├── DATA_COLLECTION.md
+│   │   └── その他の技術文書
+│   ├── results/              # シミュレーション結果（自動生成）
+│   ├── main_hils.py          # メインシナリオ
+│   └── analyze_data.py       # データ解析スクリプト
+├── logs/                     # 古い実行ログ（アーカイブ）
+├── pyproject.toml            # 依存関係管理
+├── uv.lock                   # 依存関係ロックファイル
+├── README.md                 # このファイル
+└── CLAUDE.md                 # AI開発ガイド
 ```
 
-詳細な構造については [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md) を参照してください。
+詳細は [hils_simulation/docs/README.md](hils_simulation/docs/README.md) を参照してください。
 
 ## 🚀 クイックスタート (Quick Start)
 
 ### 1. 環境構築
+
 ```bash
+# リポジトリをクローン
+git clone <repository-url>
+cd mosaik-hils
+
 # 依存関係のインストール
 uv sync
-
-# WebVisカスタマイズの初期設定
-python scripts/setup_webvis.py --apply
 ```
 
 ### 2. シミュレーション実行
-```bash
-# 基本実行
-uv run python main.py
 
-# スクリプト経由（オプション指定可能）
-python scripts/run_simulation.py --steps 100 --delay 5.0 --jitter 2.0
+```bash
+cd hils_simulation
+uv run python main_hils.py
 ```
 
 ### 3. 結果確認
-- **WebVis**: http://localhost:8002 (カスタム統計表示付き)
-- **ログファイル**: `logs/YYYYMMDD-HHMMSS/simulation_data.h5`
+
+実行後、`hils_simulation/results/YYYYMMDD-HHMMSS/` ディレクトリに以下のファイルが生成されます：
+
+- `hils_data.h5` - 全シミュレーションデータ（HDF5形式）
+- `*_dataflowGraph_*.png` - データフローグラフ
+- `*_executionGraph.png` - 実行順序グラフ
+- `*_executiontime.png` - 実行時間分析
+
+### 4. データ解析
+
+```bash
+# 統計情報とグラフを生成
+cd hils_simulation
+uv run python analyze_data.py results/YYYYMMDD-HHMMSS/hils_data.h5 --save-plots
+```
 
 ## 🔧 システム構成 (System Architecture)
 
 ### データフロー
+
 ```
-NumericalSim → DelayNode → HardwareSim
-     ↓            ↓           ↓
-     DataCollector ← ← ← ← ← ← ←
+Controller → Bridge(cmd) → Plant → Bridge(sense) → Env → Controller (time-shifted)
+     ↓            ↓          ↓           ↓          ↓
+     DataCollector ← ← ← ← ← ← ← ← ← ← ← ←
             ↓
-       HDF5 File + WebVis
+       HDF5 File
 ```
+
+### データフロー詳細
+
+1. **制御指令経路（cmd）**:
+   - Controller が推力指令（JSON形式）を生成
+   - Bridge(cmd) で遅延・ジッター・パケットロスを模擬
+   - Plant（推力測定器）が指令を受信
+
+2. **測定経路（sense）**:
+   - Plant が測定した推力を出力
+   - Bridge(sense) で遅延・ジッター・パケットロスを模擬
+   - Env（環境シミュレーター）が推力を受け取り、運動方程式を積分
+
+3. **状態フィードバック経路**:
+   - Env が位置・速度を出力
+   - Controller が状態を受信（time-shifted接続で循環依存を解決）
 
 ### 主要コンポーネント
 
-1. **NumericalSimulator** (`src/simulators/numerical_simulator.py`)
-   - 正弦波信号の生成
-   - パラメータ調整可能な数値モデル
+#### 1. ControllerSimulator（制御器）
+- **モデル**: PDController
+- **制御則**: `F = Kp * error - Kd * velocity`
+- **ステップサイズ**: 10ms（制御周期）
+- **入力**: position, velocity
+- **出力**: command（JSON: `{thrust, duration}`）, error
 
-2. **DelaySimulator** (`src/simulators/delay_simulator.py`) 🆕
-   - 通信遅延のモデリング
-   - ガウシアンジッター対応
-   - パケットロス・順序制御
+#### 2. PlantSimulator（推力測定器）
+- **モデル**: ThrustStand
+- **機能**: 推力指令を受け取り、理想的な推力を出力
+- **ステップサイズ**: 1ms
+- **入力**: command（JSON: `{thrust, duration}`）
+- **出力**: measured_thrust, status
 
-3. **HardwareSimulator** (`src/simulators/hardware_simulator.py`)
-   - センサー読取りシミュレーション
-   - アクチュエーター制御シミュレーション
+#### 3. EnvSimulator（環境シミュレーター）
+- **モデル**: Spacecraft1DOF
+- **運動方程式**: `F = ma`, オイラー法で積分
+- **ステップサイズ**: 1ms
+- **入力**: force
+- **出力**: position, velocity, acceleration
 
-4. **DataCollector** (`src/simulators/data_collector.py`)
-   - HDF5形式でのデータ保存
-   - リアルタイムコンソール出力
+#### 4. BridgeSimulator（通信ブリッジ）
+- **モデル**: CommBridge
+- **機能**: 遅延・ジッター・パケットロスを模擬
+- **ステップサイズ**: 1ms（高頻度実行）
+- **入力**: input（任意のデータ）
+- **出力**: delayed_output, stats
 
-5. **CustomWebVis** (`src/webvis/`) 🆕
-   - WebVisのカスタマイズ機能
-   - 遅延統計の表示
-   - uv sync後の永続化対応
+#### 5. DataCollectorSimulator（データ収集器）
+- **モデル**: Collector
+- **機能**: 全シミュレーションデータをHDF5形式で記録
+- **ステップサイズ**: 1ms
+- **入力**: 全シミュレーターからの全属性（動的）
 
-## 🎛️ 実行オプション (Execution Options)
+## ⚙️ パラメータ設定
 
-### 基本実行
-```bash
-# 通常実行
-uv run python main.py
+[hils_simulation/main_hils.py](hils_simulation/main_hils.py) の冒頭で以下のパラメータを変更できます：
 
-# WebVisなし
-SKIP_MOSAIK_WEBVIS=1 uv run python main.py
+### 通信遅延パラメータ
+
+```python
+CMD_DELAY = 50          # 制御指令経路の遅延 [ms]
+CMD_JITTER = 10         # 制御指令経路のジッター [ms]
+CMD_LOSS_RATE = 0.01    # パケットロス率（1%）
+
+SENSE_DELAY = 100       # 測定経路の遅延 [ms]
+SENSE_JITTER = 20       # 測定経路のジッター [ms]
+SENSE_LOSS_RATE = 0.02  # パケットロス率（2%）
 ```
 
-### 高度な実行オプション
-```bash
-# スクリプト経由
-python scripts/run_simulation.py \
-  --steps 200 \           # シミュレーションステップ数
-  --rt-factor 0.1 \       # リアルタイムファクター
-  --delay 5.0 \           # 基本遅延（ステップ）
-  --jitter 1.5 \          # ジッター標準偏差
-  --packet-loss 0.005 \   # パケットロス率
-  --no-webvis             # WebVis無効化
+### 制御パラメータ
+
+```python
+CONTROL_PERIOD = 10     # 制御周期 [ms]
+KP = 2.0                # 比例ゲイン
+KD = 5.0                # 微分ゲイン
+TARGET_POSITION = 10.0  # 目標位置 [m]
+MAX_THRUST = 20.0       # 最大推力 [N]
+```
+
+### シミュレーション設定
+
+```python
+SIMULATION_TIME = 5000  # シミュレーション時間 [ms]
+TIME_RESOLUTION = 0.001 # 時間解像度（1ms）
 ```
 
 ## 📊 データ分析 (Data Analysis)
 
 ### HDF5データ構造
+
 ```python
 import h5py
 
-with h5py.File('logs/YYYYMMDD-HHMMSS/simulation_data.h5', 'r') as f:
-    steps = f['steps']
-    print(f"Time: {steps['time'][:]}")
-    print(f"Numerical Output: {steps['output_NumericalSim-0.NumSim_0'][:]}")
-    print(f"Delayed Output: {steps['delayed_output_DelaySim-0.DelayNode_0'][:]}")
-    print(f"Hardware Sensor: {steps['sensor_value_HardwareSim-0.HW_0'][:]}")
+with h5py.File('hils_simulation/results/YYYYMMDD-HHMMSS/hils_data.h5', 'r') as f:
+    # 時刻データ
+    time = f['steps']['time_s'][:]
+
+    # 位置・速度データ
+    position = f['steps']['position_EnvSim-0.Spacecraft1DOF_0'][:]
+    velocity = f['steps']['velocity_EnvSim-0.Spacecraft1DOF_0'][:]
+
+    # 制御指令データ
+    thrust = f['steps']['command_ControllerSim-0.PDController_0'][:]
+
+    # 遅延統計
+    stats = f['steps']['stats_BridgeSim_cmd-0.CommBridge_0'][:]
 ```
 
-### 統計情報
-遅延ノードの詳細統計は、WebVis右上パネルまたはHDF5の`stats`フィールドで確認できます。
+### 統計情報の表示
 
-## 🎨 WebVisカスタマイズ (WebVis Customization)
-
-### 自動カスタマイズ
 ```bash
-# main.py実行時に自動適用
-uv run python main.py
-
-# 手動適用
-python scripts/setup_webvis.py --apply
-
-# 状態確認
-python scripts/setup_webvis.py --check
-
-# 元に戻す
-python scripts/setup_webvis.py --restore
+cd hils_simulation
+uv run python analyze_data.py results/YYYYMMDD-HHMMSS/hils_data.h5
 ```
 
-### カスタマイズ内容
-- タイトル変更: "mosaik-web (HILS Custom)"
-- 遅延統計パネル: 右上に詳細統計表示
-- uv sync対応: パッケージ更新後も自動再適用
+統計情報の例：
+- 位置・速度の平均値、標準偏差、最小値、最大値
+- 制御誤差の統計
+- 推力指令の統計
+- 遅延統計（パケットロス数、遅延時間など）
 
-詳細は [`docs/WEBVIS_CUSTOMIZATION.md`](docs/WEBVIS_CUSTOMIZATION.md) を参照してください。
+## 🔬 実験例
 
-## 🔬 開発ガイド (Development Guide)
+### 実験1: 遅延なしベースライン
+
+```python
+CMD_DELAY = 0
+CMD_JITTER = 0
+SENSE_DELAY = 0
+SENSE_JITTER = 0
+```
+
+### 実験2: 対称な遅延
+
+```python
+CMD_DELAY = 50
+CMD_JITTER = 10
+SENSE_DELAY = 50
+SENSE_JITTER = 10
+```
+
+### 実験3: 非対称な遅延（sense経路が遅い）
+
+```python
+CMD_DELAY = 50
+SENSE_DELAY = 150  # 3倍の遅延
+```
+
+## 🛠️ 開発ガイド (Development Guide)
+
+### コードフォーマット
+
+```bash
+# リンターの実行
+uv run ruff check
+
+# 自動修正
+uv run ruff check --fix
+
+# フォーマット
+uv run ruff format
+```
 
 ### 新しいシミュレーター追加
-1. `src/simulators/` にファイル作成
+
+1. `hils_simulation/simulators/` にファイル作成
 2. `mosaik_api.Simulator` を継承
-3. `main.py` の `sim_config` に追加
+3. `hils_simulation/main_hils.py` の `sim_config` に追加
+4. 接続を設定
 
-### WebVisカスタマイズ拡張
-1. `src/webvis/customize_webvis.py` を編集
-2. HTML/CSS/JavaScript追加
-
-### 詳細情報
-- 📄 [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md) - 詳細な構造説明
-- 🤖 [`CLAUDE.md`](CLAUDE.md) - AI開発ガイド
+詳細は [CLAUDE.md](CLAUDE.md) を参照してください。
 
 ## 📝 使用技術 (Technologies)
 
 - **Python 3.9+** - プログラミング言語
 - **Mosaik 3.5+** - コシミュレーションフレームワーク
-- **HDF5** - データ保存形式
+- **HDF5 / h5py** - データ保存・読み込み
+- **matplotlib** - データ可視化
+- **numpy** - 数値計算
 - **uv** - 依存関係管理
-- **D3.js** - WebVis可視化
-- **WebSocket** - リアルタイム通信
+- **ruff** - リンター・フォーマッター
 
-## 📈 パフォーマンス
+## 🏆 今後の拡張
 
-- **リアルタイムファクター**: 0.5（2倍速実行）
-- **遅延精度**: ステップレベル（設定可能）
-- **データレート**: 毎秒数百ポイント
-- **メモリ使用量**: 通常100MB以下
+- [ ] 補償機能の実装（先行送出、補間、Nowcasting）
+- [ ] 6DOF版への拡張（姿勢制御）
+- [x] データ収集とプロット機能（HDF5形式）
+- [x] データ解析スクリプト（analyze_data.py）
+- [ ] リアルタイムモニタリングダッシュボード
+- [ ] 実機制御器との統合
+- [ ] HDF5データ圧縮オプション
 
-## 🤝 コントリビューション
+## 📚 参考
 
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open Pull Request
+- [hils_simulation/docs/README.md](hils_simulation/docs/README.md) - 詳細なガイド
+- [hils_simulation/docs/DATA_COLLECTION.md](hils_simulation/docs/DATA_COLLECTION.md) - データ収集の詳細
+- [CLAUDE.md](CLAUDE.md) - AI開発ガイド
 
 ## 📜 ライセンス
 
@@ -207,6 +297,8 @@ python scripts/setup_webvis.py --restore
 
 ## 🆕 更新履歴
 
-- **v2.0** - 通信遅延モデリング機能追加
-- **v2.1** - WebVisカスタマイズ機能追加
-- **v2.2** - プロジェクト構造整理とスクリプト化
+- **v3.0** (2025-10-16) - プロジェクト構造整理、hils_simulationに統合
+- **v2.2** (2025-10-13) - コマンドパッケージ化、データフロー改善
+- **v2.1** - データ収集機能追加
+- **v2.0** - 1DOF HILS実装完了
+- **v1.0** - 初期プロトタイプ

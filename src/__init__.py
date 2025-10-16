@@ -1,3 +1,0 @@
-"""
-Mosaik HILS Simulation Package
-"""

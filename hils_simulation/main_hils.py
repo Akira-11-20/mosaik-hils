@@ -22,31 +22,31 @@ import mosaik.util
 # === SIMULATION CONFIGURATION ===
 
 # 通信遅延設定
-CMD_DELAY = 50  # 制御指令経路の遅延 [ms]
-CMD_JITTER = 10  # 制御指令経路のジッター標準偏差 [ms]
-CMD_LOSS_RATE = 0.01  # 制御指令経路のパケットロス率（1%）
+CMD_DELAY = 20  # 制御指令経路の遅延 [ms]
+CMD_JITTER = 0  # 制御指令経路のジッター標準偏差 [ms]
+CMD_LOSS_RATE = 0.0  # 制御指令経路のパケットロス率（1%）
 
-SENSE_DELAY = 100  # 測定経路の遅延 [ms]
-SENSE_JITTER = 20  # 測定経路のジッター標準偏差 [ms]
-SENSE_LOSS_RATE = 0.02  # 測定経路のパケットロス率（2%）
+SENSE_DELAY = 30  # 測定経路の遅延 [ms]
+SENSE_JITTER = 0.0  # 測定経路のジッター標準偏差 [ms]
+SENSE_LOSS_RATE = 0.0  # 測定経路のパケットロス率（2%）
 
 # シミュレーション設定
-SIMULATION_TIME = 0.5  # シミュレーション時間 [秒] = 0.5秒（テスト用）
-TIME_RESOLUTION = 0.001  # 時間解像度 [秒/step] = 1step = 1ms
+SIMULATION_TIME = 2  # シミュレーション時間 [秒]
+TIME_RESOLUTION = 0.001  # 時間解像度 [秒/step] = 1step = 0.1ms
 SIMULATION_STEP = int(
     SIMULATION_TIME / TIME_RESOLUTION
-)  # シミュレーションステップ数（0.5秒 / 0.001 = 500ステップ）
+)  # シミュレーションステップ数（0.02秒 / 0.001 = 20ステップ）
 RT_FACTOR = None  # 実時間比率（None = 最高速、1.0 = 実時間、0.5 = 2倍速）
 
 # 制御パラメータ
 CONTROL_PERIOD = 10  # 制御周期 [ms]
-KP = 20.0  # 比例ゲイン
+KP = 15.0  # 比例ゲイン
 KD = 5.0  # 微分ゲイン
 TARGET_POSITION = 5.0  # 目標位置 [m]
 MAX_THRUST = 100.0  # 最大推力 [N]
 
 # 宇宙機パラメータ
-SPACECRAFT_MASS = 100.0  # 質量 [kg]
+SPACECRAFT_MASS = 1.0  # 質量 [kg]
 
 
 def main():
@@ -99,10 +99,14 @@ def main():
         "ControllerSim",
         step_size=CONTROL_PERIOD,
     )  # 10ms周期
-    plant_sim = world.start("PlantSim", step_size=1)  # 1ms周期
-    env_sim = world.start("EnvSim", step_size=1)  # 1ms周期
-    bridge_cmd_sim = world.start("BridgeSim", step_size=1)  # 1ms周期
-    bridge_sense_sim = world.start("BridgeSim", step_size=1)  # 1ms周期
+    plant_sim = world.start("PlantSim", step_size=10)  # 1ms周期
+    env_sim = world.start("EnvSim", step_size=10)  # 1ms周期
+    bridge_cmd_sim = world.start(
+        "BridgeSim", step_size=1, log_dir=str(run_dir)
+    )  # 1ms周期
+    bridge_sense_sim = world.start(
+        "BridgeSim", step_size=1, log_dir=str(run_dir)
+    )  # 1ms周期
 
     # エンティティの作成
     print("\n📦 Creating entities...")
@@ -123,7 +127,8 @@ def main():
     spacecraft = env_sim.Spacecraft1DOF(
         mass=SPACECRAFT_MASS,
         initial_position=0.0,
-        initial_velocity=0.0,
+        initial_velocity=9.81,
+        gravity=9.81,  # 重力加速度 [m/s^2] (0.0=宇宙空間, 9.81=地球)
     )
 
     # 通信ブリッジ（cmd経路）
@@ -132,6 +137,7 @@ def main():
         base_delay=CMD_DELAY,
         jitter_std=CMD_JITTER,
         packet_loss_rate=CMD_LOSS_RATE,
+        time_resolution=TIME_RESOLUTION,
         preserve_order=True,
     )
 
@@ -141,6 +147,7 @@ def main():
         base_delay=SENSE_DELAY,
         jitter_std=SENSE_JITTER,
         packet_loss_rate=SENSE_LOSS_RATE,
+        time_resolution=TIME_RESOLUTION,
         preserve_order=True,
     )
 
@@ -255,13 +262,45 @@ def main():
     # 実行グラフの生成（オプション）
     print(f"\n📊 Generating execution graphs...")
     try:
+        from utils.plot_utils import (
+            plot_execution_graph_with_data_only,
+            plot_dataflow_graph_custom,
+        )
+
         plot_kwargs = {
             "folder": str(run_dir),
             "show_plot": False,
         }
-        mosaik.util.plot_dataflow_graph(world, **plot_kwargs)
+
+        # データフローグラフ（カスタム版 - サイズ調整可能）
+        plot_dataflow_graph_custom(
+            world,
+            folder=str(run_dir),
+            show_plot=False,
+            dpi=600,
+            format="png",
+            # カスタマイズパラメータ
+            node_size=150,  # ノードサイズ（デフォルト: 100）
+            node_label_size=12,  # ノードラベルサイズ（デフォルト: 8）
+            edge_label_size=8,  # エッジラベルサイズ（デフォルト: 6）
+            node_color="tab:blue",  # ノード色
+            node_alpha=0.8,  # ノード透明度
+            label_alpha=0.8,  # ラベル透明度
+            edge_alpha=0.6,  # エッジ透明度
+            arrow_size=25,  # 矢印サイズ（デフォルト: 20）
+            figsize=(6, 5),  # 図のサイズ
+            exclude_nodes=["DataCollector"],  # DataCollectorを非表示
+        )
+
+        # 標準データフローグラフ（比較用）
+        # mosaik.util.plot_dataflow_graph(world, **plot_kwargs)
+
+        # 実行グラフ（データのやり取りがあった時のみ）
         # mosaik.util.plot_execution_graph(world, **plot_kwargs)
+
+        # 実行時間グラフ
         mosaik.util.plot_execution_time(world, **plot_kwargs)
+
         print(f"   Graphs saved to {run_dir}/")
     except Exception as e:
         print(f"   ⚠️  Graph generation failed: {e}")

@@ -1,3 +1,0 @@
-"""
-WebVis Customization Package
-"""

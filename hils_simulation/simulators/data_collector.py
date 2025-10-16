@@ -48,6 +48,8 @@ class DataCollectorSimulator(mosaik_api.Simulator):
         self.entities = {}
         self.step_size = 1  # 1ms毎に記録
         self.data_log = []
+        self.time_resolution = 0.001
+        self.step_ms = self.time_resolution * 1000
 
     def init(
         self,
@@ -66,6 +68,7 @@ class DataCollectorSimulator(mosaik_api.Simulator):
         self.sid = sid
         self.time_resolution = time_resolution
         self.step_size = step_size
+        self.step_ms = self.time_resolution * 1000 if self.time_resolution else 1.0
         return self.meta
 
     def create(self, num, model, output_dir=None):
@@ -105,6 +108,7 @@ class DataCollectorSimulator(mosaik_api.Simulator):
         """
         # 実時間 [秒]
         real_time = time * self.time_resolution
+        time_ms = time * self.step_ms
 
         for (
             eid,
@@ -115,7 +119,7 @@ class DataCollectorSimulator(mosaik_api.Simulator):
             if eid in inputs:
                 # データポイントの作成
                 data_point = {
-                    "time_ms": time,  # シミュレーション時刻 [ms]
+                    "time_ms": time_ms,  # シミュレーション時刻 [ms]
                     "time_s": real_time,  # 実時間 [s]
                 }
 

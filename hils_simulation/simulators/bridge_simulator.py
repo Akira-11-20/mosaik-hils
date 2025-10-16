@@ -8,9 +8,16 @@ BridgeSimulator - 通信遅延シミュレーター
 """
 
 import random
+from pathlib import Path
 from typing import Any, List, Tuple
 
 import mosaik_api
+
+try:
+    from utils.event_logger import EventLogger, DataTag
+except ImportError:
+    EventLogger = None
+    DataTag = None
 
 
 meta = {
@@ -23,6 +30,7 @@ meta = {
                 "base_delay",  # 基本遅延 [ms]
                 "jitter_std",  # ジッター標準偏差 [ms]
                 "packet_loss_rate",  # パケットロス率 [0.0-1.0]
+                "time_resolution",  # 時間解像度 [秒/step]
                 "preserve_order",  # パケット順序保持
             ],
             "attrs": [
@@ -48,12 +56,17 @@ class BridgeSimulator(mosaik_api.Simulator):
         self.entities = {}
         self.step_size = 1  # デフォルト: 1ms（高頻度実行）
         self.time = 0
+        self.loggers = {}  # エンティティごとのロガー
+        self.output_dir = None
+        self.time_resolution = 0.001
+        self.step_ms = self.time_resolution * 1000
 
     def init(
         self,
         sid,
         time_resolution=0.001,
         step_size=1,
+        log_dir=None,
     ):
         """
         初期化
@@ -62,11 +75,24 @@ class BridgeSimulator(mosaik_api.Simulator):
             sid: シミュレーターID
             time_resolution: 時間解像度（0.001 = 1ms）
             step_size: ステップサイズ [時間単位]
+            log_dir: ログ出力ディレクトリ（オプション）
         """
         self.sid = sid
         self.time_resolution = time_resolution
         self.step_size = step_size
+        self.output_dir = log_dir
+        self.step_ms = self.time_resolution * 1000 if self.time_resolution else 1.0
         return self.meta
+
+    def _ms_to_steps(self, value_ms: float) -> float:
+        """Convert milliseconds to simulator steps."""
+        if not self.step_ms:
+            return value_ms
+        return value_ms / (self.step_ms * self.time_resolution * 1000)
+
+    def _steps_to_ms(self, steps: float) -> float:
+        """Convert simulator steps to milliseconds."""
+        return steps * self.step_ms
 
     def create(
         self,
@@ -76,6 +102,7 @@ class BridgeSimulator(mosaik_api.Simulator):
         base_delay=50,
         jitter_std=10,
         packet_loss_rate=0.01,
+        time_resolution=0.001,
         preserve_order=True,
     ):
         """
@@ -97,9 +124,12 @@ class BridgeSimulator(mosaik_api.Simulator):
 
             self.entities[eid] = {
                 "bridge_type": bridge_type,
-                "base_delay": base_delay,
-                "jitter_std": jitter_std,
+                "base_delay_ms": base_delay,
+                "base_delay_steps": self._ms_to_steps(base_delay),
+                "jitter_std_ms": jitter_std,
+                "jitter_std_steps": self._ms_to_steps(jitter_std),
                 "packet_loss_rate": packet_loss_rate,
+                "time_resolution": time_resolution,
                 "preserve_order": preserve_order,
                 # パケットバッファ: (arrival_time, data, scheduled_output_time, seq_num)
                 "packet_buffer": [],
@@ -121,6 +151,11 @@ class BridgeSimulator(mosaik_api.Simulator):
                 f"delay={base_delay}ms, jitter={jitter_std}ms, loss={packet_loss_rate * 100:.1f}%"
             )
 
+            # イベントロガーの作成
+            if EventLogger and self.output_dir:
+                logger_name = f"Bridge_{bridge_type}_{i}"
+                self.loggers[eid] = EventLogger(self.output_dir, logger_name)
+
         return entities
 
     def step(self, time, inputs, max_advance=None):
@@ -140,18 +175,38 @@ class BridgeSimulator(mosaik_api.Simulator):
             # 1. 新しいデータの受信処理
             if eid in inputs and "input" in inputs[eid]:
                 input_data = list(inputs[eid]["input"].values())[0]
+                source_eid = list(inputs[eid]["input"].keys())[0]
                 entity["input"] = input_data
 
+                # データタグを作成/抽出
+                if DataTag:
+                    existing_tag = DataTag.extract(input_data)
+                    if not existing_tag:
+                        # タグがない場合は新規作成
+                        data_tag = DataTag.create(
+                            sender=source_eid,
+                            send_time_ms=self._steps_to_ms(time),
+                            sequence_num=entity["sequence_counter"],
+                            data_type=entity["bridge_type"],
+                        )
+                    else:
+                        # 既存のタグを使用（シーケンス番号のみ更新）
+                        data_tag = existing_tag.copy()
+                        data_tag["bridge_seq"] = entity["sequence_counter"]
+                else:
+                    data_tag = {}
+
                 # ジッター計算（ガウス分布）
+                jitter_std_steps = entity["jitter_std_steps"]
                 jitter = (
                     random.gauss(
                         0,
-                        entity["jitter_std"],
+                        jitter_std_steps,
                     )
-                    if entity["jitter_std"] > 0
+                    if jitter_std_steps > 0
                     else 0
                 )
-                scheduled_time = time + entity["base_delay"] + jitter
+                scheduled_time = time + entity["base_delay_steps"] + jitter
 
                 # パケットロス判定
                 if random.random() >= entity["packet_loss_rate"]:
@@ -161,52 +216,90 @@ class BridgeSimulator(mosaik_api.Simulator):
                         input_data,
                         scheduled_time,
                         entity["sequence_counter"],
+                        data_tag,  # タグを追加
                     )
                     entity["packet_buffer"].append(packet)
                     entity["sequence_counter"] += 1
                     entity["stats"]["packets_received"] += 1
+
+                    # ログ: 受信イベント
+                    if eid in self.loggers:
+                        self.loggers[eid].log_receive(
+                            time_ms=self._steps_to_ms(time),
+                            source=source_eid,
+                            value=input_data,
+                            data_tag=data_tag,
+                        )
                 else:
                     # パケットロス
                     entity["stats"]["packets_dropped"] += 1
+
+                    # ログ: ドロップイベント
+                    if eid in self.loggers:
+                        self.loggers[eid].log_drop(
+                            time_ms=self._steps_to_ms(time),
+                            reason="packet_loss",
+                            value=input_data,
+                            data_tag=data_tag,
+                        )
 
             # 2. 出力準備ができたパケットの処理
             ready_packets = [pkt for pkt in entity["packet_buffer"] if pkt[2] <= time]
 
             if ready_packets:
+                selected_packet = None
                 if entity["preserve_order"]:
                     # 順序保持: 最も古いシーケンス番号のパケットを出力
-                    oldest_packet = min(
+                    selected_packet = min(
                         ready_packets,
                         key=lambda x: x[3],
                     )
-                    entity["current_output"] = oldest_packet[1]
+                    entity["current_output"] = selected_packet[1]
 
                     # そのパケットより古いものを全て削除
                     entity["packet_buffer"] = [
                         pkt
                         for pkt in entity["packet_buffer"]
-                        if pkt[3] > oldest_packet[3]
+                        if pkt[3] > selected_packet[3]
                     ]
                 else:
                     # 順序無視: 最新のパケットを出力
-                    latest_packet = max(
+                    selected_packet = max(
                         ready_packets,
                         key=lambda x: x[2],
                     )
-                    entity["current_output"] = latest_packet[1]
+                    entity["current_output"] = selected_packet[1]
 
                     # 準備完了パケットを全て削除
                     for pkt in ready_packets:
                         entity["packet_buffer"].remove(pkt)
 
-                entity["stats"]["packets_sent"] += 1
+                    entity["stats"]["packets_sent"] += 1
+
+                # ログ: 送信イベント
+                if eid in self.loggers and selected_packet:
+                    arrival_time, data, scheduled_time, _seq_num, data_tag = (
+                        selected_packet
+                    )
+                    actual_delay_steps = time - arrival_time
+                    actual_delay_ms = self._steps_to_ms(actual_delay_steps)
+                    self.loggers[eid].log_send(
+                        time_ms=self._steps_to_ms(time),
+                        destination="downstream",
+                        value=data,
+                        data_tag={
+                            **data_tag,
+                            "actual_delay_ms": actual_delay_ms,
+                            "scheduled_time_ms": self._steps_to_ms(scheduled_time),
+                        },
+                    )
 
             # 3. 統計情報の更新
             if entity["packet_buffer"]:
                 total_delay = sum(pkt[2] - pkt[0] for pkt in entity["packet_buffer"])
-                entity["stats"]["avg_delay"] = total_delay / len(
-                    entity["packet_buffer"]
-                )
+                entity["stats"]["avg_delay"] = (
+                    total_delay / len(entity["packet_buffer"])
+                ) * self.step_ms
 
         return time + self.step_size
 
@@ -238,6 +331,15 @@ class BridgeSimulator(mosaik_api.Simulator):
                     data[eid][attr] = None
 
         return data
+
+    def finalize(self):
+        """
+        シミュレーション終了時の処理
+
+        イベントログをファイルに保存
+        """
+        for logger in self.loggers.values():
+            logger.finalize()
 
 
 if __name__ == "__main__":

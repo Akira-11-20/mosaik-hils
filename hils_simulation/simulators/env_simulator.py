@@ -19,6 +19,7 @@ meta = {
                 "mass",
                 "initial_position",
                 "initial_velocity",
+                "gravity",
             ],
             "attrs": [
                 "force",  # 入力: 推力 [N]
@@ -35,11 +36,12 @@ class EnvSimulator(mosaik_api.Simulator):
     """
     環境シミュレーター（1DOF版）
 
-    運動方程式:
-        F = ma
-        a = F / m
+    運動方程式（重力項を含む）:
+        F_total = F_thrust + F_gravity
+        F_gravity = -m * g  （下向きを負とする）
+        a = F_total / m = (F_thrust / m) - g
         v(t+dt) = v(t) + a * dt
-        x(t+dt) = x(t) + v(t) * dt + 0.5 * a * dt^2
+        x(t+dt) = x(t) + v(t) * dt
 
     入力:
         force: 推力 [N]
@@ -82,6 +84,7 @@ class EnvSimulator(mosaik_api.Simulator):
         mass=100.0,
         initial_position=0.0,
         initial_velocity=0.0,
+        gravity=0.0,
     ):
         """
         宇宙機エンティティの作成
@@ -92,6 +95,7 @@ class EnvSimulator(mosaik_api.Simulator):
             mass: 質量 [kg]
             initial_position: 初期位置 [m]
             initial_velocity: 初期速度 [m/s]
+            gravity: 重力加速度 [m/s^2] (デフォルト: 0.0=宇宙空間, 地球なら9.81)
         """
         entities = []
 
@@ -104,11 +108,13 @@ class EnvSimulator(mosaik_api.Simulator):
                 "velocity": initial_velocity,
                 "acceleration": 0.0,
                 "force": 0.0,
+                "gravity": gravity,
             }
 
             entities.append({"eid": eid, "type": model})
+            gravity_str = f", g={gravity}m/s²" if gravity != 0.0 else ""
             print(
-                f"[EnvSim] Created {eid} (mass={mass}kg, x0={initial_position}m, v0={initial_velocity}m/s)"
+                f"[EnvSim] Created {eid} (mass={mass}kg, x0={initial_position}m, v0={initial_velocity}m/s{gravity_str})"
             )
 
         return entities
@@ -138,8 +144,13 @@ class EnvSimulator(mosaik_api.Simulator):
                 # 入力がない場合は推力ゼロ
                 entity["force"] = 0.0
 
-            # 運動方程式: F = ma → a = F / m
-            entity["acceleration"] = entity["force"] / entity["mass"]
+            # 運動方程式（重力項を含む）:
+            # F_total = F_thrust + F_gravity
+            # F_gravity = -m * g
+            # a = F_total / m = (F_thrust / m) - g
+            thrust_acceleration = entity["force"] / entity["mass"]
+            gravity_acceleration = -entity["gravity"]  # 下向きを負とする
+            entity["acceleration"] = thrust_acceleration + gravity_acceleration
 
             # オイラー法による積分
             # v(t+dt) = v(t) + a * dt
