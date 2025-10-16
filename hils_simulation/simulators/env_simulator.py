@@ -153,11 +153,11 @@ class EnvSimulator(mosaik_api.Simulator):
             entity["acceleration"] = thrust_acceleration + gravity_acceleration
 
             # オイラー法による積分
-            # v(t+dt) = v(t) + a * dt
-            entity["velocity"] += entity["acceleration"] * dt
-
-            # x(t+dt) = x(t) + v(t) * dt
+            # x(t+dt) = x(t) + v(t) * dt （先に位置を更新、古い速度を使用）
             entity["position"] += entity["velocity"] * dt
+
+            # v(t+dt) = v(t) + a * dt （後で速度を更新）
+            entity["velocity"] += entity["acceleration"] * dt
 
         return time + self.step_size
 

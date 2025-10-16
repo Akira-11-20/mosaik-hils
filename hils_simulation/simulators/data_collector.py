@@ -50,6 +50,7 @@ class DataCollectorSimulator(mosaik_api.Simulator):
         self.data_log = []
         self.time_resolution = 0.001
         self.step_ms = self.time_resolution * 1000
+        self.all_keys = set()  # キーを効率的に追跡
 
     def init(
         self,
@@ -88,7 +89,6 @@ class DataCollectorSimulator(mosaik_api.Simulator):
             target_dir.mkdir(parents=True, exist_ok=True)
 
             self.entities[eid] = {
-                "data": [],
                 "current_time": 0,
                 "output_dir": target_dir,
             }
@@ -117,52 +117,32 @@ class DataCollectorSimulator(mosaik_api.Simulator):
             entity["current_time"] = time
 
             if eid in inputs:
-                # データポイントの作成
+                # データポイントの作成（生データのまま保存、JSON変換は最後に実行）
                 data_point = {
                     "time_ms": time_ms,  # シミュレーション時刻 [ms]
                     "time_s": real_time,  # 実時間 [s]
                 }
 
-                # 全入力データを収集
+                # 全入力データを収集（最小限の処理）
                 for attr, values in inputs[eid].items():
-                    for (
-                        source_eid,
-                        value,
-                    ) in values.items():
+                    for source_eid, value in values.items():
                         # 属性名とソースIDでキーを作成
                         key = f"{attr}_{source_eid}"
 
-                        # 値の型に応じて処理
+                        # キーを記録
+                        self.all_keys.add(key)
+
+                        # 生データをそのまま保存
+                        data_point[key] = value
+
+                        # 辞書型の場合、各要素も記録（プロット用）
                         if isinstance(value, dict):
-                            # 辞書型（例: command）
-                            # JSON文字列として保存
-                            import json
+                            for k, v in value.items():
+                                subkey = f"{key}_{k}"
+                                data_point[subkey] = v
+                                self.all_keys.add(subkey)
 
-                            data_point[key] = json.dumps(value)
-
-                            # 各要素も個別に記録（プロット用）
-                            for (
-                                k,
-                                v,
-                            ) in value.items():
-                                data_point[f"{key}_{k}"] = v
-
-                        elif isinstance(
-                            value,
-                            (int, float),
-                        ):
-                            # 数値型
-                            data_point[key] = value
-
-                        elif value is None:
-                            # None値
-                            data_point[key] = float("nan")
-
-                        else:
-                            # その他（文字列等）
-                            data_point[key] = str(value)
-
-                entity["data"].append(data_point)
+                # data_logにのみ保存（重複を避ける）
                 self.data_log.append(data_point)
 
         return time + self.step_size
@@ -202,8 +182,10 @@ class DataCollectorSimulator(mosaik_api.Simulator):
             f"\n[DataCollector] 💾 Saving {len(self.data_log)} data points to HDF5..."
         )
 
-        # 全キーを収集
-        all_keys = sorted({key for entry in self.data_log for key in entry.keys()})
+        # 全キーを収集（ステップ中に追跡したキーを使用）
+        self.all_keys.add("time_ms")
+        self.all_keys.add("time_s")
+        all_keys = sorted(self.all_keys)
 
         with h5py.File(output_path, "w") as h5_file:
             # メタデータ
@@ -222,6 +204,9 @@ class DataCollectorSimulator(mosaik_api.Simulator):
 
                     if value is None:
                         column.append(float("nan"))
+                    elif isinstance(value, dict):
+                        # 辞書型はJSON文字列に変換（finalize時のみ）
+                        column.append(json.dumps(value))
                     elif isinstance(value, str):
                         # 文字列はそのまま
                         column.append(value)

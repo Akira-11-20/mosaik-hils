@@ -12,41 +12,114 @@ HILS Simulation Main Scenario - 1DOF版
 - 初期実装: 補償機能なし
 """
 
+import json
+import os
 from datetime import datetime
 from pathlib import Path
 
 import mosaik
 import mosaik.util
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 
-# === SIMULATION CONFIGURATION ===
+def get_env_float(key: str, default: float) -> float:
+    """Get float value from environment variable"""
+    value = os.getenv(key)
+    if value is None or value == "None":
+        return default
+    return float(value)
 
-# 通信遅延設定
-CMD_DELAY = 20  # 制御指令経路の遅延 [ms]
-CMD_JITTER = 0  # 制御指令経路のジッター標準偏差 [ms]
-CMD_LOSS_RATE = 0.0  # 制御指令経路のパケットロス率（1%）
 
-SENSE_DELAY = 30  # 測定経路の遅延 [ms]
-SENSE_JITTER = 0.0  # 測定経路のジッター標準偏差 [ms]
-SENSE_LOSS_RATE = 0.0  # 測定経路のパケットロス率（2%）
+# === SIMULATION CONFIGURATION (loaded from .env) ===
 
-# シミュレーション設定
-SIMULATION_TIME = 2  # シミュレーション時間 [秒]
-TIME_RESOLUTION = 0.001  # 時間解像度 [秒/step] = 1step = 0.1ms
-SIMULATION_STEP = int(
-    SIMULATION_TIME / TIME_RESOLUTION
-)  # シミュレーションステップ数（0.02秒 / 0.001 = 20ステップ）
-RT_FACTOR = None  # 実時間比率（None = 最高速、1.0 = 実時間、0.5 = 2倍速）
+# Communication delays
+CMD_DELAY = get_env_float("CMD_DELAY", 20)  # Command path delay [ms]
+CMD_JITTER = get_env_float("CMD_JITTER", 0)  # Command path jitter std [ms]
+CMD_LOSS_RATE = get_env_float("CMD_LOSS_RATE", 0.0)  # Command path packet loss rate
 
-# 制御パラメータ
-CONTROL_PERIOD = 10  # 制御周期 [ms]
-KP = 15.0  # 比例ゲイン
-KD = 5.0  # 微分ゲイン
-TARGET_POSITION = 5.0  # 目標位置 [m]
-MAX_THRUST = 100.0  # 最大推力 [N]
+SENSE_DELAY = get_env_float("SENSE_DELAY", 30)  # Sensing path delay [ms]
+SENSE_JITTER = get_env_float("SENSE_JITTER", 0.0)  # Sensing path jitter std [ms]
+SENSE_LOSS_RATE = get_env_float("SENSE_LOSS_RATE", 0.0)  # Sensing path packet loss rate
 
-# 宇宙機パラメータ
-SPACECRAFT_MASS = 1.0  # 質量 [kg]
+# Simulation settings
+SIMULATION_TIME = get_env_float("SIMULATION_TIME", 2)  # Simulation time [s]
+TIME_RESOLUTION = get_env_float("TIME_RESOLUTION", 0.0001)  # Time resolution [s/step]
+SIMULATION_STEPS = int(SIMULATION_TIME / TIME_RESOLUTION)
+RT_FACTOR_STR = os.getenv("RT_FACTOR", "None")
+RT_FACTOR = None if RT_FACTOR_STR == "None" else float(RT_FACTOR_STR)
+
+# Control parameters
+CONTROL_PERIOD = get_env_float("CONTROL_PERIOD", 10)  # Control period [ms]
+KP = get_env_float("KP", 15.0)  # Proportional gain
+KD = get_env_float("KD", 5.0)  # Derivative gain
+TARGET_POSITION = get_env_float("TARGET_POSITION", 5.0)  # Target position [m]
+MAX_THRUST = get_env_float("MAX_THRUST", 100.0)  # Maximum thrust [N]
+
+# Simulator periods [steps]
+ENV_SIM_PERIOD_MS = get_env_float("ENV_SIM_PERIOD", 10)  # [ms]
+PLANT_SIM_PERIOD_MS = get_env_float("PLANT_SIM_PERIOD", 10)  # [ms]
+ENV_SIM_PERIOD = int(ENV_SIM_PERIOD_MS / 1000 / TIME_RESOLUTION)  # Convert ms to steps
+PLANT_SIM_PERIOD = int(PLANT_SIM_PERIOD_MS / 1000 / TIME_RESOLUTION)  # Convert ms to steps
+
+# Spacecraft parameters
+SPACECRAFT_MASS = get_env_float("SPACECRAFT_MASS", 1.0)  # Mass [kg]
+INITIAL_POSITION = get_env_float("INITIAL_POSITION", 0.0)  # Initial position [m]
+INITIAL_VELOCITY = get_env_float("INITIAL_VELOCITY", 10.0)  # Initial velocity [m/s]
+GRAVITY = get_env_float("GRAVITY", 9.81)  # Gravity acceleration [m/s^2]
+
+
+def save_simulation_config(output_dir: Path):
+    """
+    シミュレーション設定をJSON形式で保存
+
+    Args:
+        output_dir: 出力ディレクトリ
+    """
+    config = {
+        "simulation": {
+            "simulation_time_s": SIMULATION_TIME,
+            "time_resolution_s": TIME_RESOLUTION,
+            "simulation_steps": SIMULATION_STEPS,
+            "rt_factor": RT_FACTOR,
+        },
+        "communication": {
+            "cmd_delay_s": CMD_DELAY / 1000.0,  # ms → s
+            "cmd_jitter_s": CMD_JITTER / 1000.0,  # ms → s
+            "cmd_loss_rate": CMD_LOSS_RATE,
+            "sense_delay_s": SENSE_DELAY / 1000.0,  # ms → s
+            "sense_jitter_s": SENSE_JITTER / 1000.0,  # ms → s
+            "sense_loss_rate": SENSE_LOSS_RATE,
+        },
+        "control": {
+            "control_period_s": CONTROL_PERIOD / 1000.0,  # ms → s
+            "kp": KP,
+            "kd": KD,
+            "target_position_m": TARGET_POSITION,
+            "max_thrust_N": MAX_THRUST,
+        },
+        "simulators": {
+            "env_sim_period_s": ENV_SIM_PERIOD * TIME_RESOLUTION,  # steps → s
+            "plant_sim_period_s": PLANT_SIM_PERIOD * TIME_RESOLUTION,  # steps → s
+        },
+        "spacecraft": {
+            "mass_kg": SPACECRAFT_MASS,
+        },
+        "metadata": {
+            "timestamp": datetime.now().isoformat(),
+            "description": "HILS 1-DOF Spacecraft Control Simulation",
+            "note": "All time units are in seconds (s)",
+        },
+    }
+
+    config_path = output_dir / "simulation_config.json"
+    with open(config_path, "w") as f:
+        json.dump(config, f, indent=2)
+
+    print(f"💾 Configuration saved: {config_path}")
+    return config_path
 
 
 def main():
@@ -62,6 +135,9 @@ def main():
     run_dir = Path("results") / timestamp
     run_dir.mkdir(parents=True, exist_ok=True)
     print(f"📁 Log directory: {run_dir}")
+
+    # シミュレーション設定の保存
+    save_simulation_config(run_dir)
 
     # シミュレーター構成
     sim_config = {
@@ -89,7 +165,7 @@ def main():
     world = mosaik.World(
         sim_config,
         time_resolution=TIME_RESOLUTION,
-        debug=True,
+        debug=False,  # デバッグモード無効化（高速化）
     )
 
     # シミュレーターの起動
@@ -97,13 +173,13 @@ def main():
 
     controller_sim = world.start(
         "ControllerSim",
-        step_size=CONTROL_PERIOD,
-    )  # 10ms周期
-    plant_sim = world.start("PlantSim", step_size=10)  # 1ms周期
-    env_sim = world.start("EnvSim", step_size=10)  # 1ms周期
+        step_size=int(CONTROL_PERIOD / 1000 / TIME_RESOLUTION),  # 10ms → steps
+    )
+    plant_sim = world.start("PlantSim", step_size=PLANT_SIM_PERIOD)
+    env_sim = world.start("EnvSim", step_size=ENV_SIM_PERIOD)
     bridge_cmd_sim = world.start(
         "BridgeSim", step_size=1, log_dir=str(run_dir)
-    )  # 1ms周期
+    )
     bridge_sense_sim = world.start(
         "BridgeSim", step_size=1, log_dir=str(run_dir)
     )  # 1ms周期
@@ -126,9 +202,9 @@ def main():
     # 宇宙機環境
     spacecraft = env_sim.Spacecraft1DOF(
         mass=SPACECRAFT_MASS,
-        initial_position=0.0,
-        initial_velocity=9.81,
-        gravity=9.81,  # 重力加速度 [m/s^2] (0.0=宇宙空間, 9.81=地球)
+        initial_position=INITIAL_POSITION,
+        initial_velocity=INITIAL_VELOCITY,
+        gravity=GRAVITY,
     )
 
     # 通信ブリッジ（cmd経路）
@@ -137,7 +213,6 @@ def main():
         base_delay=CMD_DELAY,
         jitter_std=CMD_JITTER,
         packet_loss_rate=CMD_LOSS_RATE,
-        time_resolution=TIME_RESOLUTION,
         preserve_order=True,
     )
 
@@ -147,7 +222,6 @@ def main():
         base_delay=SENSE_DELAY,
         jitter_std=SENSE_JITTER,
         packet_loss_rate=SENSE_LOSS_RATE,
-        time_resolution=TIME_RESOLUTION,
         preserve_order=True,
     )
 
@@ -250,11 +324,11 @@ def main():
 
     # シミュレーション実行
     print(
-        f"\n▶️  Running simulation until {SIMULATION_TIME}s ({SIMULATION_STEP} steps)..."
+        f"\n▶️  Running simulation until {SIMULATION_TIME}s ({SIMULATION_STEPS} steps)..."
     )
     print("=" * 70)
 
-    world.run(until=SIMULATION_STEP, rt_factor=RT_FACTOR)
+    world.run(until=SIMULATION_STEPS, rt_factor=RT_FACTOR)
 
     print("=" * 70)
     print("✅ Simulation completed successfully!")

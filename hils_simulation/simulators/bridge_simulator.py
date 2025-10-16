@@ -30,7 +30,6 @@ meta = {
                 "base_delay",  # 基本遅延 [ms]
                 "jitter_std",  # ジッター標準偏差 [ms]
                 "packet_loss_rate",  # パケットロス率 [0.0-1.0]
-                "time_resolution",  # 時間解像度 [秒/step]
                 "preserve_order",  # パケット順序保持
             ],
             "attrs": [
@@ -88,7 +87,7 @@ class BridgeSimulator(mosaik_api.Simulator):
         """Convert milliseconds to simulator steps."""
         if not self.step_ms:
             return value_ms
-        return value_ms / (self.step_ms * self.time_resolution * 1000)
+        return value_ms / self.step_ms
 
     def _steps_to_ms(self, steps: float) -> float:
         """Convert simulator steps to milliseconds."""
@@ -102,7 +101,6 @@ class BridgeSimulator(mosaik_api.Simulator):
         base_delay=50,
         jitter_std=10,
         packet_loss_rate=0.01,
-        time_resolution=0.001,
         preserve_order=True,
     ):
         """
@@ -116,6 +114,9 @@ class BridgeSimulator(mosaik_api.Simulator):
             jitter_std: ジッター標準偏差 [ms]
             packet_loss_rate: パケットロス率（0.0～1.0）
             preserve_order: パケット順序保持フラグ
+
+        Note:
+            time_resolutionはinit()で設定された値を使用します
         """
         entities = []
 
@@ -129,7 +130,6 @@ class BridgeSimulator(mosaik_api.Simulator):
                 "jitter_std_ms": jitter_std,
                 "jitter_std_steps": self._ms_to_steps(jitter_std),
                 "packet_loss_rate": packet_loss_rate,
-                "time_resolution": time_resolution,
                 "preserve_order": preserve_order,
                 # パケットバッファ: (arrival_time, data, scheduled_output_time, seq_num)
                 "packet_buffer": [],
