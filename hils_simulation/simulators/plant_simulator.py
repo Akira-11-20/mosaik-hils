@@ -133,9 +133,6 @@ class PlantSimulator(mosaik_api.Simulator):
                         entity["thrust_start_time"] = time
                         entity["thrust_end_time"] = time + duration
                         entity["status"] = "thrusting"
-                        print(
-                            f"[PlantSim] {eid}: Thrust {thrust:.3f}N for {duration}ms"
-                        )
 
             # 推力測定ロジック（理想応答、ノイズなし）
             if entity["status"] == "thrusting":
