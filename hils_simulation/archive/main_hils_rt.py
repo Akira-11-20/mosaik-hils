@@ -1,15 +1,19 @@
 """
-HILS Simulation Main Scenario - 1DOF版
+RT (Real-Time) Simulation Main Scenario - 1DOF版 (比較用)
 
-模擬HILS構成:
-    Env → Controller (同一ステップ) → Bridge(cmd) → Plant (次ステップで実行) → Bridge(sense) → Env
+単一ノード構成（通信遅延なし）:
+    Env → Controller → Plant → Env
 
 特徴:
-- 1ms時間解像度
-- cmd/sense経路で非対称な遅延設定
-- Controller → Plant間にtime-shifted接続（Plantの物理実行は次ステップ）
-- Env → Controllerは同一ステップで計算（より現実的な制御ループ）
-- 初期実装: 補償機能なし
+- 1ms時間解像度（HILSと同じ）
+- 通信ブリッジなし（遅延、ジッタ、パケットロスなし）
+- Controller → Plant間で直接接続（同一ノード内の動作を想定）
+- HILSシステムとの性能比較用
+
+用途:
+- HILSシステム（通信遅延あり）との制御性能比較
+- 理想的な制御ループの性能ベースライン
+- 通信遅延の影響を定量的に評価
 """
 
 import json
@@ -35,15 +39,6 @@ def get_env_float(key: str, default: float) -> float:
 
 # === SIMULATION CONFIGURATION (loaded from .env) ===
 
-# Communication delays
-CMD_DELAY = get_env_float("CMD_DELAY", 20)  # Command path delay [ms]
-CMD_JITTER = get_env_float("CMD_JITTER", 0)  # Command path jitter std [ms]
-CMD_LOSS_RATE = get_env_float("CMD_LOSS_RATE", 0.0)  # Command path packet loss rate
-
-SENSE_DELAY = get_env_float("SENSE_DELAY", 30)  # Sensing path delay [ms]
-SENSE_JITTER = get_env_float("SENSE_JITTER", 0.0)  # Sensing path jitter std [ms]
-SENSE_LOSS_RATE = get_env_float("SENSE_LOSS_RATE", 0.0)  # Sensing path packet loss rate
-
 # Simulation settings
 SIMULATION_TIME = get_env_float("SIMULATION_TIME", 2)  # Simulation time [s]
 TIME_RESOLUTION = get_env_float("TIME_RESOLUTION", 0.0001)  # Time resolution [s/step]
@@ -51,7 +46,7 @@ SIMULATION_STEPS = int(SIMULATION_TIME / TIME_RESOLUTION)
 RT_FACTOR_STR = os.getenv("RT_FACTOR", "None")
 RT_FACTOR = None if RT_FACTOR_STR == "None" else float(RT_FACTOR_STR)
 
-# Control parameters
+# Control parameters (same as HILS)
 CONTROL_PERIOD = get_env_float("CONTROL_PERIOD", 10)  # Control period [ms]
 KP = get_env_float("KP", 15.0)  # Proportional gain
 KD = get_env_float("KD", 5.0)  # Derivative gain
@@ -84,14 +79,15 @@ def save_simulation_config(output_dir: Path):
             "time_resolution_s": TIME_RESOLUTION,
             "simulation_steps": SIMULATION_STEPS,
             "rt_factor": RT_FACTOR,
+            "type": "RT (Real-Time, No Delay)",
         },
         "communication": {
-            "cmd_delay_s": CMD_DELAY / 1000.0,  # ms → s
-            "cmd_jitter_s": CMD_JITTER / 1000.0,  # ms → s
-            "cmd_loss_rate": CMD_LOSS_RATE,
-            "sense_delay_s": SENSE_DELAY / 1000.0,  # ms → s
-            "sense_jitter_s": SENSE_JITTER / 1000.0,  # ms → s
-            "sense_loss_rate": SENSE_LOSS_RATE,
+            "cmd_delay_s": 0.0,  # No delay in RT version
+            "cmd_jitter_s": 0.0,
+            "cmd_loss_rate": 0.0,
+            "sense_delay_s": 0.0,
+            "sense_jitter_s": 0.0,
+            "sense_loss_rate": 0.0,
         },
         "control": {
             "control_period_s": CONTROL_PERIOD / 1000.0,  # ms → s
@@ -109,8 +105,8 @@ def save_simulation_config(output_dir: Path):
         },
         "metadata": {
             "timestamp": datetime.now().isoformat(),
-            "description": "HILS 1-DOF Spacecraft Control Simulation",
-            "note": "All time units are in seconds (s)",
+            "description": "RT 1-DOF Spacecraft Control Simulation (No Communication Delay)",
+            "note": "All time units are in seconds (s). This is a baseline simulation without communication delays for comparison with HILS.",
         },
     }
 
@@ -124,22 +120,22 @@ def save_simulation_config(output_dir: Path):
 
 def main():
     """
-    HILS メインシナリオ
+    RT (Real-Time) メインシナリオ - 通信遅延なし版
     """
     print("=" * 70)
-    print("HILS Simulation - 1DOF Configuration")
+    print("RT Simulation - 1DOF Configuration (No Delay)")
     print("=" * 70)
 
     # ログディレクトリの作成
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    run_dir = Path("results") / timestamp
+    run_dir = Path("results_rt") / timestamp
     run_dir.mkdir(parents=True, exist_ok=True)
     print(f"📁 Log directory: {run_dir}")
 
     # シミュレーション設定の保存
     save_simulation_config(run_dir)
 
-    # シミュレーター構成
+    # シミュレーター構成（BridgeSimなし）
     sim_config = {
         "ControllerSim": {
             "python": "simulators.controller_simulator:ControllerSimulator",
@@ -149,9 +145,6 @@ def main():
         },
         "EnvSim": {
             "python": "simulators.env_simulator:EnvSimulator",
-        },
-        "BridgeSim": {
-            "python": "simulators.bridge_simulator:BridgeSimulator",
         },
         "DataCollector": {
             "python": "simulators.data_collector:DataCollectorSimulator",
@@ -173,16 +166,11 @@ def main():
 
     controller_sim = world.start(
         "ControllerSim",
-        step_size=int(CONTROL_PERIOD / 1000 / TIME_RESOLUTION),  # 10ms → steps
+        step_size=int(CONTROL_PERIOD / 1000 / TIME_RESOLUTION),  # 10ms → steps (100)
     )
-    plant_sim = world.start("PlantSim", step_size=PLANT_SIM_PERIOD)
-    env_sim = world.start("EnvSim", step_size=ENV_SIM_PERIOD)
-    bridge_cmd_sim = world.start(
-        "BridgeSim", step_size=1, log_dir=str(run_dir)
-    )
-    bridge_sense_sim = world.start(
-        "BridgeSim", step_size=1, log_dir=str(run_dir)
-    )  # 1ms周期
+    # Plant と Env は毎ステップ実行（Pure Pythonと同じ）
+    plant_sim = world.start("PlantSim", step_size=1)  # 0.1ms = 1 step
+    env_sim = world.start("EnvSim", step_size=1)  # 0.1ms = 1 step
 
     # エンティティの作成
     print("\n📦 Creating entities...")
@@ -207,61 +195,28 @@ def main():
         gravity=GRAVITY,
     )
 
-    # 通信ブリッジ（cmd経路）
-    bridge_cmd = bridge_cmd_sim.CommBridge(
-        bridge_type="cmd",
-        base_delay=CMD_DELAY,
-        jitter_std=CMD_JITTER,
-        packet_loss_rate=CMD_LOSS_RATE,
-        preserve_order=True,
-    )
+    # データフローの接続（通信ブリッジなし）
+    print("\n🔗 Connecting data flows (direct connections, no delay)...")
 
-    # 通信ブリッジ（sense経路）
-    bridge_sense = bridge_sense_sim.CommBridge(
-        bridge_type="sense",
-        base_delay=SENSE_DELAY,
-        jitter_std=SENSE_JITTER,
-        packet_loss_rate=SENSE_LOSS_RATE,
-        preserve_order=True,
-    )
-
-    # データフローの接続
-    print("\n🔗 Connecting data flows...")
-
-    # 1. Controller → Bridge(cmd) - 制御指令経路（次ステップで実行）
-    print(
-        "   ⏱️  Controller → Bridge(cmd): time-shifted connection (execution on next step)"
-    )
+    # 1. Controller → Plant - 制御指令経路（time_shiftedで循環を回避）
+    print("   ⚡ Controller → Plant: 1-step shifted (to break cycle)")
     world.connect(
         controller,
-        bridge_cmd,
-        ("command", "input"),
-        time_shifted=True,
+        plant,
+        ("command", "command"),
+        time_shifted=True,  # 循環依存回避のため必須
         initial_data={"command": {"thrust": 0.0, "duration": CONTROL_PERIOD}},
     )
 
-    # 2. Bridge(cmd) → Plant - 遅延後の制御指令（パッケージ化コマンド）
-    world.connect(
-        bridge_cmd,
-        plant,
-        ("delayed_output", "command"),
-    )
-
-    # 3. Plant → Bridge(sense) - 測定値経路
+    # 2. Plant → Env - 測定値経路（直接接続）
+    print("   ⚡ Plant → Env: direct connection (no delay)")
     world.connect(
         plant,
-        bridge_sense,
-        ("measured_thrust", "input"),
-    )
-
-    # 4. Bridge(sense) → Env - 遅延後の測定値
-    world.connect(
-        bridge_sense,
         spacecraft,
-        ("delayed_output", "force"),
+        ("measured_thrust", "force"),
     )
 
-    # 5. Env → Controller - 状態フィードバック（同一ステップで送信）
+    # 3. Env → Controller - 状態フィードバック（同一ステップで送信）
     print("   📡 Env → Controller: same-step connection (state feedback)")
     world.connect(
         spacecraft,
@@ -270,7 +225,7 @@ def main():
         "velocity",
     )
 
-    # 6. データ収集の設定
+    # 4. データ収集の設定
     print("\n📊 Setting up data collection...")
     data_collector_sim = world.start("DataCollector", step_size=1)
     collector = data_collector_sim.Collector(output_dir=str(run_dir))
@@ -285,22 +240,10 @@ def main():
     )
     mosaik.util.connect_many_to_one(
         world,
-        [bridge_cmd],
-        collector,
-        "stats",
-    )
-    mosaik.util.connect_many_to_one(
-        world,
         [plant],
         collector,
         "measured_thrust",
         "status",
-    )
-    mosaik.util.connect_many_to_one(
-        world,
-        [bridge_sense],
-        collector,
-        "stats",
     )
     mosaik.util.connect_many_to_one(
         world,
@@ -313,14 +256,13 @@ def main():
     )
 
     print("\n✅ Data flow configured:")
-    print("   Env → Controller (same step)")
-    print("   Controller → Bridge(cmd) → Plant (time-shifted: next step execution)")
-    print("   Plant → Bridge(sense) → Env")
+    print("   Env → Controller (every 10ms)")
+    print("   Controller → Plant (1-step = 0.1ms shifted, to break cycle)")
+    print("   Plant → Env (every 0.1ms)")
     print("   All data → DataCollector → HDF5")
     print("   ℹ️  Command format: JSON/dict {thrust, duration}")
-    print(
-        "   ⏱️  Timing: Env & Controller compute in step N, Plant executes in step N+1"
-    )
+    print("   ⚡ Controller: 10ms period, Plant/Env: 0.1ms period (like Pure Python)")
+    print("   ⚠️  Note: 1-step shift = 0.1ms delay (minimal overhead)")
 
     # シミュレーション実行
     print(
@@ -357,7 +299,7 @@ def main():
             node_size=150,  # ノードサイズ（デフォルト: 100）
             node_label_size=12,  # ノードラベルサイズ（デフォルト: 8）
             edge_label_size=8,  # エッジラベルサイズ（デフォルト: 6）
-            node_color="tab:blue",  # ノード色
+            node_color="tab:green",  # ノード色（RTはグリーン）
             node_alpha=0.8,  # ノード透明度
             label_alpha=0.8,  # ラベル透明度
             edge_alpha=0.6,  # エッジ透明度
@@ -365,12 +307,6 @@ def main():
             figsize=(6, 5),  # 図のサイズ
             exclude_nodes=["DataCollector"],  # DataCollectorを非表示
         )
-
-        # 標準データフローグラフ（比較用）
-        # mosaik.util.plot_dataflow_graph(world, **plot_kwargs)
-
-        # 実行グラフ（データのやり取りがあった時のみ）
-        # mosaik.util.plot_execution_graph(world, **plot_kwargs)
 
         # 実行時間グラフ
         mosaik.util.plot_execution_time(world, **plot_kwargs)
@@ -380,7 +316,7 @@ def main():
         print(f"   ⚠️  Graph generation failed: {e}")
 
     print("\n" + "=" * 70)
-    print("HILS Simulation Finished")
+    print("RT Simulation Finished")
     print("=" * 70)
 
 

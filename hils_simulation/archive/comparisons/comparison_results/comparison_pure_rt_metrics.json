@@ -1,0 +1,22 @@
+{
+  "pure_python": {
+    "rms_error": 1.545273366071265,
+    "max_error": 5.0,
+    "overshoot": -0.2525368308929705,
+    "overshoot_percent": -5.05073661785941,
+    "settling_time": null,
+    "final_error": 0.6818542781372785
+  },
+  "rt_mosaik": {
+    "rms_error": 1.8580495219666797,
+    "max_error": 4.999,
+    "overshoot": 1.9714370838835924,
+    "overshoot_percent": 39.428741677671844,
+    "settling_time": null,
+    "final_error": 0.1708142709292854
+  },
+  "mosaik_overhead": {
+    "rms_error_degradation_percent": 20.24083005394853,
+    "max_error_degradation_percent": -0.02000000000000668
+  }
+}

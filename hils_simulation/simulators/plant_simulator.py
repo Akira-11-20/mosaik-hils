@@ -128,7 +128,8 @@ class PlantSimulator(mosaik_api.Simulator):
                     entity["duration_cmd"] = duration
 
                     # 新しい推力指令が来たら、開始・終了時刻を設定
-                    if thrust > 0 and duration > 0:
+                    # 負の推力も許容するため、thrust != 0 で判定
+                    if thrust != 0 and duration > 0:
                         entity["thrust_start_time"] = time
                         entity["thrust_end_time"] = time + duration
                         entity["status"] = "thrusting"

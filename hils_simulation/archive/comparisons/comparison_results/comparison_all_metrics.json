@@ -1,0 +1,30 @@
+{
+  "hils": {
+    "rms_error": 1.9920644656730944,
+    "max_error": 4.9,
+    "overshoot": 9.180500000000004,
+    "overshoot_percent": 183.61000000000007,
+    "settling_time": 1.8900000000000001,
+    "final_error": 0.28673127318262437
+  },
+  "rt": {
+    "rms_error": 1.8036484907134138,
+    "max_error": 4.9,
+    "overshoot": 9.180500000000004,
+    "overshoot_percent": 183.61000000000007,
+    "settling_time": null,
+    "final_error": 0.17807804037316802
+  },
+  "pure_python": {
+    "rms_error": 1.5453326528833486,
+    "max_error": 5.0,
+    "overshoot": 10.19,
+    "overshoot_percent": 203.79999999999998,
+    "settling_time": null,
+    "final_error": 0.6817814338604217
+  },
+  "relative_to_pure": {
+    "hils_rms_degradation_percent": 28.908456179723775,
+    "rt_rms_degradation_percent": 16.715872621217724
+  }
+}

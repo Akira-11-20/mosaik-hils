@@ -1,0 +1,24 @@
+{
+  "hils": {
+    "rms_error": 1.9920644656730944,
+    "max_error": 4.9,
+    "overshoot": 2.281950020780261,
+    "overshoot_percent": 45.639000415605224,
+    "settling_time": 1.8900000000000001,
+    "final_error": 0.28673127318262437
+  },
+  "rt": {
+    "rms_error": 1.8036484907134138,
+    "max_error": 4.9,
+    "overshoot": 1.9061152724269181,
+    "overshoot_percent": 38.12230544853836,
+    "settling_time": null,
+    "final_error": 0.17807804037316802
+  },
+  "difference": {
+    "rms_error": 0.18841597495968054,
+    "max_error": 0.0,
+    "overshoot": 0.3758347483533431,
+    "final_error": 0.10865323280945635
+  }
+}

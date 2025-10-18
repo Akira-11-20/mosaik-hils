@@ -1,10 +1,10 @@
 """
-ControllerSimulator - シンプルなPD制御器
+ControllerSimulator - PID制御器
 
 位置制御を行うコントローラー。
 目標位置との誤差をもとに推力指令を生成。
 
-初期実装: 1DOF、シンプルなPD制御
+実装: 1DOF、PID制御
 """
 
 import mosaik_api
@@ -13,20 +13,23 @@ import mosaik_api
 meta = {
     "type": "time-based",
     "models": {
-        "PDController": {
+        "PIDController": {
             "public": True,
             "params": [
                 "kp",
+                "ki",
                 "kd",
                 "target_position",
                 "max_thrust",
                 "thrust_duration",
+                "integral_limit",
             ],
             "attrs": [
                 "position",  # 入力: 現在位置 [m]
                 "velocity",  # 入力: 現在速度 [m/s]
                 "command",  # 出力: 制御コマンド（辞書: {thrust, duration}）
                 "error",  # 出力: 位置誤差 [m]
+                "integral",  # 出力: 積分項 [m·s]
             ],
         },
     },
@@ -35,11 +38,12 @@ meta = {
 
 class ControllerSimulator(mosaik_api.Simulator):
     """
-    PD制御器シミュレーター（1DOF版）
+    PID制御器シミュレーター（1DOF版）
 
     制御則:
         error = target_position - current_position
-        thrust = Kp * error - Kd * velocity
+        integral += error * dt
+        thrust = Kp * error + Ki * integral - Kd * velocity
 
     入力:
         position: 現在位置 [m]
@@ -52,6 +56,7 @@ class ControllerSimulator(mosaik_api.Simulator):
                 "duration": 持続時間 [ms]
             }
         error: 位置誤差 [m]
+        integral: 積分項 [m·s]
     """
 
     def __init__(self):
@@ -84,10 +89,12 @@ class ControllerSimulator(mosaik_api.Simulator):
         num,
         model,
         kp=1.0,
+        ki=0.1,
         kd=0.5,
         target_position=10.0,
         max_thrust=50.0,
         thrust_duration=10,
+        integral_limit=100.0,
     ):
         """
         制御器エンティティの作成
@@ -96,10 +103,12 @@ class ControllerSimulator(mosaik_api.Simulator):
             num: 作成数
             model: モデル名
             kp: 比例ゲイン
+            ki: 積分ゲイン
             kd: 微分ゲイン
             target_position: 目標位置 [m]
             max_thrust: 最大推力 [N]
             thrust_duration: 推力持続時間 [ms]
+            integral_limit: 積分項の上限（アンチワインドアップ）
         """
         entities = []
 
@@ -108,12 +117,15 @@ class ControllerSimulator(mosaik_api.Simulator):
 
             self.entities[eid] = {
                 "kp": kp,
+                "ki": ki,
                 "kd": kd,
                 "target_position": target_position,
                 "max_thrust": max_thrust,
                 "thrust_duration": thrust_duration,
+                "integral_limit": integral_limit,
                 "position": 0.0,
                 "velocity": 0.0,
+                "integral": 0.0,  # 積分項の初期化
                 "command": {
                     "thrust": 0.0,
                     "duration": thrust_duration,
@@ -123,7 +135,7 @@ class ControllerSimulator(mosaik_api.Simulator):
 
             entities.append({"eid": eid, "type": model})
             print(
-                f"[ControllerSim] Created {eid} (Kp={kp}, Kd={kd}, target={target_position}m)"
+                f"[ControllerSim] Created {eid} (Kp={kp}, Ki={ki}, Kd={kd}, target={target_position}m)"
             )
 
         return entities
@@ -154,18 +166,30 @@ class ControllerSimulator(mosaik_api.Simulator):
                     if vel_values:
                         entity["velocity"] = list(vel_values)[0]
 
-            # PD制御則
+            # PID制御則
             error = entity["target_position"] - entity["position"]
             entity["error"] = error
 
-            # 推力指令計算: F = Kp * error - Kd * velocity
-            thrust = entity["kp"] * error - entity["kd"] * entity["velocity"]
+            # 積分項の更新（台形則）
+            # dt = step_size [ms] を秒に変換
+            dt = self.step_size / 1000.0  # [s]
+            entity["integral"] += error * dt
 
-            # 推力制限（飽和処理）
-            if thrust > entity["max_thrust"]:
-                thrust = entity["max_thrust"]
-            elif thrust < -entity["max_thrust"]:
-                thrust = -entity["max_thrust"]
+            # アンチワインドアップ（積分項の制限）
+            if entity["integral"] > entity["integral_limit"]:
+                entity["integral"] = entity["integral_limit"]
+            elif entity["integral"] < -entity["integral_limit"]:
+                entity["integral"] = -entity["integral_limit"]
+
+            # 推力指令計算: F = Kp * error + Ki * integral - Kd * velocity
+            thrust = (
+                entity["kp"] * error
+                + entity["ki"] * entity["integral"]
+                - entity["kd"] * entity["velocity"]
+            )
+
+            # 推力制限なし（負の推力も許容）
+            # max_thrustパラメータは残すが、制限は行わない
 
             # コマンドをパッケージ化
             entity["command"] = {
@@ -177,7 +201,8 @@ class ControllerSimulator(mosaik_api.Simulator):
             if time % (self.step_size * 10) == 0:
                 print(
                     f"[ControllerSim] t={time}ms: pos={entity['position']:.3f}m, "
-                    f"vel={entity['velocity']:.3f}m/s, error={error:.3f}m, thrust={thrust:.3f}N"
+                    f"vel={entity['velocity']:.3f}m/s, error={error:.3f}m, "
+                    f"integral={entity['integral']:.3f}m·s, thrust={thrust:.3f}N"
                 )
 
         return time + self.step_size
