@@ -229,9 +229,11 @@ class InverseCompensator:
 
                 # Debug logging (every 1000 steps)
                 if self.input_count % 1000 == 0:
-                    print(f"[InverseComp-{self.comp_id}] Step {self.input_count}: "
-                          f"input={numeric_value:.3f}N → output={compensated_thrust:.3f}N "
-                          f"(gain={self.gain:.1f})")
+                    print(
+                        f"[InverseComp-{self.comp_id}] Step {self.input_count}: "
+                        f"input={numeric_value:.3f}N → output={compensated_thrust:.3f}N "
+                        f"(gain={self.gain:.1f})"
+                    )
 
                 # Reconstruct command dict with compensated value
                 self.current_output = {
@@ -285,10 +287,12 @@ class InverseCompensator:
         # Debug: show first few compensations
         if self.input_count <= 10:
             delta = value - self.prev_value
-            print(f"[InverseComp] Step {self.input_count}: "
-                  f"curr={value:.3f}, prev={self.prev_value:.3f}, "
-                  f"delta={delta:.3f}, gain={self.gain:.1f} → "
-                  f"comp={compensated:.3f}")
+            print(
+                f"[InverseComp] Step {self.input_count}: "
+                f"curr={value:.3f}, prev={self.prev_value:.3f}, "
+                f"delta={delta:.3f}, gain={self.gain:.1f} → "
+                f"comp={compensated:.3f}"
+            )
 
         # Update state
         self.prev_value = value

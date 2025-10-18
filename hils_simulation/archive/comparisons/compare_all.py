@@ -41,8 +41,8 @@ def load_hdf5_data(hdf5_path: str) -> Dict[str, np.ndarray]:
     data = {}
     with h5py.File(hdf5_path, "r") as f:
         # データは'data'グループ内にある
-        if 'data' in f:
-            data_group = f['data']
+        if "data" in f:
+            data_group = f["data"]
             for key in data_group.keys():
                 data[key] = data_group[key][:]
         else:
@@ -239,24 +239,60 @@ def plot_3way_comparison(
 
     # 3. 制御入力比較
     ax = axes[2]
-    ax.plot(hils_time, hils_thrust, "b-", label="HILS (with delay)", linewidth=1.5, alpha=0.8)
-    ax.plot(rt_time, rt_thrust, "g--", label="RT (mosaik, no delay)", linewidth=1.5, alpha=0.8)
-    ax.plot(pure_time, pure_thrust, "r:", label="Pure Python (ideal)", linewidth=2, alpha=0.8)
+    ax.plot(
+        hils_time,
+        hils_thrust,
+        "b-",
+        label="HILS (with delay)",
+        linewidth=1.5,
+        alpha=0.8,
+    )
+    ax.plot(
+        rt_time,
+        rt_thrust,
+        "g--",
+        label="RT (mosaik, no delay)",
+        linewidth=1.5,
+        alpha=0.8,
+    )
+    ax.plot(
+        pure_time,
+        pure_thrust,
+        "r:",
+        label="Pure Python (ideal)",
+        linewidth=2,
+        alpha=0.8,
+    )
     ax.set_xlabel("Time [s]", fontsize=11)
     ax.set_ylabel("Thrust [N]", fontsize=11)
-    ax.set_title("Control Input Comparison: HILS vs RT vs Pure Python", fontsize=13, fontweight="bold")
+    ax.set_title(
+        "Control Input Comparison: HILS vs RT vs Pure Python",
+        fontsize=13,
+        fontweight="bold",
+    )
     ax.legend(fontsize=10)
     ax.grid(True, alpha=0.3)
 
     # 4. 制御誤差比較
     ax = axes[3]
     ax.plot(hils_time, hils_error, "b-", label="HILS (with delay)", linewidth=1.5, alpha=0.8)
-    ax.plot(rt_time, rt_error, "g--", label="RT (mosaik, no delay)", linewidth=1.5, alpha=0.8)
+    ax.plot(
+        rt_time,
+        rt_error,
+        "g--",
+        label="RT (mosaik, no delay)",
+        linewidth=1.5,
+        alpha=0.8,
+    )
     ax.plot(pure_time, pure_error, "r:", label="Pure Python (ideal)", linewidth=2, alpha=0.8)
     ax.axhline(0, color="k", linestyle=":", linewidth=1)
     ax.set_xlabel("Time [s]", fontsize=11)
     ax.set_ylabel("Position Error [m]", fontsize=11)
-    ax.set_title("Control Error Comparison: HILS vs RT vs Pure Python", fontsize=13, fontweight="bold")
+    ax.set_title(
+        "Control Error Comparison: HILS vs RT vs Pure Python",
+        fontsize=13,
+        fontweight="bold",
+    )
     ax.legend(fontsize=10)
     ax.grid(True, alpha=0.3)
 
@@ -276,10 +312,10 @@ def plot_3way_comparison(
     # 設定の表示
     hils_comm = hils_config.get("communication", {})
     print(f"\nHILS Configuration:")
-    print(f"  - Command delay: {hils_comm.get('cmd_delay_s', 0)*1000:.1f} ms")
-    print(f"  - Command jitter: {hils_comm.get('cmd_jitter_s', 0)*1000:.1f} ms")
-    print(f"  - Sense delay: {hils_comm.get('sense_delay_s', 0)*1000:.1f} ms")
-    print(f"  - Sense jitter: {hils_comm.get('sense_jitter_s', 0)*1000:.1f} ms")
+    print(f"  - Command delay: {hils_comm.get('cmd_delay_s', 0) * 1000:.1f} ms")
+    print(f"  - Command jitter: {hils_comm.get('cmd_jitter_s', 0) * 1000:.1f} ms")
+    print(f"  - Sense delay: {hils_comm.get('sense_delay_s', 0) * 1000:.1f} ms")
+    print(f"  - Sense jitter: {hils_comm.get('sense_jitter_s', 0) * 1000:.1f} ms")
 
     print(f"\nRT Configuration:")
     print(f"  - No communication delays (Mosaik-based)")
@@ -337,8 +373,20 @@ def plot_3way_comparison(
         "rt": rt_metrics,
         "pure_python": pure_metrics,
         "relative_to_pure": {
-            "hils_rms_degradation_percent": ((hils_metrics["rms_error"] - pure_metrics["rms_error"]) / pure_metrics["rms_error"] * 100) if pure_metrics["rms_error"] != 0 else 0,
-            "rt_rms_degradation_percent": ((rt_metrics["rms_error"] - pure_metrics["rms_error"]) / pure_metrics["rms_error"] * 100) if pure_metrics["rms_error"] != 0 else 0,
+            "hils_rms_degradation_percent": (
+                (hils_metrics["rms_error"] - pure_metrics["rms_error"])
+                / pure_metrics["rms_error"]
+                * 100
+            )
+            if pure_metrics["rms_error"] != 0
+            else 0,
+            "rt_rms_degradation_percent": (
+                (rt_metrics["rms_error"] - pure_metrics["rms_error"])
+                / pure_metrics["rms_error"]
+                * 100
+            )
+            if pure_metrics["rms_error"] != 0
+            else 0,
         },
     }
 
@@ -350,7 +398,9 @@ def plot_3way_comparison(
 
 def main():
     """メイン関数"""
-    parser = argparse.ArgumentParser(description="Compare HILS, RT, and Pure Python simulation results")
+    parser = argparse.ArgumentParser(
+        description="Compare HILS, RT, and Pure Python simulation results"
+    )
     parser.add_argument("hils_h5", type=str, help="Path to HILS HDF5 data file")
     parser.add_argument("rt_h5", type=str, help="Path to RT HDF5 data file")
     parser.add_argument("pure_h5", type=str, help="Path to Pure Python HDF5 data file")
@@ -408,7 +458,9 @@ def main():
 
     # 比較プロットの生成
     print("\n📊 Generating comparison plots...")
-    plot_3way_comparison(hils_data, rt_data, pure_data, hils_config, rt_config, pure_config, output_dir)
+    plot_3way_comparison(
+        hils_data, rt_data, pure_data, hils_config, rt_config, pure_config, output_dir
+    )
 
     print("\n✅ 3-way comparison analysis completed!")
     print("=" * 80)

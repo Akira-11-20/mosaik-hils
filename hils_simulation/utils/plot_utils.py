@@ -88,9 +88,7 @@ def plot_execution_graph_with_data_only(
     colormap = ["black" for _ in world.sims]
     for i, sim_name in enumerate(world.sims):
         if steps_st[sim_name]:  # データがある場合のみプロット
-            dot = ax.plot(
-                steps_st[sim_name], [i] * len(steps_st[sim_name]), "o", markersize=3
-            )
+            dot = ax.plot(steps_st[sim_name], [i] * len(steps_st[sim_name]), "o", markersize=3)
             colormap[i] = dot[0].get_color()
 
     # 軸設定

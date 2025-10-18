@@ -19,7 +19,13 @@ from .base_scenario import BaseScenario
 class Spacecraft1DOF:
     """1-DOF spacecraft dynamics simulator."""
 
-    def __init__(self, mass: float, initial_position: float, initial_velocity: float, gravity: float):
+    def __init__(
+        self,
+        mass: float,
+        initial_position: float,
+        initial_velocity: float,
+        gravity: float,
+    ):
         self.mass = mass
         self.position = initial_position
         self.velocity = initial_velocity
@@ -244,7 +250,9 @@ class PurePythonScenario(BaseScenario):
         self.setup_data_collection()
 
         # Run simulation
-        print(f"\n▶️  Running simulation until {self.params.simulation_time}s ({self.params.simulation_steps} steps)...")
+        print(
+            f"\n▶️  Running simulation until {self.params.simulation_time}s ({self.params.simulation_steps} steps)..."
+        )
         print("=" * 70)
 
         self.run_simulation()
@@ -258,7 +266,9 @@ class PurePythonScenario(BaseScenario):
 
         # Print final state
         print(f"\n📊 Final state:")
-        print(f"   Position: {self.spacecraft.position:.3f} m (target: {self.params.control.target_position} m)")
+        print(
+            f"   Position: {self.spacecraft.position:.3f} m (target: {self.params.control.target_position} m)"
+        )
         print(f"   Velocity: {self.spacecraft.velocity:.3f} m/s")
         print(f"   Error: {self.controller.error:.3f} m")
 

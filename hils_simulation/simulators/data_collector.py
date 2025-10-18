@@ -178,9 +178,7 @@ class DataCollectorSimulator(mosaik_api.Simulator):
 
         output_path = output_dir / "hils_data.h5"
 
-        print(
-            f"\n[DataCollector] 💾 Saving {len(self.data_log)} data points to HDF5..."
-        )
+        print(f"\n[DataCollector] 💾 Saving {len(self.data_log)} data points to HDF5...")
 
         # 全キーを収集（ステップ中に追跡したキーを使用）
         self.all_keys.add("time_ms")

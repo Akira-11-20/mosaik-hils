@@ -87,7 +87,9 @@ class BaseScenario(ABC):
         """Print simulation configuration information."""
         print(f"\n🌍 Simulation Info:")
         print(f"   Time: {self.params.simulation_time}s")
-        print(f"   Resolution: {self.params.time_resolution}s ({self.params.time_resolution * 1000}ms)")
+        print(
+            f"   Resolution: {self.params.time_resolution}s ({self.params.time_resolution * 1000}ms)"
+        )
         print(f"   Steps: {self.params.simulation_steps}")
         print(f"   RT Factor: {self.params.rt_factor}")
 
@@ -200,7 +202,9 @@ class BaseScenario(ABC):
         self.setup_data_collection()
 
         # Run simulation
-        print(f"\n▶️  Running simulation until {self.params.simulation_time}s ({self.params.simulation_steps} steps)...")
+        print(
+            f"\n▶️  Running simulation until {self.params.simulation_time}s ({self.params.simulation_steps} steps)..."
+        )
         print("=" * 70)
 
         self.world.run(until=self.params.simulation_steps, rt_factor=self.params.rt_factor)
@@ -246,7 +250,9 @@ class BaseScenario(ABC):
         print(f"\n📊 Setting up data collection...")
         self.setup_data_collection()
 
-        print(f"\n▶️  Running simulation until {self.params.simulation_time}s ({self.params.simulation_steps} steps)...")
+        print(
+            f"\n▶️  Running simulation until {self.params.simulation_time}s ({self.params.simulation_steps} steps)..."
+        )
         print("=" * 70)
 
         self.world.run(until=self.params.simulation_steps, rt_factor=self.params.rt_factor)

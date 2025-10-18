@@ -39,8 +39,8 @@ def load_hdf5_data(hdf5_path: str) -> Dict[str, np.ndarray]:
     data = {}
     with h5py.File(hdf5_path, "r") as f:
         # データは'data'グループ内にある
-        if 'data' in f:
-            data_group = f['data']
+        if "data" in f:
+            data_group = f["data"]
             for key in data_group.keys():
                 data[key] = data_group[key][:]
         else:
@@ -188,18 +188,35 @@ def plot_comparison(
 
     # 1. 位置比較
     ax = axes[0]
-    ax.plot(pure_time, pure_pos, "r-", label="Pure Python (no Mosaik)", linewidth=2, alpha=0.8)
+    ax.plot(
+        pure_time,
+        pure_pos,
+        "r-",
+        label="Pure Python (no Mosaik)",
+        linewidth=2,
+        alpha=0.8,
+    )
     ax.plot(rt_time, rt_pos, "b--", label="RT (Mosaik-based)", linewidth=2, alpha=0.8)
     ax.axhline(target_position, color="k", linestyle=":", label="Target")
     ax.set_xlabel("Time [s]")
     ax.set_ylabel("Position [m]")
-    ax.set_title("Position Comparison: Pure Python vs RT (Mosaik)\nEvaluating Mosaik Framework Overhead", fontweight="bold")
+    ax.set_title(
+        "Position Comparison: Pure Python vs RT (Mosaik)\nEvaluating Mosaik Framework Overhead",
+        fontweight="bold",
+    )
     ax.legend()
     ax.grid(True, alpha=0.3)
 
     # 2. 速度比較
     ax = axes[1]
-    ax.plot(pure_time, pure_vel, "r-", label="Pure Python (no Mosaik)", linewidth=2, alpha=0.8)
+    ax.plot(
+        pure_time,
+        pure_vel,
+        "r-",
+        label="Pure Python (no Mosaik)",
+        linewidth=2,
+        alpha=0.8,
+    )
     ax.plot(rt_time, rt_vel, "b--", label="RT (Mosaik-based)", linewidth=2, alpha=0.8)
     ax.set_xlabel("Time [s]")
     ax.set_ylabel("Velocity [m/s]")
@@ -209,7 +226,14 @@ def plot_comparison(
 
     # 3. 制御入力比較
     ax = axes[2]
-    ax.plot(pure_time, pure_thrust, "r-", label="Pure Python (no Mosaik)", linewidth=2, alpha=0.8)
+    ax.plot(
+        pure_time,
+        pure_thrust,
+        "r-",
+        label="Pure Python (no Mosaik)",
+        linewidth=2,
+        alpha=0.8,
+    )
     ax.plot(rt_time, rt_thrust, "b--", label="RT (Mosaik-based)", linewidth=2, alpha=0.8)
     ax.set_xlabel("Time [s]")
     ax.set_ylabel("Thrust [N]")
@@ -219,7 +243,14 @@ def plot_comparison(
 
     # 4. 制御誤差比較
     ax = axes[3]
-    ax.plot(pure_time, pure_error, "r-", label="Pure Python (no Mosaik)", linewidth=2, alpha=0.8)
+    ax.plot(
+        pure_time,
+        pure_error,
+        "r-",
+        label="Pure Python (no Mosaik)",
+        linewidth=2,
+        alpha=0.8,
+    )
     ax.plot(rt_time, rt_error, "b--", label="RT (Mosaik-based)", linewidth=2, alpha=0.8)
     ax.axhline(0, color="k", linestyle=":", linewidth=1)
     ax.set_xlabel("Time [s]")
@@ -244,12 +275,16 @@ def plot_comparison(
     print(f"\nPure Python Configuration:")
     print(f"  - No Mosaik framework")
     print(f"  - No communication delays")
-    print(f"  - Control period: {pure_config.get('control', {}).get('control_period_s', 0)*1000:.1f} ms")
+    print(
+        f"  - Control period: {pure_config.get('control', {}).get('control_period_s', 0) * 1000:.1f} ms"
+    )
 
     print(f"\nRT (Mosaik) Configuration:")
     print(f"  - Mosaik framework-based")
     print(f"  - No communication delays")
-    print(f"  - Control period: {rt_config.get('control', {}).get('control_period_s', 0)*1000:.1f} ms")
+    print(
+        f"  - Control period: {rt_config.get('control', {}).get('control_period_s', 0) * 1000:.1f} ms"
+    )
 
     # 性能指標の比較表
     print(f"\n{'Metric':<25} {'Pure Python':>15} {'RT (Mosaik)':>15} {'Difference':>15}")
@@ -289,14 +324,20 @@ def plot_comparison(
     print("Mosaik Framework Overhead Analysis")
     print("=" * 70)
 
-    rms_overhead = ((rt_metrics["rms_error"] - pure_metrics["rms_error"]) / pure_metrics["rms_error"]) * 100
-    max_overhead = ((rt_metrics["max_error"] - pure_metrics["max_error"]) / pure_metrics["max_error"]) * 100
+    rms_overhead = (
+        (rt_metrics["rms_error"] - pure_metrics["rms_error"]) / pure_metrics["rms_error"]
+    ) * 100
+    max_overhead = (
+        (rt_metrics["max_error"] - pure_metrics["max_error"]) / pure_metrics["max_error"]
+    ) * 100
 
     print(f"\nRMS Error degradation due to Mosaik: {rms_overhead:+.2f}%")
     print(f"Max Error degradation due to Mosaik: {max_overhead:+.2f}%")
 
     if pure_metrics["overshoot"] != 0:
-        overshoot_overhead = ((rt_metrics["overshoot"] - pure_metrics["overshoot"]) / pure_metrics["overshoot"]) * 100
+        overshoot_overhead = (
+            (rt_metrics["overshoot"] - pure_metrics["overshoot"]) / pure_metrics["overshoot"]
+        ) * 100
         print(f"Overshoot degradation due to Mosaik: {overshoot_overhead:+.2f}%")
 
     print(f"\n📌 Key Findings:")
@@ -306,9 +347,13 @@ def plot_comparison(
     if abs(rms_overhead) < 1.0:
         print(f"   ✓ Mosaik overhead is negligible (<1% RMS error difference).")
     elif abs(rms_overhead) < 5.0:
-        print(f"   ⚠ Mosaik introduces minor overhead ({abs(rms_overhead):.1f}% RMS error difference).")
+        print(
+            f"   ⚠ Mosaik introduces minor overhead ({abs(rms_overhead):.1f}% RMS error difference)."
+        )
     else:
-        print(f"   ⚠ Mosaik introduces significant overhead ({abs(rms_overhead):.1f}% RMS error difference).")
+        print(
+            f"   ⚠ Mosaik introduces significant overhead ({abs(rms_overhead):.1f}% RMS error difference)."
+        )
 
     print("=" * 70)
 

@@ -67,7 +67,13 @@ GRAVITY = get_env_float("GRAVITY", 9.81)  # Gravity acceleration [m/s^2]
 class Spacecraft1DOF:
     """1自由度宇宙機の運動シミュレータ"""
 
-    def __init__(self, mass: float, initial_position: float, initial_velocity: float, gravity: float):
+    def __init__(
+        self,
+        mass: float,
+        initial_position: float,
+        initial_velocity: float,
+        gravity: float,
+    ):
         self.mass = mass
         self.position = initial_position
         self.velocity = initial_velocity
@@ -255,7 +261,9 @@ def run_simulation():
     )
     plant = ThrustStand()
 
-    print(f"   Spacecraft: mass={SPACECRAFT_MASS}kg, x0={INITIAL_POSITION}m, v0={INITIAL_VELOCITY}m/s")
+    print(
+        f"   Spacecraft: mass={SPACECRAFT_MASS}kg, x0={INITIAL_POSITION}m, v0={INITIAL_VELOCITY}m/s"
+    )
     print(f"   Controller: Kp={KP}, Kd={KD}, target={TARGET_POSITION}m")
 
     # データ記録用リスト

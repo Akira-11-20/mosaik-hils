@@ -258,9 +258,7 @@ class BridgeSimulator(mosaik_api.Simulator):
 
                     # そのパケットより古いものを全て削除
                     entity["packet_buffer"] = [
-                        pkt
-                        for pkt in entity["packet_buffer"]
-                        if pkt[3] > selected_packet[3]
+                        pkt for pkt in entity["packet_buffer"] if pkt[3] > selected_packet[3]
                     ]
                 else:
                     # 順序無視: 最新のパケットを出力
@@ -278,9 +276,7 @@ class BridgeSimulator(mosaik_api.Simulator):
 
                 # ログ: 送信イベント
                 if eid in self.loggers and selected_packet:
-                    arrival_time, data, scheduled_time, _seq_num, data_tag = (
-                        selected_packet
-                    )
+                    arrival_time, data, scheduled_time, _seq_num, data_tag = selected_packet
                     actual_delay_steps = time - arrival_time
                     actual_delay_ms = self._steps_to_ms(actual_delay_steps)
                     self.loggers[eid].log_send(

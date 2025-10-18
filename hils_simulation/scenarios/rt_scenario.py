@@ -100,7 +100,12 @@ class RTScenario(BaseScenario):
             self.plant,
             ("command", "command"),
             time_shifted=True,
-            initial_data={"command": {"thrust": 0.0, "duration": self.params.control.control_period}},
+            initial_data={
+                "command": {
+                    "thrust": 0.0,
+                    "duration": self.params.control.control_period,
+                }
+            },
         )
 
         # 2. Plant → Env - direct connection (no delay)

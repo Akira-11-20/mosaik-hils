@@ -196,18 +196,16 @@ def main():
         # Compensator should run at same rate as controller to capture signal changes
         inverse_comp_sim = world.start(
             "InverseCompSim",
-            step_size=int(CONTROL_PERIOD / 1000 / TIME_RESOLUTION)  # Same as controller
+            step_size=int(CONTROL_PERIOD / 1000 / TIME_RESOLUTION),  # Same as controller
         )
-        print(f"   ✨ Inverse Compensator enabled (gain={INVERSE_COMP_GAIN}, period={CONTROL_PERIOD}ms)")
+        print(
+            f"   ✨ Inverse Compensator enabled (gain={INVERSE_COMP_GAIN}, period={CONTROL_PERIOD}ms)"
+        )
 
     plant_sim = world.start("PlantSim", step_size=PLANT_SIM_PERIOD)
     env_sim = world.start("EnvSim", step_size=ENV_SIM_PERIOD)
-    bridge_cmd_sim = world.start(
-        "BridgeSim", step_size=1, log_dir=str(run_dir)
-    )
-    bridge_sense_sim = world.start(
-        "BridgeSim", step_size=1, log_dir=str(run_dir)
-    )  # 1ms周期
+    bridge_cmd_sim = world.start("BridgeSim", step_size=1, log_dir=str(run_dir))
+    bridge_sense_sim = world.start("BridgeSim", step_size=1, log_dir=str(run_dir))  # 1ms周期
 
     # エンティティの作成
     print("\n📦 Creating entities...")
@@ -263,9 +261,7 @@ def main():
 
     if ENABLE_INVERSE_COMP:
         # 【逆補償あり】Controller → InverseComp → Bridge(cmd) → Plant
-        print(
-            "   ⏱️  Controller → Inverse Compensator: time-shifted connection"
-        )
+        print("   ⏱️  Controller → Inverse Compensator: time-shifted connection")
         world.connect(
             controller,
             inverse_comp,
@@ -274,9 +270,7 @@ def main():
             initial_data={"command": {"thrust": 0.0, "duration": CONTROL_PERIOD}},
         )
 
-        print(
-            "   ✨ Inverse Compensator → Bridge(cmd): compensated command path"
-        )
+        print("   ✨ Inverse Compensator → Bridge(cmd): compensated command path")
         world.connect(
             inverse_comp,
             bridge_cmd,
@@ -284,9 +278,7 @@ def main():
         )
     else:
         # 【逆補償なし】Controller → Bridge(cmd) → Plant (従来通り)
-        print(
-            "   ⏱️  Controller → Bridge(cmd): time-shifted connection (no compensation)"
-        )
+        print("   ⏱️  Controller → Bridge(cmd): time-shifted connection (no compensation)")
         world.connect(
             controller,
             bridge_cmd,
@@ -380,9 +372,7 @@ def main():
     print("\n✅ Data flow configured:")
     print("   Env → Controller (same step)")
     if ENABLE_INVERSE_COMP:
-        print(
-            "   Controller → [Inverse Comp] → Bridge(cmd) → Plant (time-shifted)"
-        )
+        print("   Controller → [Inverse Comp] → Bridge(cmd) → Plant (time-shifted)")
     else:
         print("   Controller → Bridge(cmd) → Plant (time-shifted)")
     print("   Plant → Bridge(sense) → Env")
@@ -390,9 +380,7 @@ def main():
     print("   ℹ️  Command format: JSON/dict {thrust, duration}")
 
     # シミュレーション実行
-    print(
-        f"\n▶️  Running simulation until {SIMULATION_TIME}s ({SIMULATION_STEPS} steps)..."
-    )
+    print(f"\n▶️  Running simulation until {SIMULATION_TIME}s ({SIMULATION_STEPS} steps)...")
     print("=" * 70)
 
     world.run(until=SIMULATION_STEPS, rt_factor=RT_FACTOR)

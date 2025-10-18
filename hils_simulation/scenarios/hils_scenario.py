@@ -74,12 +74,8 @@ class HILSScenario(BaseScenario):
         plant_sim = self.world.start("PlantSim", step_size=1)
         env_sim = self.world.start("EnvSim", step_size=1)
 
-        bridge_cmd_sim = self.world.start(
-            "BridgeSim", step_size=1, log_dir=str(self.run_dir)
-        )
-        bridge_sense_sim = self.world.start(
-            "BridgeSim", step_size=1, log_dir=str(self.run_dir)
-        )
+        bridge_cmd_sim = self.world.start("BridgeSim", step_size=1, log_dir=str(self.run_dir))
+        bridge_sense_sim = self.world.start("BridgeSim", step_size=1, log_dir=str(self.run_dir))
 
         # Create entities
         self.controller = controller_sim.PIDController(
@@ -126,7 +122,12 @@ class HILSScenario(BaseScenario):
             self.bridge_cmd,
             ("command", "input"),
             time_shifted=True,
-            initial_data={"command": {"thrust": 0.0, "duration": self.params.control.control_period}},
+            initial_data={
+                "command": {
+                    "thrust": 0.0,
+                    "duration": self.params.control.control_period,
+                }
+            },
         )
 
         # 2. Bridge(cmd) → Plant - delayed command

@@ -265,9 +265,7 @@ def main():
     print("   ⚠️  Note: 1-step shift = 0.1ms delay (minimal overhead)")
 
     # シミュレーション実行
-    print(
-        f"\n▶️  Running simulation until {SIMULATION_TIME}s ({SIMULATION_STEPS} steps)..."
-    )
+    print(f"\n▶️  Running simulation until {SIMULATION_TIME}s ({SIMULATION_STEPS} steps)...")
     print("=" * 70)
 
     world.run(until=SIMULATION_STEPS, rt_factor=RT_FACTOR)

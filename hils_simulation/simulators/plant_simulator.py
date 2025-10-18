@@ -137,10 +137,7 @@ class PlantSimulator(mosaik_api.Simulator):
             # 推力測定ロジック（理想応答、ノイズなし）
             if entity["status"] == "thrusting":
                 # 推力持続時間内かチェック
-                if (
-                    entity["thrust_end_time"] is not None
-                    and time < entity["thrust_end_time"]
-                ):
+                if entity["thrust_end_time"] is not None and time < entity["thrust_end_time"]:
                     # 指令通りの推力を出力（理想的な応答）
                     entity["measured_thrust"] = entity["thrust_cmd"]
                 else:

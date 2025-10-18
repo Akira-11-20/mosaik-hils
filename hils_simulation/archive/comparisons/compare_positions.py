@@ -15,11 +15,14 @@ import h5py
 import matplotlib.pyplot as plt
 from pathlib import Path
 
+
 def main():
     parser = argparse.ArgumentParser(description="Compare position data from two HDF5 files")
     parser.add_argument("file1", type=str, help="Path to first HDF5 file (no delay)")
     parser.add_argument("file2", type=str, help="Path to second HDF5 file (with delay)")
-    parser.add_argument("--output", type=str, default="../comparison_results", help="Output directory")
+    parser.add_argument(
+        "--output", type=str, default="../comparison_results", help="Output directory"
+    )
     args = parser.parse_args()
 
     file1 = args.file1
@@ -42,7 +45,12 @@ def main():
     plt.figure(figsize=(12, 6))
 
     plt.plot(
-        time1, position1, label="No Delay (0ms)", linewidth=2, alpha=0.8, color="tab:blue"
+        time1,
+        position1,
+        label="No Delay (0ms)",
+        linewidth=2,
+        alpha=0.8,
+        color="tab:blue",
     )
     plt.plot(
         time2,
@@ -101,6 +109,7 @@ def main():
     print(f"  Max position difference: {abs(position2.max() - position1.max()):.3f}m")
 
     plt.close()
+
 
 if __name__ == "__main__":
     main()

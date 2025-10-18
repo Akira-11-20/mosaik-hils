@@ -167,9 +167,7 @@ def _(all_results, mo):
 
         dd1 = mo.ui.dropdown(opts, value=first_label, label="📊 Result 1")
 
-        dd2 = mo.ui.dropdown(
-            {**{"(None)": -1}, **opts}, value=second_label, label="📊 Result 2"
-        )
+        dd2 = mo.ui.dropdown({**{"(None)": -1}, **opts}, value=second_label, label="📊 Result 2")
 
         dd3 = mo.ui.dropdown({**{"(None)": -1}, **opts}, value="(None)", label="📊 Result 3")
 
@@ -353,9 +351,7 @@ def _(h5py, mo, np, plt, selected_results):
         # 軸設定
         plot_target = 5.0
         if len(results_list) > 0:
-            plot_target = results_list[0]["config"].get("control", {}).get(
-                "target_position_m", 5.0
-            )
+            plot_target = results_list[0]["config"].get("control", {}).get("target_position_m", 5.0)
 
         axes[0].axhline(plot_target, color="k", linestyle=":", label="Target", lw=1)
         axes[0].set_ylabel("Position [m]", fontsize=11)

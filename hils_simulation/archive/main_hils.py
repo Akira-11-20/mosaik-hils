@@ -182,12 +182,8 @@ def main():
     # Plant と Env は毎ステップ実行（RTと同じ時間分解能）
     plant_sim = world.start("PlantSim", step_size=1)  # 0.1ms = 1 step
     env_sim = world.start("EnvSim", step_size=1)  # 0.1ms = 1 step
-    bridge_cmd_sim = world.start(
-        "BridgeSim", step_size=1, log_dir=str(run_dir)
-    )
-    bridge_sense_sim = world.start(
-        "BridgeSim", step_size=1, log_dir=str(run_dir)
-    )  # 1ms周期
+    bridge_cmd_sim = world.start("BridgeSim", step_size=1, log_dir=str(run_dir))
+    bridge_sense_sim = world.start("BridgeSim", step_size=1, log_dir=str(run_dir))  # 1ms周期
 
     # エンティティの作成
     print("\n📦 Creating entities...")
@@ -236,9 +232,7 @@ def main():
     print("\n🔗 Connecting data flows...")
 
     # 1. Controller → Bridge(cmd) - 制御指令経路（次ステップで実行）
-    print(
-        "   ⏱️  Controller → Bridge(cmd): time-shifted connection (execution on next step)"
-    )
+    print("   ⏱️  Controller → Bridge(cmd): time-shifted connection (execution on next step)")
     world.connect(
         controller,
         bridge_cmd,
@@ -326,14 +320,10 @@ def main():
     print("   All data → DataCollector → HDF5")
     print("   ℹ️  Command format: JSON/dict {thrust, duration}")
     print("   ⚡ Controller: 10ms period, Plant/Env: 0.1ms period (same as RT)")
-    print(
-        "   ⏱️  Timing: Env & Controller compute in step N, Plant executes in step N+1"
-    )
+    print("   ⏱️  Timing: Env & Controller compute in step N, Plant executes in step N+1")
 
     # シミュレーション実行
-    print(
-        f"\n▶️  Running simulation until {SIMULATION_TIME}s ({SIMULATION_STEPS} steps)..."
-    )
+    print(f"\n▶️  Running simulation until {SIMULATION_TIME}s ({SIMULATION_STEPS} steps)...")
     print("=" * 70)
 
     world.run(until=SIMULATION_STEPS, rt_factor=RT_FACTOR)

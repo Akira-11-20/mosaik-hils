@@ -37,8 +37,8 @@ def load_hdf5_data(hdf5_path: str) -> Dict[str, np.ndarray]:
     data = {}
     with h5py.File(hdf5_path, "r") as f:
         # データは'data'グループ内にある
-        if 'data' in f:
-            data_group = f['data']
+        if "data" in f:
+            data_group = f["data"]
             for key in data_group.keys():
                 data[key] = data_group[key][:]
         else:
@@ -234,10 +234,10 @@ def plot_comparison(
     # HILS設定の表示
     hils_comm = hils_config.get("communication", {})
     print(f"\nHILS Configuration:")
-    print(f"  - Command delay: {hils_comm.get('cmd_delay_s', 0)*1000:.1f} ms")
-    print(f"  - Command jitter: {hils_comm.get('cmd_jitter_s', 0)*1000:.1f} ms")
-    print(f"  - Sense delay: {hils_comm.get('sense_delay_s', 0)*1000:.1f} ms")
-    print(f"  - Sense jitter: {hils_comm.get('sense_jitter_s', 0)*1000:.1f} ms")
+    print(f"  - Command delay: {hils_comm.get('cmd_delay_s', 0) * 1000:.1f} ms")
+    print(f"  - Command jitter: {hils_comm.get('cmd_jitter_s', 0) * 1000:.1f} ms")
+    print(f"  - Sense delay: {hils_comm.get('sense_delay_s', 0) * 1000:.1f} ms")
+    print(f"  - Sense jitter: {hils_comm.get('sense_jitter_s', 0) * 1000:.1f} ms")
 
     print(f"\nRT Configuration:")
     print(f"  - No communication delays (ideal control loop)")

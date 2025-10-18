@@ -223,16 +223,12 @@ class SimulationParameters:
     @property
     def env_sim_period_steps(self) -> int:
         """Calculate environment simulator period in steps."""
-        return int(
-            self.simulators.env_sim_period / 1000 / self.time_resolution
-        )
+        return int(self.simulators.env_sim_period / 1000 / self.time_resolution)
 
     @property
     def plant_sim_period_steps(self) -> int:
         """Calculate plant simulator period in steps."""
-        return int(
-            self.simulators.plant_sim_period / 1000 / self.time_resolution
-        )
+        return int(self.simulators.plant_sim_period / 1000 / self.time_resolution)
 
     def to_dict(self, scenario_type: str = "HILS") -> dict:
         """

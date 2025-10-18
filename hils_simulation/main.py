@@ -86,7 +86,7 @@ Scenario Descriptions:
 
   pure_python   - Pure Python simulation (no Mosaik)
                   Mosaikフレームワークなしの純粋なPython実装
-        """
+        """,
     )
 
     parser.add_argument(
@@ -161,6 +161,7 @@ def main():
     except Exception as e:
         print(f"\n❌ Simulation failed: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 
