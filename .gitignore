@@ -49,3 +49,11 @@ htmlcov/
 
 # Project specific
 logs/
+
+# Simulation results
+hils_simulation/results/
+hils_simulation/results_*/
+
+# Comparison results
+hils_simulation/comparison_results/
+hils_simulation/comparisons/comparison_results/
