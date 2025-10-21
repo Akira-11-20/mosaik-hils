@@ -31,7 +31,8 @@ def _():
     import matplotlib.pyplot as plt
     import numpy as np
     import pandas as pd
-    return Path, h5py, json, np, os, plt
+    import plotly.graph_objects as go
+    return Path, go, h5py, json, np, os, plt, pd
 
 
 @app.cell
@@ -135,7 +136,7 @@ def _(all_results, base_dir, mo):
 
     ---
 
-    **Select up to 3 results to compare:**
+    **Select up to 4 results to compare:**
     """
         )
     return (title,)
@@ -155,6 +156,7 @@ def _(all_results, mo):
         dd1 = None
         dd2 = None
         dd3 = None
+        dd4 = None
         dd_ui = None
     else:
         # オプション: ラベル -> インデックス
@@ -171,8 +173,10 @@ def _(all_results, mo):
 
         dd3 = mo.ui.dropdown({**{"(None)": -1}, **opts}, value="(None)", label="📊 Result 3")
 
-        dd_ui = mo.vstack([dd1, dd2, dd3])
-    return dd1, dd2, dd3, dd_ui
+        dd4 = mo.ui.dropdown({**{"(None)": -1}, **opts}, value="(None)", label="📊 Result 4")
+
+        dd_ui = mo.vstack([dd1, dd2, dd3, dd4])
+    return dd1, dd2, dd3, dd4, dd_ui
 
 
 @app.cell
@@ -183,11 +187,11 @@ def _(dd_ui):
 
 
 @app.cell
-def _(all_results, dd1, dd2, dd3):
+def _(all_results, dd1, dd2, dd3, dd4):
     """選択された結果の取得"""
     selected_results = []
     if len(all_results) > 0 and dd1 is not None:
-        for dd in [dd1, dd2, dd3]:
+        for dd in [dd1, dd2, dd3, dd4]:
             if dd is not None and dd.value is not None:
                 idx = dd.value
                 if isinstance(idx, int) and idx >= 0 and idx < len(all_results):
@@ -323,8 +327,8 @@ def _(np):
 
 
 @app.cell
-def _(calculate_detailed_metrics, h5py, mo, np, plt, selected_results):
-    """プロット生成とメトリクス計算"""
+def _(h5py):
+    """HDF5データ読み込み関数（共通）"""
 
     def load_hdf5_data(h5_path):
         """HDF5ファイルからデータを読み込む"""
@@ -338,6 +342,13 @@ def _(calculate_detailed_metrics, h5py, mo, np, plt, selected_results):
                     if isinstance(f[key], h5py.Dataset):
                         hdf5_data[key] = f[key][:]
         return hdf5_data
+
+    return (load_hdf5_data,)
+
+
+@app.cell
+def _(calculate_detailed_metrics, load_hdf5_data, mo, np, plt, selected_results):
+    """プロット生成とメトリクス計算"""
 
     def find_key_by_suffix(key_data, suffix):
         """キーの接尾辞でデータセットキーを検索"""
@@ -364,13 +375,13 @@ def _(calculate_detailed_metrics, h5py, mo, np, plt, selected_results):
 
         # プロット作成
         fig, axes = plt.subplots(4, 1, figsize=(14, 16))
-        colors = ["#1f77b4", "#ff7f0e", "#2ca02c"]
-        styles = ["-", "--", ":"]
+        colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728"]
+        styles = ["-", "--", ":", "-."]
 
         for plot_idx, result_item in enumerate(results_list):
             try:
                 result_data = load_hdf5_data(result_item["h5_file"])
-                time_data = result_data.get("time_s", np.array([]))
+                time_data = result_data.get("time_s", np.array([])).copy()
 
                 # データキーの検索（compare_all.py と同じロジック）
 
@@ -386,6 +397,7 @@ def _(calculate_detailed_metrics, h5py, mo, np, plt, selected_results):
                 if not result_pos_key:
                     print(f"⚠️ Warning: Could not find position key for {result_item['name']}")
                     print(f"   Available keys: {list(result_data.keys())[:10]}")
+                    del result_data  # データを削除
                     continue
 
                 # Velocity: position を velocity に置き換え
@@ -401,11 +413,14 @@ def _(calculate_detailed_metrics, h5py, mo, np, plt, selected_results):
                 if not result_error_key:
                     result_error_key = find_key_by_suffix(result_data, "error_Controller")
 
-                # データ取得
-                result_position = result_data.get(result_pos_key, np.array([]))
-                result_velocity = result_data.get(result_vel_key, np.array([]))
-                result_thrust = result_data.get(result_thrust_key, np.array([]))
-                result_error = result_data.get(result_error_key, np.array([]))
+                # データ取得（コピーを作成して元のresult_dataを削除可能にする）
+                result_position = result_data.get(result_pos_key, np.array([])).copy()
+                result_velocity = result_data.get(result_vel_key, np.array([])).copy()
+                result_thrust = result_data.get(result_thrust_key, np.array([])).copy()
+                result_error = result_data.get(result_error_key, np.array([])).copy()
+
+                # 大きなresult_dataを即座に削除
+                del result_data
 
                 # デバッグ情報
                 print(f"\n{result_item['name']}:")
@@ -537,17 +552,235 @@ def _(calculate_detailed_metrics, h5py, mo, np, plt, selected_results):
         axes[3].grid(True, alpha=0.3)
 
         plt.tight_layout()
+
+        # Figureを閉じてメモリを解放
+        # matplotlibはfigureを表示後も保持するため、明示的に閉じる
+        # 注意: marimoはfigオブジェクトを表示する前にこれを実行するため、
+        # returnする前に閉じてはいけない
         return fig, all_metrics
 
     # 関数を呼び出してプロットとメトリクスを生成
-    plot_fig, computed_metrics = generate_comparison_plot_and_metrics(selected_results)
+    if len(selected_results) > 0:
+        plot_fig, computed_metrics = generate_comparison_plot_and_metrics(selected_results)
+    else:
+        plot_fig = None
+        computed_metrics = []
+
     return computed_metrics, plot_fig
 
 
 @app.cell
-def _(plot_fig):
+def _(mo, plot_fig):
     """プロット表示"""
-    plot_fig
+    if plot_fig is not None:
+        # matplotlibのfigureをそのまま表示
+        plot_display = plot_fig
+    else:
+        plot_display = mo.md("_No results selected for plotting._")
+    return (plot_display,)
+
+
+@app.cell
+def _(plot_display):
+    """プロット描画"""
+    plot_display
+    return
+
+
+@app.cell
+def _(mo):
+    """インタラクティブプロットセクションヘッダー"""
+    interactive_header = mo.md(
+        """
+---
+
+## 📈 Interactive Plot Explorer
+
+Select a plot type to view an interactive version with zoom, pan, and hover capabilities.
+        """
+    )
+    return (interactive_header,)
+
+
+@app.cell
+def _(interactive_header):
+    """インタラクティブヘッダー表示"""
+    interactive_header
+    return
+
+
+@app.cell
+def _(mo):
+    """プロット選択ドロップダウン"""
+    plot_selector = mo.ui.dropdown(
+        {
+            "Position": "position",
+            "Velocity": "velocity",
+            "Control Input (Thrust)": "thrust",
+            "Position Error": "error",
+        },
+        value="Position",
+        label="Select Plot Type",
+    )
+    return (plot_selector,)
+
+
+@app.cell
+def _(plot_selector):
+    """プロット選択表示"""
+    plot_selector
+    return
+
+
+@app.cell
+def _(go, load_hdf5_data, mo, np, plot_selector, selected_results):
+    """インタラクティブプロット生成"""
+
+    def generate_interactive_plot(results_list, plot_type):
+        """Plotlyでインタラクティブなプロットを生成"""
+
+        if len(results_list) == 0:
+            return mo.md("_No results selected for interactive plot._")
+
+        fig = go.Figure()
+
+        colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728"]
+        styles = ["solid", "dash", "dot", "dashdot"]
+
+        # データキー検索用の関数
+        def find_key_by_suffix(key_data, suffix):
+            for k in key_data.keys():
+                if k.endswith(suffix):
+                    return k
+            return None
+
+        def find_key_by_prefix_and_suffix(key_data, prefix, suffix):
+            for k in key_data.keys():
+                if k.startswith(prefix) and k.endswith(suffix):
+                    return k
+            return None
+
+        for plot_idx, result_item in enumerate(results_list):
+            try:
+                result_data = load_hdf5_data(result_item["h5_file"])
+                time_data = result_data.get("time_s", np.array([])).copy()
+
+                # データキーの検索
+                result_pos_key = find_key_by_prefix_and_suffix(
+                    result_data, "position_", "Spacecraft1DOF_0"
+                )
+                if not result_pos_key:
+                    result_pos_key = find_key_by_suffix(result_data, "position_Spacecraft")
+
+                if not result_pos_key:
+                    del result_data
+                    continue
+
+                result_vel_key = result_pos_key.replace("position", "velocity")
+                result_thrust_key = find_key_by_suffix(result_data, "_thrust")
+                result_error_key = find_key_by_prefix_and_suffix(
+                    result_data, "error_", "Controller_0"
+                )
+                if not result_error_key:
+                    result_error_key = find_key_by_suffix(result_data, "error_Controller")
+
+                # プロットタイプに応じてデータを選択（コピーを作成）
+                if plot_type == "position":
+                    y_data = result_data.get(result_pos_key, np.array([])).copy()
+                    y_label = "Position [m]"
+                    title = "Position Comparison (Interactive)"
+                elif plot_type == "velocity":
+                    y_data = result_data.get(result_vel_key, np.array([])).copy()
+                    y_label = "Velocity [m/s]"
+                    title = "Velocity Comparison (Interactive)"
+                elif plot_type == "thrust":
+                    y_data = result_data.get(result_thrust_key, np.array([])).copy()
+                    y_label = "Thrust [N]"
+                    title = "Control Input Comparison (Interactive)"
+                elif plot_type == "error":
+                    y_data = result_data.get(result_error_key, np.array([])).copy()
+                    y_label = "Position Error [m]"
+                    title = "Position Error Comparison (Interactive)"
+                else:
+                    del result_data
+                    continue
+
+                # result_dataを削除
+                del result_data
+
+                if len(y_data) == 0:
+                    continue
+
+                # プロットに追加
+                fig.add_trace(
+                    go.Scatter(
+                        x=time_data,
+                        y=y_data,
+                        mode="lines",
+                        name=result_item["label"],
+                        line=dict(
+                            color=colors[plot_idx % len(colors)],
+                            width=2,
+                            dash=styles[plot_idx % len(styles)],
+                        ),
+                        hovertemplate="<b>%{fullData.name}</b><br>"
+                        + "Time: %{x:.4f} s<br>"
+                        + f"{y_label}: "
+                        + "%{y:.6f}<br>"
+                        + "<extra></extra>",
+                    )
+                )
+
+            except Exception as exc:
+                print(f"Error loading {result_item['name']}: {exc}")
+
+        # 目標線を追加（位置プロットの場合）
+        if plot_type == "position" and len(results_list) > 0:
+            target_position = results_list[0]["config"].get("control", {}).get(
+                "target_position_m", 5.0
+            )
+            fig.add_hline(
+                y=target_position,
+                line_dash="dot",
+                line_color="black",
+                annotation_text="Target",
+                annotation_position="right",
+            )
+
+        # ゼロ線を追加（誤差プロットの場合）
+        if plot_type == "error":
+            fig.add_hline(y=0, line_dash="dot", line_color="black", line_width=1)
+
+        # レイアウト設定
+        fig.update_layout(
+            title=dict(text=title, font=dict(size=16, weight="bold")),
+            xaxis_title="Time [s]",
+            yaxis_title=y_label,
+            hovermode="x unified",
+            template="plotly_white",
+            height=500,
+            legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01),
+            margin=dict(l=60, r=30, t=50, b=50),
+        )
+
+        fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor="LightGray")
+        fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor="LightGray")
+
+        return fig
+
+    # インタラクティブプロットを生成
+    if plot_selector.value and selected_results:
+        interactive_fig = generate_interactive_plot(selected_results, plot_selector.value)
+    else:
+        interactive_fig = mo.md("_Select results and a plot type above._")
+
+    return (interactive_fig,)
+
+
+@app.cell
+def _(interactive_fig):
+    """インタラクティブプロット表示"""
+    interactive_fig
     return
 
 
@@ -1015,6 +1248,524 @@ def _(integral_relative_section):
 def _(control_relative_section):
     """制御入力相対比較表示"""
     control_relative_section
+    return
+
+
+@app.cell
+def _(mo):
+    """時刻範囲指定比較セクションヘッダー"""
+    time_range_header = mo.md(
+        """
+---
+
+## ⏱️ Time Range Trajectory Comparison
+
+Select a time range to analyze detailed trajectory differences between two selected simulations.
+        """
+    )
+    return (time_range_header,)
+
+
+@app.cell
+def _(time_range_header):
+    """時刻範囲ヘッダー表示"""
+    time_range_header
+    return
+
+
+@app.cell
+def _(load_hdf5_data, np, selected_results):
+    """時刻範囲の最大値を計算"""
+    if len(selected_results) >= 1:
+        # 最初の結果から最大時刻を取得
+        try:
+            first_h5 = selected_results[0]["h5_file"]
+            first_data = load_hdf5_data(first_h5)
+            time_data_first = first_data.get("time_s", np.array([]))
+
+            if len(time_data_first) > 0:
+                max_time_calc = float(time_data_first[-1])
+                min_time_calc = float(time_data_first[0])
+            else:
+                max_time_calc = 2.0
+                min_time_calc = 0.0
+
+            # 明示的に大きなデータを削除
+            del first_data
+            del time_data_first
+        except Exception:
+            max_time_calc = 2.0
+            min_time_calc = 0.0
+    else:
+        max_time_calc = 2.0
+        min_time_calc = 0.0
+
+    return max_time_calc, min_time_calc
+
+
+@app.cell
+def _(max_time_calc, min_time_calc, mo, selected_results):
+    """時刻範囲選択UI"""
+    if len(selected_results) >= 2:
+        # 開始時刻の入力（スライダーと数値入力）
+        time_start_slider = mo.ui.slider(
+            start=min_time_calc,
+            stop=max_time_calc,
+            step=0.01,
+            value=min_time_calc,
+            label="Start Time [s]",
+            show_value=True,
+        )
+
+        time_start_number = mo.ui.number(
+            start=min_time_calc,
+            stop=max_time_calc,
+            step=0.001,
+            value=min_time_calc,
+            label="Start Time (precise)",
+        )
+
+        # 終了時刻の入力（スライダーと数値入力）
+        time_end_slider = mo.ui.slider(
+            start=min_time_calc,
+            stop=max_time_calc,
+            step=0.01,
+            value=max_time_calc,
+            label="End Time [s]",
+            show_value=True,
+        )
+
+        time_end_number = mo.ui.number(
+            start=min_time_calc,
+            stop=max_time_calc,
+            step=0.001,
+            value=max_time_calc,
+            label="End Time (precise)",
+        )
+
+        # レイアウト：スライダーと数値入力を横に並べる
+        time_range_ui = mo.vstack([
+            mo.md("**Select time range for comparison:**"),
+            mo.md(
+                "_Use **sliders** for quick selection or **number inputs** for precise values (0.001s precision)._\n\n"
+                f"_Available time range: {min_time_calc:.3f}s to {max_time_calc:.3f}s_"
+            ),
+            mo.hstack([time_start_slider, time_start_number], justify="start", widths=[3, 1]),
+            mo.hstack([time_end_slider, time_end_number], justify="start", widths=[3, 1]),
+        ])
+    else:
+        time_start_slider = None
+        time_end_slider = None
+        time_start_number = None
+        time_end_number = None
+        time_range_ui = mo.md("_Select at least 2 results to enable time range comparison._")
+
+    return (
+        time_end_number,
+        time_end_slider,
+        time_range_ui,
+        time_start_number,
+        time_start_slider,
+    )
+
+
+@app.cell
+def _(time_range_ui):
+    """時刻範囲UI表示"""
+    time_range_ui
+    return
+
+
+@app.cell
+def _(
+    load_hdf5_data,
+    mo,
+    np,
+    selected_results,
+    time_end_number,
+    time_end_slider,
+    time_start_number,
+    time_start_slider,
+):
+    """時刻範囲内の軌跡誤差計算"""
+
+    def calculate_trajectory_difference(result1, result2, t_start, t_end):
+        """
+        2つのシミュレーション結果の軌跡誤差を計算
+
+        Args:
+            result1: 基準となるシミュレーション結果
+            result2: 比較するシミュレーション結果
+            t_start: 開始時刻
+            t_end: 終了時刻
+
+        Returns:
+            dict: 誤差統計情報
+        """
+        try:
+            # データ読み込み
+            data1 = load_hdf5_data(result1["h5_file"])
+            data2 = load_hdf5_data(result2["h5_file"])
+        except Exception:
+            return None
+
+        # キー検索関数
+        def find_key_by_prefix_and_suffix(key_data, prefix, suffix):
+            for k in key_data.keys():
+                if k.startswith(prefix) and k.endswith(suffix):
+                    return k
+            return None
+
+        def find_key_by_suffix(key_data, suffix):
+            for k in key_data.keys():
+                if k.endswith(suffix):
+                    return k
+            return None
+
+        # 時刻データ取得
+        time1 = data1.get("time_s", np.array([]))
+        time2 = data2.get("time_s", np.array([]))
+
+        if len(time1) == 0 or len(time2) == 0:
+            return None
+
+        # 位置データキーの検索
+        pos_key1 = find_key_by_prefix_and_suffix(data1, "position_", "Spacecraft1DOF_0")
+        if not pos_key1:
+            pos_key1 = find_key_by_suffix(data1, "position_Spacecraft")
+
+        pos_key2 = find_key_by_prefix_and_suffix(data2, "position_", "Spacecraft1DOF_0")
+        if not pos_key2:
+            pos_key2 = find_key_by_suffix(data2, "position_Spacecraft")
+
+        if not pos_key1 or not pos_key2:
+            return None
+
+        # 位置データ取得
+        pos1 = data1.get(pos_key1, np.array([]))
+        pos2 = data2.get(pos_key2, np.array([]))
+
+        if len(pos1) == 0 or len(pos2) == 0:
+            return None
+
+        # 速度データキーの検索
+        vel_key1 = pos_key1.replace("position", "velocity")
+        vel_key2 = pos_key2.replace("position", "velocity")
+
+        vel1 = data1.get(vel_key1, np.array([]))
+        vel2 = data2.get(vel_key2, np.array([]))
+
+        # 時刻範囲でフィルタリング
+        mask1 = (time1 >= t_start) & (time1 <= t_end)
+        mask2 = (time2 >= t_start) & (time2 <= t_end)
+
+        time1_filtered = time1[mask1]
+        time2_filtered = time2[mask2]
+        pos1_filtered = pos1[mask1]
+        pos2_filtered = pos2[mask2]
+        vel1_filtered = vel1[mask1]
+        vel2_filtered = vel2[mask2]
+
+        if len(time1_filtered) == 0 or len(time2_filtered) == 0:
+            return None
+
+        # 時刻を統一（線形補間）
+        # result1の時刻を基準とする
+        pos2_interp = np.interp(time1_filtered, time2_filtered, pos2_filtered)
+        vel2_interp = np.interp(time1_filtered, time2_filtered, vel2_filtered) if len(vel2_filtered) > 0 else np.zeros_like(pos2_interp)
+
+        # 誤差計算
+        position_error = pos1_filtered - pos2_interp
+        velocity_error = vel1_filtered - vel2_interp if len(vel1_filtered) > 0 else np.zeros_like(position_error)
+
+        # データを間引く（プロット用に最大1000ポイント）
+        max_plot_points = 1000
+        if len(time1_filtered) > max_plot_points:
+            # 均等に間引く
+            indices = np.linspace(0, len(time1_filtered) - 1, max_plot_points, dtype=int)
+            time_plot = time1_filtered[indices]
+            pos1_plot = pos1_filtered[indices]
+            pos2_plot = pos2_interp[indices]
+            position_error_plot = position_error[indices]
+            vel1_plot = vel1_filtered[indices]
+            vel2_plot = vel2_interp[indices]
+            velocity_error_plot = velocity_error[indices]
+        else:
+            time_plot = time1_filtered
+            pos1_plot = pos1_filtered
+            pos2_plot = pos2_interp
+            position_error_plot = position_error
+            vel1_plot = vel1_filtered
+            vel2_plot = vel2_interp
+            velocity_error_plot = velocity_error
+
+        # 統計情報
+        stats = {
+            "n_samples": len(position_error),
+            "time_range": (float(time1_filtered[0]), float(time1_filtered[-1])),
+            # 位置誤差
+            "pos_rmse": float(np.sqrt(np.mean(position_error**2))),
+            "pos_max_error": float(np.max(np.abs(position_error))),
+            "pos_mean_error": float(np.mean(position_error)),
+            "pos_mean_abs_error": float(np.mean(np.abs(position_error))),
+            "pos_std_error": float(np.std(position_error)),
+            "pos_median_error": float(np.median(position_error)),
+            "pos_min_error": float(np.min(position_error)),
+            "pos_max_positive_error": float(np.max(position_error)),
+            "pos_max_negative_error": float(np.min(position_error)),
+            # 速度誤差
+            "vel_rmse": float(np.sqrt(np.mean(velocity_error**2))),
+            "vel_max_error": float(np.max(np.abs(velocity_error))),
+            "vel_mean_error": float(np.mean(velocity_error)),
+            "vel_mean_abs_error": float(np.mean(np.abs(velocity_error))),
+            "vel_std_error": float(np.std(velocity_error)),
+            # データ（プロット用） - 間引いたデータをリストに変換
+            "time": time_plot.tolist(),
+            "pos1": pos1_plot.tolist(),
+            "pos2": pos2_plot.tolist(),
+            "position_error": position_error_plot.tolist(),
+            "vel1": vel1_plot.tolist(),
+            "vel2": vel2_plot.tolist(),
+            "velocity_error": velocity_error_plot.tolist(),
+        }
+
+        # 大きなデータを明示的に削除
+        del data1, data2
+        del time1, time2, pos1, pos2, vel1, vel2
+        del time1_filtered, time2_filtered, pos1_filtered, pos2_filtered
+        del vel1_filtered, vel2_filtered, pos2_interp, vel2_interp
+        del position_error, velocity_error
+
+        return stats
+
+    # 計算実行
+    if (len(selected_results) >= 2 and
+        time_start_slider is not None and
+        time_end_slider is not None and
+        time_start_number is not None and
+        time_end_number is not None):
+
+        # 数値入力を優先（より正確な値の入力が可能なため）
+        # ユーザーが数値入力を使用した場合、その値を使用
+        # そうでない場合はスライダーの値を使用
+        t_start = time_start_number.value if time_start_number.value is not None else time_start_slider.value
+        t_end = time_end_number.value if time_end_number.value is not None else time_end_slider.value
+
+        # 時刻範囲の妥当性チェック
+        if t_start >= t_end:
+            trajectory_diff_stats = None
+            trajectory_diff_message = mo.md(f"⚠️ **Invalid time range**: Start time ({t_start:.3f}s) must be less than end time ({t_end:.3f}s)")
+        else:
+            trajectory_diff_stats = calculate_trajectory_difference(
+                selected_results[0],
+                selected_results[1],
+                t_start,
+                t_end
+            )
+
+            if trajectory_diff_stats is None:
+                trajectory_diff_message = mo.md("⚠️ **Error**: Could not calculate trajectory difference. Check data availability.")
+            else:
+                trajectory_diff_message = mo.md(
+                    f"""
+**Comparing trajectories:**
+- **Baseline**: {selected_results[0]["label"]}
+- **Comparison**: {selected_results[1]["label"]}
+- **Time range**: {t_start:.3f}s to {t_end:.3f}s ({trajectory_diff_stats['n_samples']} samples)
+                    """
+                )
+    else:
+        trajectory_diff_stats = None
+        trajectory_diff_message = mo.md("_Waiting for time range selection..._")
+
+    return trajectory_diff_message, trajectory_diff_stats
+
+
+@app.cell
+def _(trajectory_diff_message):
+    """軌跡差分メッセージ表示"""
+    trajectory_diff_message
+    return
+
+
+@app.cell
+def _(mo, pd, selected_results, trajectory_diff_stats):
+    """軌跡誤差統計テーブル作成"""
+    if trajectory_diff_stats is not None and len(selected_results) >= 2:
+        # 位置誤差テーブル
+        pos_error_data = {
+            "Metric": [
+                "RMSE",
+                "Max Absolute Error",
+                "Mean Error (signed)",
+                "Mean Absolute Error",
+                "Std Deviation",
+                "Median Error",
+                "Max Positive Error",
+                "Max Negative Error",
+            ],
+            "Value [m]": [
+                f"{trajectory_diff_stats['pos_rmse']:.6f}",
+                f"{trajectory_diff_stats['pos_max_error']:.6f}",
+                f"{trajectory_diff_stats['pos_mean_error']:.6f}",
+                f"{trajectory_diff_stats['pos_mean_abs_error']:.6f}",
+                f"{trajectory_diff_stats['pos_std_error']:.6f}",
+                f"{trajectory_diff_stats['pos_median_error']:.6f}",
+                f"{trajectory_diff_stats['pos_max_positive_error']:.6f}",
+                f"{trajectory_diff_stats['pos_max_negative_error']:.6f}",
+            ],
+        }
+
+        pos_error_table_df = pd.DataFrame(pos_error_data)
+
+        pos_error_table_section = mo.vstack([
+            mo.md("### 📏 Position Trajectory Error (Time Range)"),
+            mo.ui.table(pos_error_table_df, selection=None),
+        ])
+
+        # 速度誤差テーブル
+        vel_error_data = {
+            "Metric": [
+                "RMSE",
+                "Max Absolute Error",
+                "Mean Error (signed)",
+                "Mean Absolute Error",
+                "Std Deviation",
+            ],
+            "Value [m/s]": [
+                f"{trajectory_diff_stats['vel_rmse']:.6f}",
+                f"{trajectory_diff_stats['vel_max_error']:.6f}",
+                f"{trajectory_diff_stats['vel_mean_error']:.6f}",
+                f"{trajectory_diff_stats['vel_mean_abs_error']:.6f}",
+                f"{trajectory_diff_stats['vel_std_error']:.6f}",
+            ],
+        }
+
+        vel_error_table_df = pd.DataFrame(vel_error_data)
+
+        vel_error_table_section = mo.vstack([
+            mo.md("### 🚀 Velocity Trajectory Error (Time Range)"),
+            mo.ui.table(vel_error_table_df, selection=None),
+        ])
+    else:
+        pos_error_table_section = None
+        vel_error_table_section = None
+
+    return pos_error_table_section, vel_error_table_section
+
+
+@app.cell
+def _(pos_error_table_section):
+    """位置誤差テーブル表示"""
+    pos_error_table_section
+    return
+
+
+@app.cell
+def _(vel_error_table_section):
+    """速度誤差テーブル表示"""
+    vel_error_table_section
+    return
+
+
+@app.cell
+def _(go, mo, selected_results, trajectory_diff_stats):
+    """時刻範囲の軌跡比較プロット"""
+    if trajectory_diff_stats is not None:
+        # 位置比較プロット
+        fig_pos_compare = go.Figure()
+
+        # Baseline軌跡
+        fig_pos_compare.add_trace(go.Scatter(
+            x=trajectory_diff_stats["time"],
+            y=trajectory_diff_stats["pos1"],
+            mode="lines",
+            name=f"Baseline: {selected_results[0]['name']}",
+            line=dict(color="#1f77b4", width=2),
+            hovertemplate="<b>Baseline</b><br>Time: %{x:.4f} s<br>Position: %{y:.6f} m<extra></extra>",
+        ))
+
+        # Comparison軌跡
+        fig_pos_compare.add_trace(go.Scatter(
+            x=trajectory_diff_stats["time"],
+            y=trajectory_diff_stats["pos2"],
+            mode="lines",
+            name=f"Comparison: {selected_results[1]['name']}",
+            line=dict(color="#ff7f0e", width=2, dash="dash"),
+            hovertemplate="<b>Comparison</b><br>Time: %{x:.4f} s<br>Position: %{y:.6f} m<extra></extra>",
+        ))
+
+        fig_pos_compare.update_layout(
+            title="Position Trajectory Comparison (Selected Time Range)",
+            xaxis_title="Time [s]",
+            yaxis_title="Position [m]",
+            hovermode="x unified",
+            template="plotly_white",
+            height=400,
+            legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01),
+        )
+
+        fig_pos_compare.update_xaxes(showgrid=True, gridwidth=1, gridcolor="LightGray")
+        fig_pos_compare.update_yaxes(showgrid=True, gridwidth=1, gridcolor="LightGray")
+
+        # 誤差プロット
+        fig_error = go.Figure()
+
+        fig_error.add_trace(go.Scatter(
+            x=trajectory_diff_stats["time"],
+            y=trajectory_diff_stats["position_error"],
+            mode="lines",
+            name="Position Error",
+            line=dict(color="#d62728", width=2),
+            fill="tozeroy",
+            fillcolor="rgba(214, 39, 40, 0.2)",
+            hovertemplate="<b>Position Error</b><br>Time: %{x:.4f} s<br>Error: %{y:.6f} m<extra></extra>",
+        ))
+
+        fig_error.add_hline(y=0, line_dash="dot", line_color="black", line_width=1)
+
+        # RMSE線を追加
+        rmse = trajectory_diff_stats["pos_rmse"]
+        fig_error.add_hline(
+            y=rmse,
+            line_dash="dash",
+            line_color="green",
+            annotation_text=f"RMSE: {rmse:.6f}m",
+            annotation_position="right"
+        )
+        fig_error.add_hline(
+            y=-rmse,
+            line_dash="dash",
+            line_color="green",
+        )
+
+        fig_error.update_layout(
+            title="Position Error (Baseline - Comparison)",
+            xaxis_title="Time [s]",
+            yaxis_title="Position Error [m]",
+            hovermode="x unified",
+            template="plotly_white",
+            height=400,
+        )
+
+        fig_error.update_xaxes(showgrid=True, gridwidth=1, gridcolor="LightGray")
+        fig_error.update_yaxes(showgrid=True, gridwidth=1, gridcolor="LightGray")
+
+        trajectory_comparison_plots = mo.vstack([
+            mo.md("### 📊 Trajectory Comparison Plots"),
+            fig_pos_compare,
+            fig_error,
+        ])
+    else:
+        trajectory_comparison_plots = None
+
+    return (trajectory_comparison_plots,)
+
+
+@app.cell
+def _(trajectory_comparison_plots):
+    """軌跡比較プロット表示"""
+    trajectory_comparison_plots
     return
 
 
