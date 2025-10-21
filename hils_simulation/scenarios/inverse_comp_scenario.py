@@ -86,8 +86,8 @@ class InverseCompScenario(BaseScenario):
             )
             print(f"   ✨ Inverse Compensator enabled (gain={self.params.inverse_comp.gain})")
 
-        plant_sim = self.world.start("PlantSim", step_size=1)
-        env_sim = self.world.start("EnvSim", step_size=1)
+        plant_sim = self.world.start("PlantSim", step_size=self.params.plant_sim_period_steps)
+        env_sim = self.world.start("EnvSim", step_size=self.params.env_sim_period_steps)
 
         bridge_cmd_sim = self.world.start("BridgeSim", step_size=1, log_dir=str(self.run_dir))
         bridge_sense_sim = self.world.start("BridgeSim", step_size=1, log_dir=str(self.run_dir))

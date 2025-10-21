@@ -68,8 +68,8 @@ class RTScenario(BaseScenario):
             step_size=self.params.control_period_steps,
         )
 
-        plant_sim = self.world.start("PlantSim", step_size=1)
-        env_sim = self.world.start("EnvSim", step_size=1)
+        plant_sim = self.world.start("PlantSim", step_size=self.params.plant_sim_period_steps)
+        env_sim = self.world.start("EnvSim", step_size=self.params.env_sim_period_steps)
 
         # Create entities
         self.controller = controller_sim.PIDController(

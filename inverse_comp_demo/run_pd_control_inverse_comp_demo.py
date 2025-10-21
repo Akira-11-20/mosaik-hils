@@ -26,26 +26,27 @@ import numpy as np
 @dataclass
 class PDControlConfig:
     """PD control with inverse compensation configuration"""
+
     # Time parameters
-    Ts: float = 0.01          # Sampling period [s] (10ms like HILS)
-    Tend: float = 5.0         # Simulation end time [s]
+    Ts: float = 0.01  # Sampling period [s] (10ms like HILS)
+    Tend: float = 5.0  # Simulation end time [s]
 
     # Communication delay (command path: Controller → Actuator)
-    tau_cmd: float = 0.15     # Command delay [s] (150ms like HILS)
+    tau_cmd: float = 0.15  # Command delay [s] (150ms like HILS)
 
     # Plant dynamics (1-DOF spacecraft)
-    mass: float = 1.0         # Spacecraft mass [kg]
-    gravity: float = 9.81     # Gravity acceleration [m/s²]
+    mass: float = 1.0  # Spacecraft mass [kg]
+    gravity: float = 9.81  # Gravity acceleration [m/s²]
 
     # PD Controller parameters (same as HILS)
-    kp: float = 15.0          # Proportional gain
-    kd: float = 5.0           # Derivative gain
+    kp: float = 15.0  # Proportional gain
+    kd: float = 5.0  # Derivative gain
     target_position: float = 5.0  # Target position [m]
-    max_thrust: float = 100.0     # Maximum thrust [N]
+    max_thrust: float = 100.0  # Maximum thrust [N]
 
     # Initial conditions
-    x0: float = 0.0           # Initial position [m]
-    v0: float = 10.0          # Initial velocity [m/s]
+    x0: float = 0.0  # Initial position [m]
+    v0: float = 10.0  # Initial velocity [m/s]
 
     @property
     def sample_count(self) -> int:
@@ -62,11 +63,7 @@ class PDControlConfig:
         return gain_value
 
 
-def pd_controller(
-    position: float,
-    velocity: float,
-    cfg: PDControlConfig
-) -> float:
+def pd_controller(position: float, velocity: float, cfg: PDControlConfig) -> float:
     """PD controller (same as HILS)
 
     Args:
@@ -109,9 +106,7 @@ def apply_command_delay(cmd: np.ndarray, delay_samples: int) -> np.ndarray:
     return cmd_delayed
 
 
-def apply_command_inverse_compensation(
-    u_ref: np.ndarray, gain: float
-) -> np.ndarray:
+def apply_command_inverse_compensation(u_ref: np.ndarray, gain: float) -> np.ndarray:
     """Apply command inverse compensation
 
     Formula: u_comp[k] = a * u_ref[k] - (a - 1) * u_ref[k-1]
@@ -139,8 +134,7 @@ def apply_command_inverse_compensation(
 
 
 def simulate_spacecraft_pd_control(
-    cfg: PDControlConfig,
-    thrust_cmd: np.ndarray
+    cfg: PDControlConfig, thrust_cmd: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Simulate 1-DOF spacecraft with PD control
 
@@ -204,7 +198,7 @@ def settling_time(t: np.ndarray, pos: np.ndarray, target: float, tolerance: floa
         if np.all(error[i:] < threshold):
             return t[i]
 
-    return float('nan')
+    return float("nan")
 
 
 def plot_results(
@@ -226,43 +220,71 @@ def plot_results(
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
 
     # Top plot: Position tracking
-    ax1.axhline(cfg.target_position, color='black', linestyle='--',
-                linewidth=1, alpha=0.5, label='Target')
-    ax1.plot(t, pos_no_delay, label='No delay (ideal)',
-             linewidth=2, color='green')
-    ax1.plot(t, pos_delayed, label=f'With delay ({cfg.tau_cmd*1000:.0f}ms, no comp)',
-             linewidth=2, color='red', alpha=0.7)
+    ax1.axhline(
+        cfg.target_position, color="black", linestyle="--", linewidth=1, alpha=0.5, label="Target"
+    )
+    ax1.plot(t, pos_no_delay, label="No delay (ideal)", linewidth=2, color="green")
+    ax1.plot(
+        t,
+        pos_delayed,
+        label=f"With delay ({cfg.tau_cmd * 1000:.0f}ms, no comp)",
+        linewidth=2,
+        color="red",
+        alpha=0.7,
+    )
 
-    colors = ['blue', 'purple', 'orange', 'cyan']
+    colors = ["blue", "purple", "orange", "cyan"]
     for idx, (gain, pos) in enumerate(pos_compensated_dict.items()):
-        ax1.plot(t, pos, label=f'Inverse comp (gain={gain:.0f})',
-                linewidth=2, linestyle='--', color=colors[idx % len(colors)])
+        ax1.plot(
+            t,
+            pos,
+            label=f"Inverse comp (gain={gain:.0f})",
+            linewidth=2,
+            linestyle="--",
+            color=colors[idx % len(colors)],
+        )
 
-    ax1.set_xlabel('Time [s]')
-    ax1.set_ylabel('Position [m]')
-    ax1.set_title('PD Control with Command Inverse Compensation')
+    ax1.set_xlabel("Time [s]")
+    ax1.set_ylabel("Position [m]")
+    ax1.set_title("PD Control with Command Inverse Compensation")
     ax1.grid(True, alpha=0.3)
     ax1.legend()
     ax1.set_xlim([0, cfg.Tend])
 
     # Bottom plot: Tracking error
-    ax2.plot(t, np.abs(cfg.target_position - pos_no_delay),
-             label='No delay (ideal)', linewidth=2, color='green')
-    ax2.plot(t, np.abs(cfg.target_position - pos_delayed),
-             label=f'With delay (no comp)', linewidth=2, color='red', alpha=0.7)
+    ax2.plot(
+        t,
+        np.abs(cfg.target_position - pos_no_delay),
+        label="No delay (ideal)",
+        linewidth=2,
+        color="green",
+    )
+    ax2.plot(
+        t,
+        np.abs(cfg.target_position - pos_delayed),
+        label=f"With delay (no comp)",
+        linewidth=2,
+        color="red",
+        alpha=0.7,
+    )
 
     for idx, (gain, pos) in enumerate(pos_compensated_dict.items()):
-        ax2.plot(t, np.abs(cfg.target_position - pos),
-                label=f'Inverse comp (gain={gain:.0f})',
-                linewidth=2, linestyle='--', color=colors[idx % len(colors)])
+        ax2.plot(
+            t,
+            np.abs(cfg.target_position - pos),
+            label=f"Inverse comp (gain={gain:.0f})",
+            linewidth=2,
+            linestyle="--",
+            color=colors[idx % len(colors)],
+        )
 
-    ax2.set_xlabel('Time [s]')
-    ax2.set_ylabel('Tracking Error [m]')
-    ax2.set_title('Absolute Tracking Error')
+    ax2.set_xlabel("Time [s]")
+    ax2.set_ylabel("Tracking Error [m]")
+    ax2.set_title("Absolute Tracking Error")
     ax2.grid(True, alpha=0.3)
     ax2.legend()
     ax2.set_xlim([0, cfg.Tend])
-    ax2.set_yscale('log')
+    ax2.set_yscale("log")
 
     plt.tight_layout()
 
@@ -279,8 +301,8 @@ def main() -> None:
     cfg = PDControlConfig()
 
     print("=== PD Control with Command Inverse Compensation Demo ===")
-    print(f"Sampling period: {cfg.Ts*1000:.1f} ms")
-    print(f"Command delay: {cfg.tau_cmd*1000:.1f} ms ({cfg.delay_samples} samples)")
+    print(f"Sampling period: {cfg.Ts * 1000:.1f} ms")
+    print(f"Command delay: {cfg.tau_cmd * 1000:.1f} ms ({cfg.delay_samples} samples)")
     print(f"PD gains: Kp={cfg.kp}, Kd={cfg.kd}")
     print(f"Target position: {cfg.target_position} m")
     print()
@@ -392,7 +414,9 @@ def main() -> None:
     for gain, pos_comp in pos_compensated_dict.items():
         rmse_comp = rmse(pos_comp, np.full_like(pos_comp, cfg.target_position))
         improvement = (1 - rmse_comp / rmse_delayed) * 100
-        print(f"  Inverse comp (gain={gain:.0f}): {rmse_comp:.4f} m (improvement: {improvement:.1f}%)")
+        print(
+            f"  Inverse comp (gain={gain:.0f}): {rmse_comp:.4f} m (improvement: {improvement:.1f}%)"
+        )
 
     # Settling time
     print(f"\nSettling time (±2% of target):")

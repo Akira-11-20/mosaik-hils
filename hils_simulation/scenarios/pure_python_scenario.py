@@ -51,15 +51,18 @@ class Spacecraft1DOF:
         self.velocity += self.acceleration * dt
 
 
-class PDController:
-    """PD controller for position tracking."""
+class PIDController:
+    """PID controller for position tracking."""
 
-    def __init__(self, kp: float, kd: float, target_position: float, max_thrust: float):
+    def __init__(self, kp: float, kd: float, ki: float, target_position: float, max_thrust: float, dt: float):
         self.kp = kp
         self.kd = kd
+        self.ki = ki
         self.target_position = target_position
         self.max_thrust = max_thrust
+        self.dt = dt
         self.error = 0.0
+        self.integral = 0.0
 
     def compute_control(self, position: float, velocity: float) -> float:
         """
@@ -73,8 +76,11 @@ class PDController:
             Thrust command [N]
         """
         self.error = self.target_position - position
-        thrust = self.kp * self.error - self.kd * velocity
-        return thrust  # No saturation (allows negative thrust)
+        self.integral += self.error * self.dt
+        thrust = self.kp * self.error - self.kd * velocity + self.ki * self.integral
+        # Apply thrust saturation limits
+        thrust = max(-self.max_thrust, min(thrust, self.max_thrust))
+        return thrust
 
 
 class ThrustStand:
@@ -134,17 +140,19 @@ class PurePythonScenario(BaseScenario):
             gravity=self.params.spacecraft.gravity,
         )
 
-        self.controller = PDController(
+        self.controller = PIDController(
             kp=self.params.control.kp,
             kd=self.params.control.kd,
+            ki=self.params.control.ki,
             target_position=self.params.control.target_position,
             max_thrust=self.params.control.max_thrust,
+            dt=self.params.control.control_period / 1000.0,  # Use control period, not time resolution
         )
 
         self.plant = ThrustStand()
 
         print(f"   Spacecraft: mass={self.params.spacecraft.mass}kg")
-        print(f"   Controller: Kp={self.params.control.kp}, Kd={self.params.control.kd}")
+        print(f"   Controller: Kp={self.params.control.kp}, Ki={self.params.control.ki}, Kd={self.params.control.kd}")
 
     def connect_entities(self):
         """Pure Python doesn't need explicit connections."""
@@ -161,6 +169,7 @@ class PurePythonScenario(BaseScenario):
             "force_Spacecraft": [],
             "command_Controller_thrust": [],
             "error_Controller": [],
+            "integral_Controller": [],
             "measured_thrust_Plant": [],
         }
 
@@ -179,22 +188,40 @@ class PurePythonScenario(BaseScenario):
 
     def run_simulation(self):
         """Execute pure Python simulation loop."""
-        control_period_steps = int(
-            self.params.control.control_period / 1000.0 / self.params.time_resolution
-        )
+        # Get time_resolution from parameters (variable, not hardcoded)
+        time_resolution = self.params.time_resolution  # [s]
+
+        # Calculate step_size for each simulator (same as Mosaik scenarios)
+        # step_size = how many time_resolution units between executions
+        # Actual period = step_size × time_resolution
+        control_period_steps = self.params.control_period_steps
+        env_period_steps = self.params.env_sim_period_steps
+        plant_period_steps = self.params.plant_sim_period_steps
+
         thrust = 0.0
-        log_interval_steps = int(1.0 / self.params.time_resolution)  # Log every 1 second
+        next_thrust = 0.0  # For time-shifted behavior (like Mosaik)
+        log_interval_steps = int(1.0 / time_resolution)  # Log every 1 second
 
         for step in range(self.params.simulation_steps):
-            time_s = step * self.params.time_resolution
+            time_s = step * time_resolution
             time_ms = time_s * 1000
 
-            # Compute control at specified period
+            # Apply thrust from previous control computation (time-shifted like Mosaik)
+            thrust = next_thrust
+
+            # Update spacecraft dynamics at env_sim_period FIRST (to match Mosaik execution order)
+            # Actual period = env_period_steps × time_resolution
+            if step % env_period_steps == 0:
+                # Integrate for dt = env_period_steps × time_resolution
+                dt = env_period_steps * time_resolution
+                self.spacecraft.step(dt, thrust)
+
+            # Compute control at specified period AFTER physics update
             if step % control_period_steps == 0:
-                thrust = self.controller.compute_control(
+                next_thrust = self.controller.compute_control(
                     self.spacecraft.position, self.spacecraft.velocity
                 )
-                measured_thrust = self.plant.measure(thrust)
+                measured_thrust = self.plant.measure(next_thrust)
 
                 # Periodic logging
                 if step % log_interval_steps == 0:
@@ -204,7 +231,7 @@ class PurePythonScenario(BaseScenario):
                         f"thrust={thrust:.3f}N"
                     )
 
-            # Record data (before physics update, like Mosaik)
+            # Record data (AFTER physics update to match Mosaik DataCollector behavior)
             self.data["time_s"].append(time_s)
             self.data["time_ms"].append(time_ms)
             self.data["position_Spacecraft"].append(self.spacecraft.position)
@@ -213,10 +240,8 @@ class PurePythonScenario(BaseScenario):
             self.data["force_Spacecraft"].append(self.spacecraft.force)
             self.data["command_Controller_thrust"].append(thrust)
             self.data["error_Controller"].append(self.controller.error)
+            self.data["integral_Controller"].append(self.controller.integral)
             self.data["measured_thrust_Plant"].append(self.plant.measured_thrust)
-
-            # Update spacecraft dynamics
-            self.spacecraft.step(self.params.time_resolution, thrust)
 
     def generate_graphs(self):
         """Pure Python scenario doesn't generate Mosaik graphs."""

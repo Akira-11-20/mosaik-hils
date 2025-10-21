@@ -27,32 +27,33 @@ import numpy as np
 @dataclass
 class SimulationConfig:
     """シミュレーション設定を保持するデータクラス"""
+
     # 時間関連パラメータ
-    Ts: float = 0.01          # サンプリング周期 [s] - 制御ループの時間刻み幅
-    Tend: float = 20.0        # シミュレーション終了時刻 [s]
+    Ts: float = 0.01  # サンプリング周期 [s] - 制御ループの時間刻み幅
+    Tend: float = 20.0  # シミュレーション終了時刻 [s]
 
     # システム特性パラメータ
-    tau: float = 0.15         # 通信遅延時間 [s] - センサから制御器への伝送遅延
+    tau: float = 0.15  # 通信遅延時間 [s] - センサから制御器への伝送遅延
 
     # 2次系パラメータ（質量-バネ-ダンパー系）
     # 差分方程式: x[k] = a1*x[k-1] + a2*x[k-2] + b0*u[k] + b1*u[k-1]
     # 連続系: m*d²x/dt² + c*dx/dt + k*x = u
     # 以下のパラメータは減衰振動系を想定（ζ < 1, 固有周波数 ω_n ≈ 2π rad/s）
-    a1: float = 1.8           # 2次系係数1（極の位置を決定）
-    a2: float = -0.85         # 2次系係数2（極の位置を決定）
-    b0: float = 0.005         # 入力ゲイン（現在ステップ）
-    b1: float = 0.005         # 入力ゲイン（1ステップ前）
+    a1: float = 1.8  # 2次系係数1（極の位置を決定）
+    a2: float = -0.85  # 2次系係数2（極の位置を決定）
+    b0: float = 0.005  # 入力ゲイン（現在ステップ）
+    b1: float = 0.005  # 入力ゲイン（1ステップ前）
 
     # ノイズパラメータ
-    noise_std: float = 0.00   # ガウスノイズの標準偏差 - 測定ノイズのシミュレーション
+    noise_std: float = 0.00  # ガウスノイズの標準偏差 - 測定ノイズのシミュレーション
 
     # 入力信号パラメータ（正弦波）
-    sine_amp: float = 0.2     # 正弦波の振幅
-    sine_freq_hz: float = 0.3 # 正弦波の周波数 [Hz]
+    sine_amp: float = 0.2  # 正弦波の振幅
+    sine_freq_hz: float = 0.3  # 正弦波の周波数 [Hz]
 
     # 入力信号パラメータ（ステップ）
-    step_time: float = 2.0    # ステップ入力を加える時刻 [s]
-    step_amp: float = 0.5     # ステップ入力の大きさ
+    step_time: float = 2.0  # ステップ入力を加える時刻 [s]
+    step_amp: float = 0.5  # ステップ入力の大きさ
 
     @property
     def sample_count(self) -> int:
@@ -116,16 +117,11 @@ def propagate_second_order(u: np.ndarray, cfg: SimulationConfig) -> np.ndarray:
 
     # k >= 2 から通常の2次差分方程式を適用
     for k in range(2, len(u)):
-        x[k] = (cfg.a1 * x[k - 1] +
-                cfg.a2 * x[k - 2] +
-                cfg.b0 * u[k] +
-                cfg.b1 * u[k - 1])
+        x[k] = cfg.a1 * x[k - 1] + cfg.a2 * x[k - 2] + cfg.b0 * u[k] + cfg.b1 * u[k - 1]
     return x
 
 
-def apply_delay_and_noise(
-    signal: np.ndarray, delay_samples: int, noise_std: float
-) -> np.ndarray:
+def apply_delay_and_noise(signal: np.ndarray, delay_samples: int, noise_std: float) -> np.ndarray:
     """信号に遅延とノイズを付加（通信遅延とセンサノイズのシミュレーション）
 
     FIFOバッファ（deque）を使用して、delay_samples分の遅延を実現します。
@@ -220,18 +216,14 @@ def estimate_lag(ref: np.ndarray, sig: np.ndarray, Ts: float) -> Tuple[int, floa
     ref_d = np.diff(ref, prepend=ref[0])
     sig_d = np.diff(sig, prepend=sig[0])
     # 相互相関を計算（平均を引いてゼロ平均にする）
-    c = np.correlate(
-        sig_d - np.mean(sig_d), ref_d - np.mean(ref_d), mode="full"
-    )
+    c = np.correlate(sig_d - np.mean(sig_d), ref_d - np.mean(ref_d), mode="full")
     # 相互相関が最大となるラグを求める（中心からのオフセット）
     lag_samples = int(np.argmax(c) - (len(ref) - 1))
     lag_ms = lag_samples * Ts * 1000.0  # サンプル数から時間 [ms] に変換
     return lag_samples, lag_ms
 
 
-def step_rise_time(
-    t: np.ndarray, sig: np.ndarray, cfg: SimulationConfig, baseline: float
-) -> float:
+def step_rise_time(t: np.ndarray, sig: np.ndarray, cfg: SimulationConfig, baseline: float) -> float:
     """ステップ応答の立ち上がり時間を計算（90%到達時刻）
 
     ステップ入力後、信号が最終値の90%に到達する時刻を求めます。
@@ -425,19 +417,23 @@ def main() -> None:
 
     # ステップ6: 結果を表示
     print("=== Mini HILS inverse compensation demo ===")
-    print(f"Sampling period Ts: {cfg.Ts:.3f} s  |  Delay τ: {cfg.tau*1000:.1f} ms")
+    print(f"Sampling period Ts: {cfg.Ts:.3f} s  |  Delay τ: {cfg.tau * 1000:.1f} ms")
     print(f"Delay samples d: {cfg.delay_samples}  |  Inverse gain a: {cfg.inverse_gain:.1f}")
     print()
     print(f"RMSE (no compensation)  : {metrics['rmse_no_comp']:.4f}")
     print(f"RMSE (inverse)          : {metrics['rmse_inverse']:.4f}")
-    print(f"Lag  (no compensation)  : {metrics['lag_no_samples']} samples (~{metrics['lag_no_ms']:.1f} ms)")
-    print(f"Lag  (inverse)          : {metrics['lag_inv_samples']} samples (~{metrics['lag_inv_ms']:.1f} ms)")
     print(
-        f"Phase delay (no comp)   : {metrics['phase_delay_no_time']*1000:.1f} ms"
+        f"Lag  (no compensation)  : {metrics['lag_no_samples']} samples (~{metrics['lag_no_ms']:.1f} ms)"
+    )
+    print(
+        f"Lag  (inverse)          : {metrics['lag_inv_samples']} samples (~{metrics['lag_inv_ms']:.1f} ms)"
+    )
+    print(
+        f"Phase delay (no comp)   : {metrics['phase_delay_no_time'] * 1000:.1f} ms"
         f" ({metrics['phase_delay_no_rad']:.3f} rad)"
     )
     print(
-        f"Phase delay (inverse)   : {metrics['phase_delay_inv_time']*1000:.1f} ms"
+        f"Phase delay (inverse)   : {metrics['phase_delay_inv_time'] * 1000:.1f} ms"
         f" ({metrics['phase_delay_inv_rad']:.3f} rad)"
     )
     print()
@@ -445,12 +441,8 @@ def main() -> None:
         f"Rise time (true)        : {metrics['rise_time_true']:.3f} s"
         f"  | reference step @ {cfg.step_time:.1f} s"
     )
-    print(
-        f"Rise delay (no comp)    : {metrics['rise_delay_no']:.3f} s"
-    )
-    print(
-        f"Rise delay (inverse)    : {metrics['rise_delay_inv']:.3f} s"
-    )
+    print(f"Rise delay (no comp)    : {metrics['rise_delay_no']:.3f} s")
+    print(f"Rise delay (inverse)    : {metrics['rise_delay_inv']:.3f} s")
 
     # ステップ7: 結果をプロット
     plot_results(t, x, y_delayed, y_comp, cfg)

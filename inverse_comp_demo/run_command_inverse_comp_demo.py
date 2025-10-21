@@ -26,25 +26,26 @@ import numpy as np
 @dataclass
 class CommandCompConfig:
     """Command inverse compensation demo configuration"""
+
     # Time parameters
-    Ts: float = 0.01          # Sampling period [s]
-    Tend: float = 20.0        # Simulation end time [s]
+    Ts: float = 0.01  # Sampling period [s]
+    Tend: float = 20.0  # Simulation end time [s]
 
     # Communication delay (command path: Controller → Actuator)
-    tau_cmd: float = 0.15     # Command delay [s]
+    tau_cmd: float = 0.15  # Command delay [s]
 
     # Plant dynamics (2nd order system: mass-spring-damper)
     # x[k] = a1*x[k-1] + a2*x[k-2] + b0*u[k] + b1*u[k-1]
-    a1: float = 1.8           # System coefficient 1
-    a2: float = -0.85         # System coefficient 2
-    b0: float = 0.005         # Input gain (current step)
-    b1: float = 0.005         # Input gain (previous step)
+    a1: float = 1.8  # System coefficient 1
+    a2: float = -0.85  # System coefficient 2
+    b0: float = 0.005  # Input gain (current step)
+    b1: float = 0.005  # Input gain (previous step)
 
     # Input signal parameters (reference trajectory)
-    sine_amp: float = 0.2     # Sine wave amplitude
-    sine_freq_hz: float = 0.3 # Sine wave frequency [Hz]
-    step_time: float = 2.0    # Step command time [s]
-    step_amp: float = 0.5     # Step command amplitude
+    sine_amp: float = 0.2  # Sine wave amplitude
+    sine_freq_hz: float = 0.3  # Sine wave frequency [Hz]
+    step_time: float = 2.0  # Step command time [s]
+    step_amp: float = 0.5  # Step command amplitude
 
     @property
     def sample_count(self) -> int:
@@ -113,9 +114,7 @@ def apply_command_delay(cmd: np.ndarray, delay_samples: int) -> np.ndarray:
     return cmd_delayed
 
 
-def apply_command_inverse_compensation(
-    u_ref: np.ndarray, gain: float
-) -> np.ndarray:
+def apply_command_inverse_compensation(u_ref: np.ndarray, gain: float) -> np.ndarray:
     """Apply command inverse compensation
 
     Inverse compensation formula:
@@ -180,10 +179,7 @@ def propagate_second_order(u: np.ndarray, cfg: CommandCompConfig) -> np.ndarray:
         x[1] = cfg.a1 * x[0] + cfg.b0 * u[1] + cfg.b1 * u[0]
 
     for k in range(2, len(u)):
-        x[k] = (cfg.a1 * x[k - 1] +
-                cfg.a2 * x[k - 2] +
-                cfg.b0 * u[k] +
-                cfg.b1 * u[k - 1])
+        x[k] = cfg.a1 * x[k - 1] + cfg.a2 * x[k - 2] + cfg.b0 * u[k] + cfg.b1 * u[k - 1]
 
     return x
 
@@ -210,9 +206,7 @@ def estimate_lag(ref: np.ndarray, sig: np.ndarray, Ts: float) -> Tuple[int, floa
     sig_d = np.diff(sig, prepend=sig[0])
 
     # Cross-correlation
-    c = np.correlate(
-        sig_d - np.mean(sig_d), ref_d - np.mean(ref_d), mode="full"
-    )
+    c = np.correlate(sig_d - np.mean(sig_d), ref_d - np.mean(ref_d), mode="full")
 
     lag_samples = int(np.argmax(c) - (len(ref) - 1))
     lag_ms = lag_samples * Ts * 1000.0
@@ -272,11 +266,23 @@ def plot_results(
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
 
     # Top plot: Full time range
-    ax1.plot(t, x_ideal, label="Ideal (no delay)", linewidth=2, color='green')
-    ax1.plot(t, x_delayed, label=f"Delayed (τ={cfg.tau_cmd*1000:.0f}ms)",
-             alpha=0.7, linewidth=2, color='red')
-    ax1.plot(t, x_compensated, label="With inverse compensation",
-             linewidth=2, linestyle='--', color='blue')
+    ax1.plot(t, x_ideal, label="Ideal (no delay)", linewidth=2, color="green")
+    ax1.plot(
+        t,
+        x_delayed,
+        label=f"Delayed (τ={cfg.tau_cmd * 1000:.0f}ms)",
+        alpha=0.7,
+        linewidth=2,
+        color="red",
+    )
+    ax1.plot(
+        t,
+        x_compensated,
+        label="With inverse compensation",
+        linewidth=2,
+        linestyle="--",
+        color="blue",
+    )
     ax1.set_xlabel("Time [s]")
     ax1.set_ylabel("Plant Output")
     ax1.set_title("Command Inverse Compensation Demo (Full Range)")
@@ -288,16 +294,24 @@ def plot_results(
     zoom_end = cfg.step_time + 2.0
     zoom_mask = (t >= zoom_start) & (t <= zoom_end)
 
-    ax2.plot(t[zoom_mask], x_ideal[zoom_mask], label="Ideal (no delay)",
-             linewidth=2, color='green')
-    ax2.plot(t[zoom_mask], x_delayed[zoom_mask],
-             label=f"Delayed (τ={cfg.tau_cmd*1000:.0f}ms)",
-             alpha=0.7, linewidth=2, color='red')
-    ax2.plot(t[zoom_mask], x_compensated[zoom_mask],
-             label="With inverse compensation",
-             linewidth=2, linestyle='--', color='blue')
-    ax2.axvline(cfg.step_time, color='gray', linestyle=':', alpha=0.5,
-                label='Step command')
+    ax2.plot(t[zoom_mask], x_ideal[zoom_mask], label="Ideal (no delay)", linewidth=2, color="green")
+    ax2.plot(
+        t[zoom_mask],
+        x_delayed[zoom_mask],
+        label=f"Delayed (τ={cfg.tau_cmd * 1000:.0f}ms)",
+        alpha=0.7,
+        linewidth=2,
+        color="red",
+    )
+    ax2.plot(
+        t[zoom_mask],
+        x_compensated[zoom_mask],
+        label="With inverse compensation",
+        linewidth=2,
+        linestyle="--",
+        color="blue",
+    )
+    ax2.axvline(cfg.step_time, color="gray", linestyle=":", alpha=0.5, label="Step command")
     ax2.set_xlabel("Time [s]")
     ax2.set_ylabel("Plant Output")
     ax2.set_title(f"Zoomed View: Step Response (t={zoom_start:.1f}s to {zoom_end:.1f}s)")
@@ -333,7 +347,7 @@ def main() -> None:
 
     print("=== Command Inverse Compensation Demo ===")
     print(f"Sampling period Ts: {cfg.Ts:.3f} s")
-    print(f"Command delay τ: {cfg.tau_cmd*1000:.1f} ms ({cfg.delay_samples} samples)")
+    print(f"Command delay τ: {cfg.tau_cmd * 1000:.1f} ms ({cfg.delay_samples} samples)")
     print(f"Inverse gain a: {cfg.inverse_gain:.1f}")
     print()
 
@@ -372,7 +386,7 @@ def main() -> None:
     print("=== Tracking Performance ===")
     print(f"RMSE (delayed, no comp): {rmse_delayed:.4f}")
     print(f"RMSE (with inverse comp): {rmse_compensated:.4f}")
-    print(f"Improvement: {(1 - rmse_compensated/rmse_delayed)*100:.1f}%")
+    print(f"Improvement: {(1 - rmse_compensated / rmse_delayed) * 100:.1f}%")
     print()
 
     print("=== Lag Estimation (Cross-correlation) ===")

@@ -170,9 +170,9 @@ class ControllerSimulator(mosaik_api.Simulator):
             error = entity["target_position"] - entity["position"]
             entity["error"] = error
 
-            # 積分項の更新（台形則）
-            # dt = step_size [ms] を秒に変換
-            dt = self.step_size / 1000.0  # [s]
+            # 積分項の更新
+            # dt = step_size [time_resolution units] × time_resolution [s/unit]
+            dt = self.step_size * self.time_resolution  # [s]
             entity["integral"] += error * dt
 
             # アンチワインドアップ（積分項の制限）
@@ -188,8 +188,9 @@ class ControllerSimulator(mosaik_api.Simulator):
                 - entity["kd"] * entity["velocity"]
             )
 
-            # 推力制限なし（負の推力も許容）
-            # max_thrustパラメータは残すが、制限は行わない
+            # 推力飽和処理
+            max_thrust = entity["max_thrust"]
+            thrust = max(-max_thrust, min(thrust, max_thrust))
 
             # コマンドをパッケージ化
             entity["command"] = {
