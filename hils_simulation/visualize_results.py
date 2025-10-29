@@ -111,7 +111,7 @@ def _(Path, json, os):
 
 @app.cell
 def _(all_results, base_dir, mo):
-    """ヘッダー表示"""
+    """ヘッダー表示とプロット数選択"""
     if not all_results:
         title = mo.md(
             f"""
@@ -125,9 +125,20 @@ def _(all_results, base_dir, mo):
     - `{base_dir}/results_pure/`
     """
         )
+        num_plots_selector = None
     else:
         result_list_md = "\n".join([f"- {r['label']}" for r in all_results[:5]])
         more_md = f"\n- ... and {len(all_results) - 5} more" if len(all_results) > 5 else ""
+
+        # プロット数選択（数値入力）
+        max_selectable = min(len(all_results), 10)  # 最大10個まで
+        num_plots_selector = mo.ui.number(
+            start=1,
+            stop=max_selectable,
+            step=1,
+            value=min(4, max_selectable),
+            label=f"Number of results to plot (1-{max_selectable})",
+        )
 
         title = mo.md(
             f"""
@@ -142,66 +153,76 @@ def _(all_results, base_dir, mo):
 
     ---
 
-    **Select up to 4 results to compare:**
+    **Select how many results to compare:**
     """
         )
-    return (title,)
+    return num_plots_selector, title
 
 
 @app.cell
-def _(title):
+def _(mo, num_plots_selector, title):
     """タイトル表示"""
-    title
-    return
+    title_display = mo.vstack([title, num_plots_selector] if num_plots_selector else [title])
+    title_display
+    return (title_display,)
 
 
 @app.cell
-def _(all_results, mo):
-    """ドロップダウン作成"""
-    if len(all_results) == 0:
-        dd1 = None
-        dd2 = None
-        dd3 = None
-        dd4 = None
-        dd_ui = None
+def _(all_results, mo, num_plots_selector):
+    """ドロップダウン作成（動的）"""
+    if len(all_results) == 0 or num_plots_selector is None:
+        result_dropdowns_array = None
     else:
+        # プロット数を取得
+        num_plots = num_plots_selector.value if num_plots_selector.value else 4
+
         # オプション: ラベル -> インデックス
         opts = {r["label"]: i for i, r in enumerate(all_results)}
+        opts_with_none = {**{"(None)": -1}, **opts}
 
-        # 最初と2番目のラベルを取得
+        # 最新のラベル（降順でソートされている）
         labels = list(opts.keys())
-        first_label = labels[0] if len(labels) > 0 else None
-        second_label = labels[1] if len(labels) > 1 else "(None)"
 
-        dd1 = mo.ui.dropdown(opts, value=first_label, label="📊 Result 1")
+        # ヘルパー関数でドロップダウンを作成
+        def _create_dropdown(index):
+            default_val = labels[index] if index < len(labels) else "(None)"
+            if index == 0:
+                return mo.ui.dropdown(opts, value=default_val, label=f"📊 Result {index+1}")
+            else:
+                return mo.ui.dropdown(opts_with_none, value=default_val, label=f"📊 Result {index+1} (optional)")
 
-        dd2 = mo.ui.dropdown({**{"(None)": -1}, **opts}, value=second_label, label="📊 Result 2")
+        # mo.ui.arrayでラップしてリアクティビティを確保
+        dropdowns_list = [_create_dropdown(i) for i in range(num_plots)]
+        result_dropdowns_array = mo.ui.array(dropdowns_list)
 
-        dd3 = mo.ui.dropdown({**{"(None)": -1}, **opts}, value="(None)", label="📊 Result 3")
-
-        dd4 = mo.ui.dropdown({**{"(None)": -1}, **opts}, value="(None)", label="📊 Result 4")
-
-        dd_ui = mo.vstack([dd1, dd2, dd3, dd4])
-    return dd1, dd2, dd3, dd4, dd_ui
+    return (result_dropdowns_array,)
 
 
 @app.cell
-def _(dd_ui):
+def _(result_dropdowns_array):
     """ドロップダウン表示"""
-    dd_ui
+    result_dropdowns_array
     return
 
 
 @app.cell
-def _(all_results, dd1, dd2, dd3, dd4):
+def _(all_results, result_dropdowns_array):
     """選択された結果の取得"""
+    # mo.ui.arrayの.valueを使ってリアクティビティを確保
     selected_results = []
-    if len(all_results) > 0 and dd1 is not None:
-        for dd in [dd1, dd2, dd3, dd4]:
-            if dd is not None and dd.value is not None:
-                idx = dd.value
-                if isinstance(idx, int) and idx >= 0 and idx < len(all_results):
-                    selected_results.append(all_results[idx])
+    if len(all_results) > 0 and result_dropdowns_array is not None:
+        # mo.ui.arrayの.valueは各要素の値のリストを返す
+        dropdown_values = result_dropdowns_array.value
+
+        # 有効な値のみフィルタリング
+        selected_results = [
+            all_results[val]
+            for val in dropdown_values
+            if val is not None
+            and isinstance(val, int)
+            and val >= 0
+            and val < len(all_results)
+        ]
     return (selected_results,)
 
 
@@ -404,8 +425,13 @@ def _(
 
         # プロット作成
         fig, axes = plt.subplots(4, 1, figsize=(14, 16))
-        colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728"]
-        styles = ["-", "--", ":", "-."]
+        # 10色に拡張（カラーマップから取得）
+        colors = [
+            "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+            "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"
+        ]
+        # 線スタイルを拡張
+        styles = ["-", "--", "-.", ":", (0, (3, 1, 1, 1)), (0, (5, 2, 1, 2)), (0, (3, 5, 1, 5)), (0, (1, 1)), (0, (5, 1)), (0, (3, 1, 1, 1, 1, 1))]
 
         for plot_idx, result_item in enumerate(results_list):
             try:
@@ -674,8 +700,14 @@ def _(go, load_hdf5_data, mo, np, plot_selector, selected_results):
 
         fig = go.Figure()
 
-        colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728"]
-        styles = ["solid", "dash", "dot", "dashdot"]
+        # 10色に拡張
+        colors = [
+            "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+            "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"
+        ]
+        # 線スタイルを拡張
+        styles = ["solid", "dash", "dot", "dashdot", "longdash", "longdashdot",
+                  (5, (10, 3)), (0, (5, 5)), (0, (3, 1, 1, 1)), (0, (1, 1))]
 
         # データキー検索用の関数
         def find_key_by_suffix(key_data, suffix):
