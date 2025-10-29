@@ -97,12 +97,17 @@ class HILSScenario(BaseScenario):
             gravity=self.params.spacecraft.gravity,
         )
 
+        # Command path bridge with time_shifted compensation
+        # Since Controller->Bridge uses time_shifted=True, it adds 1 step delay
+        # We compensate for this in the Bridge to achieve the desired total delay
         self.bridge_cmd = bridge_cmd_sim.CommBridge(
             bridge_type="cmd",
             base_delay=self.params.communication.cmd_delay,
             jitter_std=self.params.communication.cmd_jitter,
             packet_loss_rate=self.params.communication.cmd_loss_rate,
             preserve_order=True,
+            compensate_time_shifted=True,
+            time_shifted_delay_ms=self.params.time_resolution * 1000,  # 1 step in ms
         )
 
         self.bridge_sense = bridge_sense_sim.CommBridge(
@@ -185,6 +190,14 @@ class HILSScenario(BaseScenario):
             [self.bridge_cmd],
             self.collector,
             "stats",
+            "packet_receive_time",
+            "packet_send_time",
+            "packet_actual_delay",
+            # Debug attributes
+            "buffer_size",
+            # "buffer_content",  # Commented out to reduce log size
+            "oldest_packet_time",
+            "newest_packet_time",
         )
 
         mosaik.util.connect_many_to_one(
@@ -200,6 +213,14 @@ class HILSScenario(BaseScenario):
             [self.bridge_sense],
             self.collector,
             "stats",
+            "packet_receive_time",
+            "packet_send_time",
+            "packet_actual_delay",
+            # Debug attributes
+            "buffer_size",
+            # "buffer_content",  # Commented out to reduce log size
+            "oldest_packet_time",
+            "newest_packet_time",
         )
 
         mosaik.util.connect_many_to_one(

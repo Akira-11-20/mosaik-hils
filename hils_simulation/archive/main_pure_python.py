@@ -261,9 +261,7 @@ def run_simulation():
     )
     plant = ThrustStand()
 
-    print(
-        f"   Spacecraft: mass={SPACECRAFT_MASS}kg, x0={INITIAL_POSITION}m, v0={INITIAL_VELOCITY}m/s"
-    )
+    print(f"   Spacecraft: mass={SPACECRAFT_MASS}kg, x0={INITIAL_POSITION}m, v0={INITIAL_VELOCITY}m/s")
     print(f"   Controller: Kp={KP}, Kd={KD}, target={TARGET_POSITION}m")
 
     # データ記録用リスト
@@ -298,11 +296,7 @@ def run_simulation():
 
             # 定期的にログ出力
             if step % log_interval_steps == 0:  # 1秒ごと
-                print(
-                    f"[t={time_ms:.0f}ms] pos={spacecraft.position:.3f}m, "
-                    f"vel={spacecraft.velocity:.3f}m/s, error={controller.error:.3f}m, "
-                    f"thrust={thrust:.3f}N"
-                )
+                print(f"[t={time_ms:.0f}ms] pos={spacecraft.position:.3f}m, vel={spacecraft.velocity:.3f}m/s, error={controller.error:.3f}m, thrust={thrust:.3f}N")
 
         # データ記録（制御計算後、物理更新前 - Mosaikと同じタイミング）
         data["time_s"].append(time_s)

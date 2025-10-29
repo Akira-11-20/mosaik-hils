@@ -19,7 +19,7 @@ import json
 from pathlib import Path
 from typing import Dict, Tuple
 
-import h5py
+from hdf5_helper import load_hdf5_data, get_dataset
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -35,17 +35,17 @@ def load_hdf5_data(hdf5_path: str) -> Dict[str, np.ndarray]:
         データセットの辞書
     """
     data = {}
-    with h5py.File(hdf5_path, "r") as f:
-        # データは'data'グループ内にある
-        if "data" in f:
-            data_group = f["data"]
-            for key in data_group.keys():
-                data[key] = data_group[key][:]
-        else:
-            # 古い形式の互換性のため
-            for key in f.keys():
-                if isinstance(f[key], h5py.Dataset):
-                    data[key] = f[key][:]
+    data_tmp = load_hdf5_data(hdf5_path)
+    # データは'data'グループ内にある
+    if "data" in f:
+        data_group = f["data"]
+        for key in data_group.keys():
+            data[key] = data_group[key][:]
+    else:
+        # 古い形式の互換性のため
+        for key in f.keys():
+            if isinstance(f[key], h5py.Dataset):
+                data[key] = f[key][:]
     return data
 
 
@@ -265,9 +265,7 @@ def plot_comparison(
     rt_settling = rt_metrics["settling_time"]
     if hils_settling is not None and rt_settling is not None:
         diff = hils_settling - rt_settling
-        print(
-            f"{'Settling Time [s]':<25} {hils_settling:>15.4f} {rt_settling:>15.4f} {diff:>15.4f}"
-        )
+        print(f"{'Settling Time [s]':<25} {hils_settling:>15.4f} {rt_settling:>15.4f} {diff:>15.4f}")
     else:
         hils_str = f"{hils_settling:.4f}" if hils_settling is not None else "N/A"
         rt_str = f"{rt_settling:.4f}" if rt_settling is not None else "N/A"

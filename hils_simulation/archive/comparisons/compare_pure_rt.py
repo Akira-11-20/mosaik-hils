@@ -21,7 +21,7 @@ import json
 from pathlib import Path
 from typing import Dict
 
-import h5py
+from hdf5_helper import load_hdf5_data, get_dataset
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -37,17 +37,17 @@ def load_hdf5_data(hdf5_path: str) -> Dict[str, np.ndarray]:
         データセットの辞書
     """
     data = {}
-    with h5py.File(hdf5_path, "r") as f:
-        # データは'data'グループ内にある
-        if "data" in f:
-            data_group = f["data"]
-            for key in data_group.keys():
-                data[key] = data_group[key][:]
-        else:
-            # 古い形式の互換性のため
-            for key in f.keys():
-                if isinstance(f[key], h5py.Dataset):
-                    data[key] = f[key][:]
+    data_tmp = load_hdf5_data(hdf5_path)
+    # データは'data'グループ内にある
+    if "data" in f:
+        data_group = f["data"]
+        for key in data_group.keys():
+            data[key] = data_group[key][:]
+    else:
+        # 古い形式の互換性のため
+        for key in f.keys():
+            if isinstance(f[key], h5py.Dataset):
+                data[key] = f[key][:]
     return data
 
 
@@ -275,16 +275,12 @@ def plot_comparison(
     print(f"\nPure Python Configuration:")
     print(f"  - No Mosaik framework")
     print(f"  - No communication delays")
-    print(
-        f"  - Control period: {pure_config.get('control', {}).get('control_period_s', 0) * 1000:.1f} ms"
-    )
+    print(f"  - Control period: {pure_config.get('control', {}).get('control_period_s', 0) * 1000:.1f} ms")
 
     print(f"\nRT (Mosaik) Configuration:")
     print(f"  - Mosaik framework-based")
     print(f"  - No communication delays")
-    print(
-        f"  - Control period: {rt_config.get('control', {}).get('control_period_s', 0) * 1000:.1f} ms"
-    )
+    print(f"  - Control period: {rt_config.get('control', {}).get('control_period_s', 0) * 1000:.1f} ms")
 
     # 性能指標の比較表
     print(f"\n{'Metric':<25} {'Pure Python':>15} {'RT (Mosaik)':>15} {'Difference':>15}")
@@ -324,20 +320,14 @@ def plot_comparison(
     print("Mosaik Framework Overhead Analysis")
     print("=" * 70)
 
-    rms_overhead = (
-        (rt_metrics["rms_error"] - pure_metrics["rms_error"]) / pure_metrics["rms_error"]
-    ) * 100
-    max_overhead = (
-        (rt_metrics["max_error"] - pure_metrics["max_error"]) / pure_metrics["max_error"]
-    ) * 100
+    rms_overhead = ((rt_metrics["rms_error"] - pure_metrics["rms_error"]) / pure_metrics["rms_error"]) * 100
+    max_overhead = ((rt_metrics["max_error"] - pure_metrics["max_error"]) / pure_metrics["max_error"]) * 100
 
     print(f"\nRMS Error degradation due to Mosaik: {rms_overhead:+.2f}%")
     print(f"Max Error degradation due to Mosaik: {max_overhead:+.2f}%")
 
     if pure_metrics["overshoot"] != 0:
-        overshoot_overhead = (
-            (rt_metrics["overshoot"] - pure_metrics["overshoot"]) / pure_metrics["overshoot"]
-        ) * 100
+        overshoot_overhead = ((rt_metrics["overshoot"] - pure_metrics["overshoot"]) / pure_metrics["overshoot"]) * 100
         print(f"Overshoot degradation due to Mosaik: {overshoot_overhead:+.2f}%")
 
     print(f"\n📌 Key Findings:")
@@ -347,13 +337,9 @@ def plot_comparison(
     if abs(rms_overhead) < 1.0:
         print(f"   ✓ Mosaik overhead is negligible (<1% RMS error difference).")
     elif abs(rms_overhead) < 5.0:
-        print(
-            f"   ⚠ Mosaik introduces minor overhead ({abs(rms_overhead):.1f}% RMS error difference)."
-        )
+        print(f"   ⚠ Mosaik introduces minor overhead ({abs(rms_overhead):.1f}% RMS error difference).")
     else:
-        print(
-            f"   ⚠ Mosaik introduces significant overhead ({abs(rms_overhead):.1f}% RMS error difference)."
-        )
+        print(f"   ⚠ Mosaik introduces significant overhead ({abs(rms_overhead):.1f}% RMS error difference).")
 
     print("=" * 70)
 
@@ -375,9 +361,7 @@ def plot_comparison(
 
 def main():
     """メイン関数"""
-    parser = argparse.ArgumentParser(
-        description="Compare Pure Python and RT (Mosaik) simulation results to evaluate Mosaik framework overhead"
-    )
+    parser = argparse.ArgumentParser(description="Compare Pure Python and RT (Mosaik) simulation results to evaluate Mosaik framework overhead")
     parser.add_argument("pure_h5", type=str, help="Path to Pure Python HDF5 data file")
     parser.add_argument("rt_h5", type=str, help="Path to RT (Mosaik) HDF5 data file")
     parser.add_argument(

@@ -133,9 +133,7 @@ def apply_command_inverse_compensation(u_ref: np.ndarray, gain: float) -> np.nda
     return u_comp
 
 
-def simulate_spacecraft_pd_control(
-    cfg: PDControlConfig, thrust_cmd: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
+def simulate_spacecraft_pd_control(cfg: PDControlConfig, thrust_cmd: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """Simulate 1-DOF spacecraft with PD control
 
     Dynamics: F = m*a
@@ -220,9 +218,7 @@ def plot_results(
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
 
     # Top plot: Position tracking
-    ax1.axhline(
-        cfg.target_position, color="black", linestyle="--", linewidth=1, alpha=0.5, label="Target"
-    )
+    ax1.axhline(cfg.target_position, color="black", linestyle="--", linewidth=1, alpha=0.5, label="Target")
     ax1.plot(t, pos_no_delay, label="No delay (ideal)", linewidth=2, color="green")
     ax1.plot(
         t,
@@ -414,9 +410,7 @@ def main() -> None:
     for gain, pos_comp in pos_compensated_dict.items():
         rmse_comp = rmse(pos_comp, np.full_like(pos_comp, cfg.target_position))
         improvement = (1 - rmse_comp / rmse_delayed) * 100
-        print(
-            f"  Inverse comp (gain={gain:.0f}): {rmse_comp:.4f} m (improvement: {improvement:.1f}%)"
-        )
+        print(f"  Inverse comp (gain={gain:.0f}): {rmse_comp:.4f} m (improvement: {improvement:.1f}%)")
 
     # Settling time
     print(f"\nSettling time (±2% of target):")

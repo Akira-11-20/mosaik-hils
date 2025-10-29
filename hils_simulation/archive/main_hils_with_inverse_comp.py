@@ -174,9 +174,7 @@ def main():
     }
 
     # Worldの作成（1ms精度）
-    print(
-        f"\n🌍 Creating Mosaik World (time_resolution={TIME_RESOLUTION}s = {TIME_RESOLUTION * 1000}ms)"
-    )
+    print(f"\n🌍 Creating Mosaik World (time_resolution={TIME_RESOLUTION}s = {TIME_RESOLUTION * 1000}ms)")
     world = mosaik.World(
         sim_config,
         time_resolution=TIME_RESOLUTION,
@@ -198,9 +196,7 @@ def main():
             "InverseCompSim",
             step_size=int(CONTROL_PERIOD / 1000 / TIME_RESOLUTION),  # Same as controller
         )
-        print(
-            f"   ✨ Inverse Compensator enabled (gain={INVERSE_COMP_GAIN}, period={CONTROL_PERIOD}ms)"
-        )
+        print(f"   ✨ Inverse Compensator enabled (gain={INVERSE_COMP_GAIN}, period={CONTROL_PERIOD}ms)")
 
     plant_sim = world.start("PlantSim", step_size=PLANT_SIM_PERIOD)
     env_sim = world.start("EnvSim", step_size=ENV_SIM_PERIOD)

@@ -214,9 +214,7 @@ def estimate_lag(ref: np.ndarray, sig: np.ndarray, Ts: float) -> Tuple[int, floa
     return lag_samples, lag_ms
 
 
-def step_rise_time(
-    t: np.ndarray, sig: np.ndarray, cfg: CommandCompConfig, baseline: float
-) -> float:
+def step_rise_time(t: np.ndarray, sig: np.ndarray, cfg: CommandCompConfig, baseline: float) -> float:
     """Calculate 90% rise time for step response
 
     For oscillatory systems, we look for the first crossing of 90% threshold.

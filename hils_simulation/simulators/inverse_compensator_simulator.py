@@ -36,7 +36,18 @@ meta = {
         "InverseCompensator": {
             "public": True,
             "params": ["comp_id", "gain", "comp_type"],
-            "attrs": ["input", "compensated_output", "stats"],
+            "attrs": [
+                "input",
+                "compensated_output",
+                "stats",
+                # Debug attributes
+                "raw_input",
+                "prev_input",
+                "delta",
+                "compensation_amount",
+                "input_thrust",
+                "output_thrust",
+            ],
         }
     },
 }
@@ -163,6 +174,18 @@ class InverseCompensatorSimulator(mosaik_api.Simulator):
                     data[comp_id][attr] = comp.get_output()
                 elif attr == "stats":
                     data[comp_id][attr] = comp.get_stats()
+                elif attr == "raw_input":
+                    data[comp_id][attr] = comp.raw_input_value
+                elif attr == "prev_input":
+                    data[comp_id][attr] = comp.prev_input_value
+                elif attr == "delta":
+                    data[comp_id][attr] = comp.delta_value
+                elif attr == "compensation_amount":
+                    data[comp_id][attr] = comp.compensation_amount_value
+                elif attr == "input_thrust":
+                    data[comp_id][attr] = comp.input_thrust_value
+                elif attr == "output_thrust":
+                    data[comp_id][attr] = comp.output_thrust_value
 
         return data
 
@@ -210,6 +233,14 @@ class InverseCompensator:
         self.current_output: Any = 0.0
         self.input_count: int = 0
 
+        # Debug information
+        self.raw_input_value: Any = 0.0
+        self.prev_input_value: float = 0.0
+        self.delta_value: float = 0.0
+        self.compensation_amount_value: float = 0.0
+        self.input_thrust_value: float = 0.0
+        self.output_thrust_value: float = 0.0
+
     def process_input(self, value: Any) -> None:
         """
         Process input and apply inverse compensation
@@ -218,22 +249,22 @@ class InverseCompensator:
             value: Input signal (numeric or dict/JSON)
         """
         self.input_count += 1
+        self.raw_input_value = value  # Store raw input for debugging
 
         # Extract numeric value if input is dict/JSON
         if isinstance(value, dict):
             # For command signals: extract "thrust" field
             if "thrust" in value:
                 numeric_value = value["thrust"]
+                self.input_thrust_value = numeric_value
+
                 # Apply compensation
                 compensated_thrust = self._apply_compensation(numeric_value)
+                self.output_thrust_value = compensated_thrust
 
                 # Debug logging (every 1000 steps)
                 if self.input_count % 1000 == 0:
-                    print(
-                        f"[InverseComp-{self.comp_id}] Step {self.input_count}: "
-                        f"input={numeric_value:.3f}N → output={compensated_thrust:.3f}N "
-                        f"(gain={self.gain:.1f})"
-                    )
+                    print(f"[InverseComp-{self.comp_id}] Step {self.input_count}: input={numeric_value:.3f}N → output={compensated_thrust:.3f}N (gain={self.gain:.1f}, delta={self.delta_value:.3f})")
 
                 # Reconstruct command dict with compensated value
                 self.current_output = {
@@ -273,25 +304,28 @@ class InverseCompensator:
         Returns:
             Compensated value
         """
-        # First input - no previous value to use
-        if self.input_count == 1:
-            self.prev_value = value
-            if self.input_count <= 10:
-                print(f"[InverseComp] First input: {value:.3f} (no compensation)")
-            return value
+        # Store previous input for debugging (use 0 if first input)
+        self.prev_input_value = self.prev_value
+
+        # Calculate delta and compensation amount
+        # For first input, prev_value is 0.0 (initialized in __init__)
+        self.delta_value = value - self.prev_value
+        self.compensation_amount_value = (self.gain - 1.0) * self.delta_value
 
         # Apply compensation formula (same as demo code)
         # This emphasizes current value and subtracts previous value
         compensated = self.gain * value - (self.gain - 1.0) * self.prev_value
 
+        # Alternative formula (equivalent): y[k] + (gain-1) * (y[k] - y[k-1])
+        # compensated_alt = value + self.compensation_amount_value
+
         # Debug: show first few compensations
         if self.input_count <= 10:
-            delta = value - self.prev_value
             print(
                 f"[InverseComp] Step {self.input_count}: "
                 f"curr={value:.3f}, prev={self.prev_value:.3f}, "
-                f"delta={delta:.3f}, gain={self.gain:.1f} → "
-                f"comp={compensated:.3f}"
+                f"delta={self.delta_value:.3f}, comp_amt={self.compensation_amount_value:.3f}, "
+                f"gain={self.gain:.1f} → comp={compensated:.3f}"
             )
 
         # Update state

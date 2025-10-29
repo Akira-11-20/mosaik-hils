@@ -191,11 +191,73 @@ class DataCollectorSimulator(mosaik_api.Simulator):
             h5_file.attrs["num_samples"] = len(self.data_log)
             h5_file.attrs["time_resolution"] = self.time_resolution
 
-            # データグループ
-            data_group = h5_file.create_group("data")
+            # 時刻データは共通グループに
+            time_group = h5_file.create_group("time")
 
-            # 各属性ごとにデータセットを作成
+            # ノードごとにグループを作成
+            node_groups = {}
+
+            # 各属性をノードごとに分類
+            import re
+
             for key in all_keys:
+                if key in ["time_ms", "time_s"]:
+                    # 時刻データは特別扱い
+                    target_group = time_group
+                    dataset_name = key
+                else:
+                    # キーをパース: attr_SimName-ID.EntityID[_suffix]
+                    # 例1: buffer_size_BridgeSim-0.CommBridge_0 -> node=BridgeSim-0.CommBridge_0, attr=buffer_size
+                    # 例2: compensated_output_InverseCompSim-0.cmd_compensator -> node=InverseCompSim-0.cmd_compensator, attr=compensated_output
+                    # 例3: command_ControllerSim-0.PIDController_0_thrust -> node=ControllerSim-0.PIDController_0, attr=command_thrust
+
+                    # Match: attr_prefix + SimName-ID. + rest
+                    sim_match = re.match(r"([a-z_]+)_([A-Z][a-zA-Z]*Sim-\d+)\.(.+)", key)
+
+                    if sim_match:
+                        attr_prefix = sim_match.group(1)
+                        sim_name = sim_match.group(2)
+                        rest = sim_match.group(3)
+
+                        # Parse 'rest' to separate entity_id from sub-attribute suffixes
+                        # Known sub-attribute suffixes (from dict expansion)
+                        known_suffixes = ["thrust", "duration"]
+
+                        parts = rest.split("_")
+                        suffix_idx = None
+
+                        # Find if any known suffix exists
+                        for i, part in enumerate(parts):
+                            if part in known_suffixes:
+                                suffix_idx = i
+                                break
+
+                        if suffix_idx is not None:
+                            # Entity ID is everything before the suffix
+                            entity_id = "_".join(parts[:suffix_idx])
+                            attr_suffix = "_".join(parts[suffix_idx:])
+                            attr_name = f"{attr_prefix}_{attr_suffix}"
+                        else:
+                            # No known suffix - entire rest is entity_id
+                            entity_id = rest
+                            attr_name = attr_prefix
+
+                        node_name = f"{sim_name}.{entity_id}"
+
+                        # ノードグループを作成（初回のみ）
+                        if node_name not in node_groups:
+                            # グループ名に使えない文字を置換
+                            safe_node_name = node_name.replace(".", "_")
+                            node_groups[node_name] = h5_file.create_group(safe_node_name)
+
+                        target_group = node_groups[node_name]
+                        dataset_name = attr_name
+                    else:
+                        # パースできない場合はルートに配置
+                        target_group = h5_file
+                        dataset_name = key
+
+                # データ収集
                 column = []
                 for entry in self.data_log:
                     value = entry.get(key)
@@ -216,23 +278,34 @@ class DataCollectorSimulator(mosaik_api.Simulator):
                 # データ型に応じてデータセットを作成
                 if column and isinstance(column[0], str):
                     # 文字列データ
-                    data_group.create_dataset(
-                        name=key,
+                    target_group.create_dataset(
+                        name=dataset_name,
                         data=column,
                         dtype=h5py.string_dtype(),
                     )
                 else:
                     # 数値データ
-                    data_group.create_dataset(
-                        name=key,
+                    target_group.create_dataset(
+                        name=dataset_name,
                         data=column,
                     )
 
-            # データセット一覧を表示
-            print(f"[DataCollector] ✅ Saved datasets:")
-            for key in sorted(data_group.keys()):
-                dataset = data_group[key]
-                print(f"  - {key}: {dataset.shape} {dataset.dtype}")
+            # データセット一覧を表示（ノードごと）
+            print(f"[DataCollector] ✅ Saved datasets by node:")
+
+            # 時刻データ
+            print(f"\n  [time/]")
+            for key in sorted(time_group.keys()):
+                dataset = time_group[key]
+                print(f"    - {key}: {dataset.shape} {dataset.dtype}")
+
+            # ノードデータ
+            for node_name in sorted(node_groups.keys()):
+                node_group = node_groups[node_name]
+                print(f"\n  [{node_name}/]")
+                for key in sorted(node_group.keys()):
+                    dataset = node_group[key]
+                    print(f"    - {key}: {dataset.shape} {dataset.dtype}")
 
         print(f"[DataCollector] 📁 Output: {output_path}")
 

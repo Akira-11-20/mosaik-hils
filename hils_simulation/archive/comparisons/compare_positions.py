@@ -11,18 +11,16 @@ Data 2: 50ms遅延あり
 """
 
 import argparse
-import h5py
 import matplotlib.pyplot as plt
 from pathlib import Path
+from hdf5_helper import load_hdf5_data, get_dataset
 
 
 def main():
     parser = argparse.ArgumentParser(description="Compare position data from two HDF5 files")
     parser.add_argument("file1", type=str, help="Path to first HDF5 file (no delay)")
     parser.add_argument("file2", type=str, help="Path to second HDF5 file (with delay)")
-    parser.add_argument(
-        "--output", type=str, default="../comparison_results", help="Output directory"
-    )
+    parser.add_argument("--output", type=str, default="../comparison_results", help="Output directory")
     args = parser.parse_args()
 
     file1 = args.file1
@@ -32,14 +30,19 @@ def main():
     output_dir = Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # データ読み込み
-    with h5py.File(file1, "r") as f1:
-        time1 = f1["data"]["time_s"][:]
-        position1 = f1["data"]["position_EnvSim-0.Spacecraft1DOF_0"][:]
+    # データ読み込み（新旧両形式対応）
+    data1 = load_hdf5_data(file1)
+    time1 = data1.get("time_s")
+    position1 = get_dataset(data1, "position_EnvSim-0.Spacecraft1DOF_0")
+    if position1 is None:
+        # グループ名がアンダースコア区切りの場合
+        position1 = get_dataset(data1, "position_EnvSim-0_Spacecraft1DOF_0")
 
-    with h5py.File(file2, "r") as f2:
-        time2 = f2["data"]["time_s"][:]
-        position2 = f2["data"]["position_EnvSim-0.Spacecraft1DOF_0"][:]
+    data2 = load_hdf5_data(file2)
+    time2 = data2.get("time_s")
+    position2 = get_dataset(data2, "position_EnvSim-0.Spacecraft1DOF_0")
+    if position2 is None:
+        position2 = get_dataset(data2, "position_EnvSim-0_Spacecraft1DOF_0")
 
     # プロット作成
     plt.figure(figsize=(12, 6))

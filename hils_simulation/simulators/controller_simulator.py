@@ -134,9 +134,7 @@ class ControllerSimulator(mosaik_api.Simulator):
             }
 
             entities.append({"eid": eid, "type": model})
-            print(
-                f"[ControllerSim] Created {eid} (Kp={kp}, Ki={ki}, Kd={kd}, target={target_position}m)"
-            )
+            print(f"[ControllerSim] Created {eid} (Kp={kp}, Ki={ki}, Kd={kd}, target={target_position}m)")
 
         return entities
 
@@ -182,11 +180,7 @@ class ControllerSimulator(mosaik_api.Simulator):
                 entity["integral"] = -entity["integral_limit"]
 
             # 推力指令計算: F = Kp * error + Ki * integral - Kd * velocity
-            thrust = (
-                entity["kp"] * error
-                + entity["ki"] * entity["integral"]
-                - entity["kd"] * entity["velocity"]
-            )
+            thrust = entity["kp"] * error + entity["ki"] * entity["integral"] - entity["kd"] * entity["velocity"]
 
             # 推力飽和処理
             max_thrust = entity["max_thrust"]
@@ -200,11 +194,7 @@ class ControllerSimulator(mosaik_api.Simulator):
 
             # デバッグ出力（10制御周期に1回）
             if time % (self.step_size * 10) == 0:
-                print(
-                    f"[ControllerSim] t={time}ms: pos={entity['position']:.3f}m, "
-                    f"vel={entity['velocity']:.3f}m/s, error={error:.3f}m, "
-                    f"integral={entity['integral']:.3f}m·s, thrust={thrust:.3f}N"
-                )
+                print(f"[ControllerSim] t={time}ms: pos={entity['position']:.3f}m, vel={entity['velocity']:.3f}m/s, error={error:.3f}m, integral={entity['integral']:.3f}m·s, thrust={thrust:.3f}N")
 
         return time + self.step_size
 

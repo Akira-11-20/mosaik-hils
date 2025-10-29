@@ -218,18 +218,12 @@ class PurePythonScenario(BaseScenario):
 
             # Compute control at specified period AFTER physics update
             if step % control_period_steps == 0:
-                next_thrust = self.controller.compute_control(
-                    self.spacecraft.position, self.spacecraft.velocity
-                )
+                next_thrust = self.controller.compute_control(self.spacecraft.position, self.spacecraft.velocity)
                 measured_thrust = self.plant.measure(next_thrust)
 
                 # Periodic logging
                 if step % log_interval_steps == 0:
-                    print(
-                        f"[t={time_ms:.0f}ms] pos={self.spacecraft.position:.3f}m, "
-                        f"vel={self.spacecraft.velocity:.3f}m/s, error={self.controller.error:.3f}m, "
-                        f"thrust={thrust:.3f}N"
-                    )
+                    print(f"[t={time_ms:.0f}ms] pos={self.spacecraft.position:.3f}m, vel={self.spacecraft.velocity:.3f}m/s, error={self.controller.error:.3f}m, thrust={thrust:.3f}N")
 
             # Record data (AFTER physics update to match Mosaik DataCollector behavior)
             self.data["time_s"].append(time_s)
@@ -275,9 +269,7 @@ class PurePythonScenario(BaseScenario):
         self.setup_data_collection()
 
         # Run simulation
-        print(
-            f"\n▶️  Running simulation until {self.params.simulation_time}s ({self.params.simulation_steps} steps)..."
-        )
+        print(f"\n▶️  Running simulation until {self.params.simulation_time}s ({self.params.simulation_steps} steps)...")
         print("=" * 70)
 
         self.run_simulation()
@@ -291,9 +283,7 @@ class PurePythonScenario(BaseScenario):
 
         # Print final state
         print(f"\n📊 Final state:")
-        print(
-            f"   Position: {self.spacecraft.position:.3f} m (target: {self.params.control.target_position} m)"
-        )
+        print(f"   Position: {self.spacecraft.position:.3f} m (target: {self.params.control.target_position} m)")
         print(f"   Velocity: {self.spacecraft.velocity:.3f} m/s")
         print(f"   Error: {self.controller.error:.3f} m")
 

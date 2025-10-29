@@ -304,9 +304,7 @@ def plot_dataflow_graph_custom(
     }
 
     # ラベル位置のオフセット計算
-    def calculate_label_offset(
-        pos_x: float, pos_y: float, all_positions: dict, position_mode: str
-    ) -> Tuple[float, float]:
+    def calculate_label_offset(pos_x: float, pos_y: float, all_positions: dict, position_mode: str) -> Tuple[float, float]:
         """ラベルのオフセット位置を計算（ノードと重ならないように）"""
         offset_distance = 0.15  # ノードからの距離
 
@@ -371,28 +369,18 @@ def plot_dataflow_graph_custom(
         )
 
         # ラベル配置（ノードの外側）
-        label_x, label_y = calculate_label_offset(
-            positions[node][0], positions[node][1], positions, label_position
-        )
+        label_x, label_y = calculate_label_offset(positions[node][0], positions[node][1], positions, label_position)
 
         # 水平・垂直配置の調整
         if label_position == "center":
             h_align, v_align = "center", "center"
-        elif label_position in ["top", "auto"] or (
-            label_position == "auto" and label_y > positions[node][1]
-        ):
+        elif label_position in ["top", "auto"] or (label_position == "auto" and label_y > positions[node][1]):
             h_align, v_align = "center", "bottom"
-        elif label_position == "bottom" or (
-            label_position == "auto" and label_y < positions[node][1]
-        ):
+        elif label_position == "bottom" or (label_position == "auto" and label_y < positions[node][1]):
             h_align, v_align = "center", "top"
-        elif label_position == "left" or (
-            label_position == "auto" and label_x < positions[node][0]
-        ):
+        elif label_position == "left" or (label_position == "auto" and label_x < positions[node][0]):
             h_align, v_align = "right", "center"
-        elif label_position == "right" or (
-            label_position == "auto" and label_x > positions[node][0]
-        ):
+        elif label_position == "right" or (label_position == "auto" and label_x > positions[node][0]):
             h_align, v_align = "left", "center"
         else:
             h_align, v_align = "center", "bottom"

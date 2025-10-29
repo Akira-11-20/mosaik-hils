@@ -94,6 +94,8 @@ class RTScenario(BaseScenario):
     def connect_entities(self):
         """Connect entities to form RT dataflow (direct connections)."""
         # 1. Controller → Plant - direct connection (time-shifted to break cycle)
+        # Note: RT scenario doesn't use Bridge, so time_shifted adds only 1 step delay
+        # This is acceptable as RT is intended to have minimal delay
         print("   ⚡ Controller → Plant: 1-step shifted (to break cycle)")
         self.world.connect(
             self.controller,

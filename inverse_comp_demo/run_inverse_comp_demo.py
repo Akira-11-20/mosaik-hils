@@ -33,7 +33,7 @@ class SimulationConfig:
     Tend: float = 20.0  # シミュレーション終了時刻 [s]
 
     # システム特性パラメータ
-    tau: float = 0.15  # 通信遅延時間 [s] - センサから制御器への伝送遅延
+    tau: float = 0.5  # 通信遅延時間 [s] - センサから制御器への伝送遅延
 
     # 2次系パラメータ（質量-バネ-ダンパー系）
     # 差分方程式: x[k] = a1*x[k-1] + a2*x[k-2] + b0*u[k] + b1*u[k-1]
@@ -248,9 +248,7 @@ def step_rise_time(t: np.ndarray, sig: np.ndarray, cfg: SimulationConfig, baseli
     return float("nan")  # 到達しなかった場合
 
 
-def compute_metrics(
-    t: np.ndarray, x: np.ndarray, y_delayed: np.ndarray, y_comp: np.ndarray, cfg: SimulationConfig
-) -> Dict[str, float]:
+def compute_metrics(t: np.ndarray, x: np.ndarray, y_delayed: np.ndarray, y_comp: np.ndarray, cfg: SimulationConfig) -> Dict[str, float]:
     """補償あり・なしの両方について各種評価指標を計算
 
     以下の3種類の指標を計算します：
@@ -304,9 +302,7 @@ def compute_metrics(
     return metrics
 
 
-def phase_delay_at_freq(
-    ref: np.ndarray, sig: np.ndarray, cfg: SimulationConfig
-) -> Tuple[float, float]:
+def phase_delay_at_freq(ref: np.ndarray, sig: np.ndarray, cfg: SimulationConfig) -> Tuple[float, float]:
     """特定周波数におけるクロススペクトルの位相遅延を計算
 
     手順:
@@ -422,25 +418,12 @@ def main() -> None:
     print()
     print(f"RMSE (no compensation)  : {metrics['rmse_no_comp']:.4f}")
     print(f"RMSE (inverse)          : {metrics['rmse_inverse']:.4f}")
-    print(
-        f"Lag  (no compensation)  : {metrics['lag_no_samples']} samples (~{metrics['lag_no_ms']:.1f} ms)"
-    )
-    print(
-        f"Lag  (inverse)          : {metrics['lag_inv_samples']} samples (~{metrics['lag_inv_ms']:.1f} ms)"
-    )
-    print(
-        f"Phase delay (no comp)   : {metrics['phase_delay_no_time'] * 1000:.1f} ms"
-        f" ({metrics['phase_delay_no_rad']:.3f} rad)"
-    )
-    print(
-        f"Phase delay (inverse)   : {metrics['phase_delay_inv_time'] * 1000:.1f} ms"
-        f" ({metrics['phase_delay_inv_rad']:.3f} rad)"
-    )
+    print(f"Lag  (no compensation)  : {metrics['lag_no_samples']} samples (~{metrics['lag_no_ms']:.1f} ms)")
+    print(f"Lag  (inverse)          : {metrics['lag_inv_samples']} samples (~{metrics['lag_inv_ms']:.1f} ms)")
+    print(f"Phase delay (no comp)   : {metrics['phase_delay_no_time'] * 1000:.1f} ms ({metrics['phase_delay_no_rad']:.3f} rad)")
+    print(f"Phase delay (inverse)   : {metrics['phase_delay_inv_time'] * 1000:.1f} ms ({metrics['phase_delay_inv_rad']:.3f} rad)")
     print()
-    print(
-        f"Rise time (true)        : {metrics['rise_time_true']:.3f} s"
-        f"  | reference step @ {cfg.step_time:.1f} s"
-    )
+    print(f"Rise time (true)        : {metrics['rise_time_true']:.3f} s  | reference step @ {cfg.step_time:.1f} s")
     print(f"Rise delay (no comp)    : {metrics['rise_delay_no']:.3f} s")
     print(f"Rise delay (inverse)    : {metrics['rise_delay_inv']:.3f} s")
 

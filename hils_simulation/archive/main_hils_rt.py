@@ -152,9 +152,7 @@ def main():
     }
 
     # Worldの作成（1ms精度）
-    print(
-        f"\n🌍 Creating Mosaik World (time_resolution={TIME_RESOLUTION}s = {TIME_RESOLUTION * 1000}ms)"
-    )
+    print(f"\n🌍 Creating Mosaik World (time_resolution={TIME_RESOLUTION}s = {TIME_RESOLUTION * 1000}ms)")
     world = mosaik.World(
         sim_config,
         time_resolution=TIME_RESOLUTION,

@@ -31,11 +31,21 @@ meta = {
                 "jitter_std",  # ジッター標準偏差 [ms]
                 "packet_loss_rate",  # パケットロス率 [0.0-1.0]
                 "preserve_order",  # パケット順序保持
+                "compensate_time_shifted",  # time_shifted接続の遅延を補償するか
+                "time_shifted_delay_ms",  # time_shifted接続による遅延量 [ms]
             ],
             "attrs": [
                 "input",  # 入力: 任意のデータ
                 "delayed_output",  # 出力: 遅延後のデータ
                 "stats",  # 統計情報
+                "packet_receive_time",  # パケット受信時刻 [ms]
+                "packet_send_time",  # パケット送信時刻 [ms]
+                "packet_actual_delay",  # 実際の遅延時間 [ms]
+                # Debug attributes
+                "buffer_size",  # バッファー内のパケット数
+                "buffer_content",  # バッファー内容（JSON文字列）
+                "oldest_packet_time",  # 最古パケットの到着時刻 [ms]
+                "newest_packet_time",  # 最新パケットの到着時刻 [ms]
             ],
         },
     },
@@ -102,6 +112,8 @@ class BridgeSimulator(mosaik_api.Simulator):
         jitter_std=10,
         packet_loss_rate=0.01,
         preserve_order=True,
+        compensate_time_shifted=False,
+        time_shifted_delay_ms=0.0,
     ):
         """
         通信ブリッジエンティティの作成
@@ -114,23 +126,39 @@ class BridgeSimulator(mosaik_api.Simulator):
             jitter_std: ジッター標準偏差 [ms]
             packet_loss_rate: パケットロス率（0.0～1.0）
             preserve_order: パケット順序保持フラグ
+            compensate_time_shifted: time_shifted接続の遅延を補償するか
+            time_shifted_delay_ms: time_shifted接続による遅延量 [ms]（通常は制御周期）
 
         Note:
             time_resolutionはinit()で設定された値を使用します
+            compensate_time_shifted=Trueの場合、実際の遅延は
+            base_delay - time_shifted_delay_ms となります
         """
         entities = []
 
         for i in range(num):
             eid = f"{model}_{i}"
 
+            # time_shifted補償の計算
+            actual_delay = base_delay
+            if compensate_time_shifted and time_shifted_delay_ms > 0:
+                actual_delay = max(0, base_delay - time_shifted_delay_ms)
+                print(f"[BridgeSim] Compensating for time_shifted delay:")
+                print(f"  Configured delay: {base_delay}ms")
+                print(f"  time_shifted delay: {time_shifted_delay_ms}ms")
+                print(f"  Actual Bridge delay: {actual_delay}ms")
+                print(f"  Total delay: {base_delay}ms")
+
             self.entities[eid] = {
                 "bridge_type": bridge_type,
-                "base_delay_ms": base_delay,
-                "base_delay_steps": self._ms_to_steps(base_delay),
+                "base_delay_ms": actual_delay,
+                "base_delay_steps": self._ms_to_steps(actual_delay),
                 "jitter_std_ms": jitter_std,
                 "jitter_std_steps": self._ms_to_steps(jitter_std),
                 "packet_loss_rate": packet_loss_rate,
                 "preserve_order": preserve_order,
+                "compensate_time_shifted": compensate_time_shifted,
+                "configured_delay_ms": base_delay,  # 設定値を保存
                 # パケットバッファ: (arrival_time, data, scheduled_output_time, seq_num)
                 "packet_buffer": [],
                 "sequence_counter": 0,
@@ -141,15 +169,19 @@ class BridgeSimulator(mosaik_api.Simulator):
                     "packets_received": 0,
                     "packets_sent": 0,
                     "packets_dropped": 0,
-                    "avg_delay": base_delay,
+                    "avg_delay": actual_delay,
                 },
+                # パケット追跡用データ（最後に送信したパケットの情報）
+                "last_packet_receive_time": None,
+                "last_packet_send_time": None,
+                "last_packet_actual_delay": None,
             }
 
             entities.append({"eid": eid, "type": model})
-            print(
-                f"[BridgeSim] Created {eid} ({bridge_type}): "
-                f"delay={base_delay}ms, jitter={jitter_std}ms, loss={packet_loss_rate * 100:.1f}%"
-            )
+            if compensate_time_shifted:
+                print(f"[BridgeSim] Created {eid} ({bridge_type}): configured_delay={base_delay}ms (actual={actual_delay}ms), jitter={jitter_std}ms, loss={packet_loss_rate * 100:.1f}%")
+            else:
+                print(f"[BridgeSim] Created {eid} ({bridge_type}): delay={actual_delay}ms, jitter={jitter_std}ms, loss={packet_loss_rate * 100:.1f}%")
 
             # イベントロガーの作成
             if EventLogger and self.output_dir:
@@ -257,9 +289,7 @@ class BridgeSimulator(mosaik_api.Simulator):
                     entity["current_output"] = selected_packet[1]
 
                     # そのパケットより古いものを全て削除
-                    entity["packet_buffer"] = [
-                        pkt for pkt in entity["packet_buffer"] if pkt[3] > selected_packet[3]
-                    ]
+                    entity["packet_buffer"] = [pkt for pkt in entity["packet_buffer"] if pkt[3] > selected_packet[3]]
                 else:
                     # 順序無視: 最新のパケットを出力
                     selected_packet = max(
@@ -273,6 +303,16 @@ class BridgeSimulator(mosaik_api.Simulator):
                         entity["packet_buffer"].remove(pkt)
 
                     entity["stats"]["packets_sent"] += 1
+
+                # パケット追跡データを記録
+                if selected_packet:
+                    arrival_time, data, scheduled_time, _seq_num, data_tag = selected_packet
+                    actual_delay_steps = time - arrival_time
+                    actual_delay_ms = self._steps_to_ms(actual_delay_steps)
+
+                    entity["last_packet_receive_time"] = self._steps_to_ms(arrival_time)
+                    entity["last_packet_send_time"] = self._steps_to_ms(time)
+                    entity["last_packet_actual_delay"] = actual_delay_ms
 
                 # ログ: 送信イベント
                 if eid in self.loggers and selected_packet:
@@ -293,9 +333,7 @@ class BridgeSimulator(mosaik_api.Simulator):
             # 3. 統計情報の更新
             if entity["packet_buffer"]:
                 total_delay = sum(pkt[2] - pkt[0] for pkt in entity["packet_buffer"])
-                entity["stats"]["avg_delay"] = (
-                    total_delay / len(entity["packet_buffer"])
-                ) * self.step_ms
+                entity["stats"]["avg_delay"] = (total_delay / len(entity["packet_buffer"])) * self.step_ms
 
         return time + self.step_size
 
@@ -323,6 +361,43 @@ class BridgeSimulator(mosaik_api.Simulator):
                     data[eid][attr] = entity["stats"]["avg_delay"]
                 elif attr == "input":
                     data[eid][attr] = entity["input"]
+                elif attr == "packet_receive_time":
+                    data[eid][attr] = entity["last_packet_receive_time"]
+                elif attr == "packet_send_time":
+                    data[eid][attr] = entity["last_packet_send_time"]
+                elif attr == "packet_actual_delay":
+                    data[eid][attr] = entity["last_packet_actual_delay"]
+                # Debug attributes
+                elif attr == "buffer_size":
+                    data[eid][attr] = len(entity["packet_buffer"])
+                elif attr == "buffer_content":
+                    # バッファー内容をJSON文字列として返す
+                    import json
+
+                    buffer_info = []
+                    for pkt in entity["packet_buffer"]:
+                        arrival_time, pkt_data, scheduled_time, seq_num, _tag = pkt
+                        buffer_info.append(
+                            {
+                                "seq": seq_num,
+                                "arrival_ms": self._steps_to_ms(arrival_time),
+                                "scheduled_ms": self._steps_to_ms(scheduled_time),
+                                "data": str(pkt_data)[:50],  # データの一部のみ
+                            }
+                        )
+                    data[eid][attr] = json.dumps(buffer_info)
+                elif attr == "oldest_packet_time":
+                    if entity["packet_buffer"]:
+                        oldest = min(entity["packet_buffer"], key=lambda x: x[0])
+                        data[eid][attr] = self._steps_to_ms(oldest[0])
+                    else:
+                        data[eid][attr] = None
+                elif attr == "newest_packet_time":
+                    if entity["packet_buffer"]:
+                        newest = max(entity["packet_buffer"], key=lambda x: x[0])
+                        data[eid][attr] = self._steps_to_ms(newest[0])
+                    else:
+                        data[eid][attr] = None
                 else:
                     data[eid][attr] = None
 

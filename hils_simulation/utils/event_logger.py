@@ -174,9 +174,7 @@ class EventLogger:
             for event in self.events:
                 f.write(json.dumps(event) + "\n")
 
-        print(
-            f"[EventLogger] 📝 {self.simulator_name}: {len(self.events)} events logged to {self.log_file}"
-        )
+        print(f"[EventLogger] 📝 {self.simulator_name}: {len(self.events)} events logged to {self.log_file}")
 
 
 class DataTag:

@@ -135,10 +135,7 @@ def get_scenario(scenario_name: str, params: Optional[SimulationParameters] = No
 
     scenario_class = scenario_map.get(resolved_name)
     if scenario_class is None:
-        raise ValueError(
-            f"Invalid scenario: {scenario_name}. "
-            f"Available scenarios: {', '.join(scenario_map.keys())} (shortcuts: h, r, i, p)"
-        )
+        raise ValueError(f"Invalid scenario: {scenario_name}. Available scenarios: {', '.join(scenario_map.keys())} (shortcuts: h, r, i, p)")
 
     return scenario_class(params)
 

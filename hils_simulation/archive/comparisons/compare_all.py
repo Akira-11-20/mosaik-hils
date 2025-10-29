@@ -23,7 +23,7 @@ import json
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-import h5py
+from hdf5_helper import load_hdf5_data, get_dataset
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -39,17 +39,17 @@ def load_hdf5_data(hdf5_path: str) -> Dict[str, np.ndarray]:
         データセットの辞書
     """
     data = {}
-    with h5py.File(hdf5_path, "r") as f:
-        # データは'data'グループ内にある
-        if "data" in f:
-            data_group = f["data"]
-            for key in data_group.keys():
-                data[key] = data_group[key][:]
-        else:
-            # 古い形式の互換性のため
-            for key in f.keys():
-                if isinstance(f[key], h5py.Dataset):
-                    data[key] = f[key][:]
+    data_tmp = load_hdf5_data(hdf5_path)
+    # データは'data'グループ内にある
+    if "data" in f:
+        data_group = f["data"]
+        for key in data_group.keys():
+            data[key] = data_group[key][:]
+    else:
+        # 古い形式の互換性のため
+        for key in f.keys():
+            if isinstance(f[key], h5py.Dataset):
+                data[key] = f[key][:]
     return data
 
 
@@ -373,20 +373,8 @@ def plot_3way_comparison(
         "rt": rt_metrics,
         "pure_python": pure_metrics,
         "relative_to_pure": {
-            "hils_rms_degradation_percent": (
-                (hils_metrics["rms_error"] - pure_metrics["rms_error"])
-                / pure_metrics["rms_error"]
-                * 100
-            )
-            if pure_metrics["rms_error"] != 0
-            else 0,
-            "rt_rms_degradation_percent": (
-                (rt_metrics["rms_error"] - pure_metrics["rms_error"])
-                / pure_metrics["rms_error"]
-                * 100
-            )
-            if pure_metrics["rms_error"] != 0
-            else 0,
+            "hils_rms_degradation_percent": ((hils_metrics["rms_error"] - pure_metrics["rms_error"]) / pure_metrics["rms_error"] * 100) if pure_metrics["rms_error"] != 0 else 0,
+            "rt_rms_degradation_percent": ((rt_metrics["rms_error"] - pure_metrics["rms_error"]) / pure_metrics["rms_error"] * 100) if pure_metrics["rms_error"] != 0 else 0,
         },
     }
 
@@ -398,9 +386,7 @@ def plot_3way_comparison(
 
 def main():
     """メイン関数"""
-    parser = argparse.ArgumentParser(
-        description="Compare HILS, RT, and Pure Python simulation results"
-    )
+    parser = argparse.ArgumentParser(description="Compare HILS, RT, and Pure Python simulation results")
     parser.add_argument("hils_h5", type=str, help="Path to HILS HDF5 data file")
     parser.add_argument("rt_h5", type=str, help="Path to RT HDF5 data file")
     parser.add_argument("pure_h5", type=str, help="Path to Pure Python HDF5 data file")
@@ -458,9 +444,7 @@ def main():
 
     # 比較プロットの生成
     print("\n📊 Generating comparison plots...")
-    plot_3way_comparison(
-        hils_data, rt_data, pure_data, hils_config, rt_config, pure_config, output_dir
-    )
+    plot_3way_comparison(hils_data, rt_data, pure_data, hils_config, rt_config, pure_config, output_dir)
 
     print("\n✅ 3-way comparison analysis completed!")
     print("=" * 80)

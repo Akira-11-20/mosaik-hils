@@ -84,7 +84,7 @@ class InverseCompScenario(BaseScenario):
                 "InverseCompSim",
                 step_size=self.params.control_period_steps,
             )
-            print(f"   ✨ Inverse Compensator enabled (gain={self.params.inverse_comp.gain})")
+            print(f" ✨ Inverse Compensator enabled (gain={self.params.inverse_comp.gain})")
 
         plant_sim = self.world.start("PlantSim", step_size=self.params.plant_sim_period_steps)
         env_sim = self.world.start("EnvSim", step_size=self.params.env_sim_period_steps)
@@ -119,12 +119,17 @@ class InverseCompScenario(BaseScenario):
             gravity=self.params.spacecraft.gravity,
         )
 
+        # Command path bridge with time_shifted compensation
+        # Since InverseComp->Bridge uses time_shifted=True, it adds 1 step delay
+        # We compensate for this in the Bridge to achieve the desired total delay
         self.bridge_cmd = bridge_cmd_sim.CommBridge(
             bridge_type="cmd",
             base_delay=self.params.communication.cmd_delay,
             jitter_std=self.params.communication.cmd_jitter,
             packet_loss_rate=self.params.communication.cmd_loss_rate,
             preserve_order=True,
+            compensate_time_shifted=True,
+            time_shifted_delay_ms=self.params.time_resolution * 1000,  # 1 step in ms
         )
 
         self.bridge_sense = bridge_sense_sim.CommBridge(
@@ -139,25 +144,25 @@ class InverseCompScenario(BaseScenario):
         """Connect entities with inverse compensator in command path."""
         if self.params.inverse_comp.enabled:
             # With inverse compensation
-            print("   ⏱️  Controller → Inverse Compensator: time-shifted connection")
+            print("   Controller → Inverse Compensator: same-step connection")
             self.world.connect(
                 self.controller,
                 self.inverse_comp,
                 ("command", "input"),
-                time_shifted=True,
-                initial_data={
-                    "command": {
-                        "thrust": 0.0,
-                        "duration": self.params.control.control_period,
-                    }
-                },
             )
 
-            print("   ✨ Inverse Compensator → Bridge(cmd): compensated command path")
+            print("   ⏱️  Inverse Compensator → Bridge(cmd): time-shifted connection")
             self.world.connect(
                 self.inverse_comp,
                 self.bridge_cmd,
                 ("compensated_output", "input"),
+                time_shifted=True,
+                initial_data={
+                    "compensated_output": {
+                        "thrust": 0.0,
+                        "duration": self.params.control.control_period,
+                    }
+                },
             )
         else:
             # Without inverse compensation (fallback to standard HILS)
@@ -230,31 +235,55 @@ class InverseCompScenario(BaseScenario):
                 self.world,
                 [self.inverse_comp],
                 self.collector,
-                "compensated_output",
-                "stats",
+                # "compensated_output",
+                # "stats",
+                # # Debug attributes
+                # "raw_input",
+                # "prev_input",
+                # "delta",
+                # "compensation_amount",
+                "input_thrust",
+                "output_thrust",
             )
 
-        mosaik.util.connect_many_to_one(
-            self.world,
-            [self.bridge_cmd],
-            self.collector,
-            "stats",
-        )
+
+        # mosaik.util.connect_many_to_one(
+        #     self.world,
+        #     [self.bridge_cmd],
+        #     self.collector,
+        #     "stats",
+        #     "packet_receive_time",
+        #     "packet_send_time",
+        #     "packet_actual_delay",
+        #     # Debug attributes
+        #     "buffer_size",
+        #     # "buffer_content",  # Commented out to reduce log size
+        #     "oldest_packet_time",
+        #     "newest_packet_time",
+        # )
 
         mosaik.util.connect_many_to_one(
             self.world,
             [self.plant],
             self.collector,
             "measured_thrust",
-            "status",
+            # "status",
         )
 
-        mosaik.util.connect_many_to_one(
-            self.world,
-            [self.bridge_sense],
-            self.collector,
-            "stats",
-        )
+        # mosaik.util.connect_many_to_one(
+        #     self.world,
+        #     [self.bridge_sense],
+        #     self.collector,
+        #     "stats",
+        #     "packet_receive_time",
+        #     "packet_send_time",
+        #     "packet_actual_delay",
+        #     # Debug attributes
+        #     "buffer_size",
+        #     # "buffer_content",  # Commented out to reduce log size
+        #     "oldest_packet_time",
+        #     "newest_packet_time",
+        # )
 
         mosaik.util.connect_many_to_one(
             self.world,

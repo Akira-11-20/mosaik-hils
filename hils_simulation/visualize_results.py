@@ -32,7 +32,7 @@ def _():
     import numpy as np
     import pandas as pd
     import plotly.graph_objects as go
-    return Path, go, h5py, json, np, os, plt, pd
+    return Path, go, h5py, json, np, os, pd, plt
 
 
 @app.cell
@@ -88,6 +88,12 @@ def _(Path, json, os):
                 delay_info = "No delay"
             else:
                 delay_info = f"Cmd:{cmd_delay:.0f}ms, Sense:{sense_delay:.0f}ms"
+
+            # 逆補償情報
+            inv_comp = config.get("inverse_compensation", {})
+            if inv_comp.get("enabled", False):
+                alpha = inv_comp.get("gain", 0)
+                delay_info = f"{delay_info}, α={alpha:.1f}"
 
             label = f"[{dir_type}] {subdir.name} ({delay_info})"
 
@@ -228,16 +234,12 @@ def _(np):
         # オーバーシュート
         overshoot = np.max(position) - target_position
         metrics["overshoot"] = overshoot
-        metrics["overshoot_percent"] = (
-            (overshoot / target_position) * 100 if target_position != 0 else 0
-        )
+        metrics["overshoot_percent"] = (overshoot / target_position) * 100 if target_position != 0 else 0
 
         # アンダーシュート
         undershoot = target_position - np.min(position)
         metrics["undershoot"] = undershoot
-        metrics["undershoot_percent"] = (
-            (undershoot / target_position) * 100 if target_position != 0 else 0
-        )
+        metrics["undershoot_percent"] = (undershoot / target_position) * 100 if target_position != 0 else 0
 
         # 整定時間（誤差が5%以内に収まる時刻）
         settling_threshold = 0.05 * abs(target_position)
@@ -322,7 +324,6 @@ def _(np):
             metrics["itae"] = 0
 
         return metrics
-
     return (calculate_detailed_metrics,)
 
 
@@ -331,23 +332,51 @@ def _(h5py):
     """HDF5データ読み込み関数（共通）"""
 
     def load_hdf5_data(h5_path):
-        """HDF5ファイルからデータを読み込む"""
+        """HDF5ファイルからデータを読み込む（階層構造対応）"""
         hdf5_data = {}
         with h5py.File(h5_path, "r") as f:
+            # 旧形式（data/以下にフラット）の対応
             if "data" in f:
                 for key in f["data"].keys():
                     hdf5_data[key] = f["data"][key][:]
             else:
-                for key in f.keys():
-                    if isinstance(f[key], h5py.Dataset):
-                        hdf5_data[key] = f[key][:]
-        return hdf5_data
+                # 新形式（ノードごとにグループ化）の対応
+                def read_group(group, prefix=""):
+                    """再帰的にグループを読み込む"""
+                    for key in group.keys():
+                        item = group[key]
+                        if isinstance(item, h5py.Group):
+                            # グループの場合、再帰的に読み込む
+                            read_group(item, prefix=f"{key}_")
+                        elif isinstance(item, h5py.Dataset):
+                            # データセットの場合、フラット化したキー名で保存
+                            # 例: BridgeSim-0_CommBridge_0/buffer_size -> buffer_size_BridgeSim-0_CommBridge_0
+                            flat_key = f"{item.name.replace('/', '_')}"
+                            if flat_key.startswith("_"):
+                                flat_key = flat_key[1:]
+                            # 階層を逆にしてフラット化: group_name/attr -> attr_group_name
+                            parts = item.name.split("/")
+                            if len(parts) >= 2:
+                                # /group_name/attr_name -> attr_name_group_name
+                                group_name = parts[1]
+                                attr_name = parts[-1]
+                                flat_key = f"{attr_name}_{group_name}" if group_name != "time" else attr_name
+                            hdf5_data[flat_key] = item[:]
 
+                read_group(f)
+        return hdf5_data
     return (load_hdf5_data,)
 
 
 @app.cell
-def _(calculate_detailed_metrics, load_hdf5_data, mo, np, plt, selected_results):
+def _(
+    calculate_detailed_metrics,
+    load_hdf5_data,
+    mo,
+    np,
+    plt,
+    selected_results,
+):
     """プロット生成とメトリクス計算"""
 
     def find_key_by_suffix(key_data, suffix):
@@ -386,9 +415,7 @@ def _(calculate_detailed_metrics, load_hdf5_data, mo, np, plt, selected_results)
                 # データキーの検索（compare_all.py と同じロジック）
 
                 # HILS/RT の場合: position_EnvSim-0.Spacecraft1DOF_0
-                result_pos_key = find_key_by_prefix_and_suffix(
-                    result_data, "position_", "Spacecraft1DOF_0"
-                )
+                result_pos_key = find_key_by_prefix_and_suffix(result_data, "position_", "Spacecraft1DOF_0")
 
                 # Pure Python の場合: position_Spacecraft
                 if not result_pos_key:
@@ -403,13 +430,25 @@ def _(calculate_detailed_metrics, load_hdf5_data, mo, np, plt, selected_results)
                 # Velocity: position を velocity に置き換え
                 result_vel_key = result_pos_key.replace("position", "velocity")
 
-                # Thrust: command_..._thrust (compare_all.py と同じ)
-                result_thrust_key = find_key_by_suffix(result_data, "_thrust")
+                # Thrust: 優先順位で検索
+                # 1. command_thrust (コントローラーからの指令)
+                # 2. output_thrust (補償器がある場合の出力)
+                # 3. 最初に見つかった _thrust
+                result_thrust_key = None
+                for k in result_data.keys():
+                    if k.startswith("command_thrust"):
+                        result_thrust_key = k
+                        break
+                if not result_thrust_key:
+                    for k in result_data.keys():
+                        if k.startswith("output_thrust"):
+                            result_thrust_key = k
+                            break
+                if not result_thrust_key:
+                    result_thrust_key = find_key_by_suffix(result_data, "_thrust")
 
                 # Error: error_..._Controller...
-                result_error_key = find_key_by_prefix_and_suffix(
-                    result_data, "error_", "Controller_0"
-                )
+                result_error_key = find_key_by_prefix_and_suffix(result_data, "error_", "Controller_0")
                 if not result_error_key:
                     result_error_key = find_key_by_suffix(result_data, "error_Controller")
 
@@ -430,18 +469,10 @@ def _(calculate_detailed_metrics, load_hdf5_data, mo, np, plt, selected_results)
                 print(f"  error_key: {result_error_key} (len={len(result_error)})")
 
                 # 目標位置の取得
-                target_position = result_item["config"].get("control", {}).get(
-                    "target_position_m", 5.0
-                )
+                target_position = result_item["config"].get("control", {}).get("target_position_m", 5.0)
 
                 # メトリクス計算
-                if (
-                    len(time_data) > 0
-                    and len(result_position) > 0
-                    and len(result_velocity) > 0
-                    and len(result_error) > 0
-                    and len(result_thrust) > 0
-                ):
+                if len(time_data) > 0 and len(result_position) > 0 and len(result_velocity) > 0 and len(result_error) > 0 and len(result_thrust) > 0:
                     metrics = calculate_detailed_metrics(
                         time_data,
                         result_position,
@@ -565,7 +596,6 @@ def _(calculate_detailed_metrics, load_hdf5_data, mo, np, plt, selected_results)
     else:
         plot_fig = None
         computed_metrics = []
-
     return computed_metrics, plot_fig
 
 
@@ -592,11 +622,11 @@ def _(mo):
     """インタラクティブプロットセクションヘッダー"""
     interactive_header = mo.md(
         """
----
+    ---
 
-## 📈 Interactive Plot Explorer
+    ## 📈 Interactive Plot Explorer
 
-Select a plot type to view an interactive version with zoom, pan, and hover capabilities.
+    Select a plot type to view an interactive version with zoom, pan, and hover capabilities.
         """
     )
     return (interactive_header,)
@@ -666,9 +696,7 @@ def _(go, load_hdf5_data, mo, np, plot_selector, selected_results):
                 time_data = result_data.get("time_s", np.array([])).copy()
 
                 # データキーの検索
-                result_pos_key = find_key_by_prefix_and_suffix(
-                    result_data, "position_", "Spacecraft1DOF_0"
-                )
+                result_pos_key = find_key_by_prefix_and_suffix(result_data, "position_", "Spacecraft1DOF_0")
                 if not result_pos_key:
                     result_pos_key = find_key_by_suffix(result_data, "position_Spacecraft")
 
@@ -677,10 +705,22 @@ def _(go, load_hdf5_data, mo, np, plot_selector, selected_results):
                     continue
 
                 result_vel_key = result_pos_key.replace("position", "velocity")
-                result_thrust_key = find_key_by_suffix(result_data, "_thrust")
-                result_error_key = find_key_by_prefix_and_suffix(
-                    result_data, "error_", "Controller_0"
-                )
+
+                # Thrust: 優先順位で検索（静的プロットと同じロジック）
+                result_thrust_key = None
+                for k in result_data.keys():
+                    if k.startswith("command_thrust"):
+                        result_thrust_key = k
+                        break
+                if not result_thrust_key:
+                    for k in result_data.keys():
+                        if k.startswith("output_thrust"):
+                            result_thrust_key = k
+                            break
+                if not result_thrust_key:
+                    result_thrust_key = find_key_by_suffix(result_data, "_thrust")
+
+                result_error_key = find_key_by_prefix_and_suffix(result_data, "error_", "Controller_0")
                 if not result_error_key:
                     result_error_key = find_key_by_suffix(result_data, "error_Controller")
 
@@ -723,11 +763,7 @@ def _(go, load_hdf5_data, mo, np, plot_selector, selected_results):
                             width=2,
                             dash=styles[plot_idx % len(styles)],
                         ),
-                        hovertemplate="<b>%{fullData.name}</b><br>"
-                        + "Time: %{x:.4f} s<br>"
-                        + f"{y_label}: "
-                        + "%{y:.6f}<br>"
-                        + "<extra></extra>",
+                        hovertemplate="<b>%{fullData.name}</b><br>" + "Time: %{x:.4f} s<br>" + f"{y_label}: " + "%{y:.6f}<br>" + "<extra></extra>",
                     )
                 )
 
@@ -736,9 +772,7 @@ def _(go, load_hdf5_data, mo, np, plot_selector, selected_results):
 
         # 目標線を追加（位置プロットの場合）
         if plot_type == "position" and len(results_list) > 0:
-            target_position = results_list[0]["config"].get("control", {}).get(
-                "target_position_m", 5.0
-            )
+            target_position = results_list[0]["config"].get("control", {}).get("target_position_m", 5.0)
             fig.add_hline(
                 y=target_position,
                 line_dash="dot",
@@ -773,7 +807,6 @@ def _(go, load_hdf5_data, mo, np, plot_selector, selected_results):
         interactive_fig = generate_interactive_plot(selected_results, plot_selector.value)
     else:
         interactive_fig = mo.md("_Select results and a plot type above._")
-
     return (interactive_fig,)
 
 
@@ -811,16 +844,8 @@ def _(computed_metrics, mo, pd):
                 "Overshoot": metrics["overshoot"],
                 "Overshoot %": metrics["overshoot_percent"],
                 "Rise Time": metrics["rise_time"] if metrics["rise_time"] is not None else None,
-                "Settling 5%": (
-                    metrics["settling_time_5pct"]
-                    if metrics["settling_time_5pct"] is not None
-                    else None
-                ),
-                "Settling 2%": (
-                    metrics["settling_time_2pct"]
-                    if metrics["settling_time_2pct"] is not None
-                    else None
-                ),
+                "Settling 5%": (metrics["settling_time_5pct"] if metrics["settling_time_5pct"] is not None else None),
+                "Settling 2%": (metrics["settling_time_2pct"] if metrics["settling_time_2pct"] is not None else None),
                 "ISE": metrics["ise"],
                 "IAE": metrics["iae"],
                 "ITAE": metrics["itae"],
@@ -834,47 +859,29 @@ def _(computed_metrics, mo, pd):
         df = pd.DataFrame(rows)
 
         # 各カテゴリの表を作成（数値は適切にフォーマット）
-        error_table = df[
-            ["Simulation", "RMS Error", "Max Error", "Mean |Error|", "Std Error", "Final Error"]
-        ].copy()
+        error_table = df[["Simulation", "RMS Error", "Max Error", "Mean |Error|", "Std Error", "Final Error"]].copy()
         error_table["RMS Error"] = error_table["RMS Error"].apply(lambda x: f"{x:.6f}")
         error_table["Max Error"] = error_table["Max Error"].apply(lambda x: f"{x:.6f}")
         error_table["Mean |Error|"] = error_table["Mean |Error|"].apply(lambda x: f"{x:.6f}")
         error_table["Std Error"] = error_table["Std Error"].apply(lambda x: f"{x:.6f}")
         error_table["Final Error"] = error_table["Final Error"].apply(lambda x: f"{x:.6f}")
 
-        transient_table = df[
-            ["Simulation", "Overshoot", "Overshoot %", "Rise Time", "Settling 5%", "Settling 2%"]
-        ].copy()
+        transient_table = df[["Simulation", "Overshoot", "Overshoot %", "Rise Time", "Settling 5%", "Settling 2%"]].copy()
         transient_table["Overshoot"] = transient_table["Overshoot"].apply(lambda x: f"{x:.6f}")
-        transient_table["Overshoot %"] = transient_table["Overshoot %"].apply(
-            lambda x: f"{x:.2f}%"
-        )
-        transient_table["Rise Time"] = transient_table["Rise Time"].apply(
-            lambda x: f"{x:.4f}" if pd.notna(x) else "N/A"
-        )
-        transient_table["Settling 5%"] = transient_table["Settling 5%"].apply(
-            lambda x: f"{x:.4f}" if pd.notna(x) else "N/A"
-        )
-        transient_table["Settling 2%"] = transient_table["Settling 2%"].apply(
-            lambda x: f"{x:.4f}" if pd.notna(x) else "N/A"
-        )
+        transient_table["Overshoot %"] = transient_table["Overshoot %"].apply(lambda x: f"{x:.2f}%")
+        transient_table["Rise Time"] = transient_table["Rise Time"].apply(lambda x: f"{x:.4f}" if pd.notna(x) else "N/A")
+        transient_table["Settling 5%"] = transient_table["Settling 5%"].apply(lambda x: f"{x:.4f}" if pd.notna(x) else "N/A")
+        transient_table["Settling 2%"] = transient_table["Settling 2%"].apply(lambda x: f"{x:.4f}" if pd.notna(x) else "N/A")
 
         integral_table = df[["Simulation", "ISE", "IAE", "ITAE"]].copy()
         integral_table["ISE"] = integral_table["ISE"].apply(lambda x: f"{x:.6f}")
         integral_table["IAE"] = integral_table["IAE"].apply(lambda x: f"{x:.6f}")
         integral_table["ITAE"] = integral_table["ITAE"].apply(lambda x: f"{x:.6f}")
 
-        control_table = df[
-            ["Simulation", "Max Thrust", "Mean |Thrust|", "Control Effort", "Max Velocity"]
-        ].copy()
+        control_table = df[["Simulation", "Max Thrust", "Mean |Thrust|", "Control Effort", "Max Velocity"]].copy()
         control_table["Max Thrust"] = control_table["Max Thrust"].apply(lambda x: f"{x:.4f}")
-        control_table["Mean |Thrust|"] = control_table["Mean |Thrust|"].apply(
-            lambda x: f"{x:.4f}"
-        )
-        control_table["Control Effort"] = control_table["Control Effort"].apply(
-            lambda x: f"{x:.4f}"
-        )
+        control_table["Mean |Thrust|"] = control_table["Mean |Thrust|"].apply(lambda x: f"{x:.4f}")
+        control_table["Control Effort"] = control_table["Control Effort"].apply(lambda x: f"{x:.4f}")
         control_table["Max Velocity"] = control_table["Max Velocity"].apply(lambda x: f"{x:.6f}")
 
         # 相対比較テーブル（拡充版）
@@ -1022,12 +1029,11 @@ def _(computed_metrics, mo, pd):
 
         metrics_display = mo.md(
             f"""
-## 📊 Performance Metrics Comparison
+    ## 📊 Performance Metrics Comparison
 
-**Total simulations compared:** {len(computed_metrics)}
+    **Total simulations compared:** {len(computed_metrics)}
         """
         )
-
     return (
         control_relative_table,
         control_table,
@@ -1036,7 +1042,6 @@ def _(computed_metrics, mo, pd):
         integral_relative_table,
         integral_table,
         metrics_display,
-        relative_table,
         transient_relative_table,
         transient_table,
     )
@@ -1151,13 +1156,13 @@ def _(
         # ヘッダー
         relative_header = mo.md(
             f"""
----
+    ---
 
-## 🔍 Relative Performance Analysis
+    ## 🔍 Relative Performance Analysis
 
-**Baseline:** {computed_metrics[0]["label"]}
+    **Baseline:** {computed_metrics[0]["label"]}
 
-All percentages show the change relative to the baseline (positive = worse for errors, varies for other metrics).
+    All percentages show the change relative to the baseline (positive = worse for errors, varies for other metrics).
         """
         )
 
@@ -1206,7 +1211,6 @@ All percentages show the change relative to the baseline (positive = worse for e
         transient_relative_section = None
         integral_relative_section = None
         control_relative_section = None
-
     return (
         control_relative_section,
         error_relative_section,
@@ -1256,11 +1260,11 @@ def _(mo):
     """時刻範囲指定比較セクションヘッダー"""
     time_range_header = mo.md(
         """
----
+    ---
 
-## ⏱️ Time Range Trajectory Comparison
+    ## ⏱️ Time Range Trajectory Comparison
 
-Select a time range to analyze detailed trajectory differences between two selected simulations.
+    Select a time range to analyze detailed trajectory differences between two selected simulations.
         """
     )
     return (time_range_header,)
@@ -1299,7 +1303,6 @@ def _(load_hdf5_data, np, selected_results):
     else:
         max_time_calc = 2.0
         min_time_calc = 0.0
-
     return max_time_calc, min_time_calc
 
 
@@ -1344,22 +1347,20 @@ def _(max_time_calc, min_time_calc, mo, selected_results):
         )
 
         # レイアウト：スライダーと数値入力を横に並べる
-        time_range_ui = mo.vstack([
-            mo.md("**Select time range for comparison:**"),
-            mo.md(
-                "_Use **sliders** for quick selection or **number inputs** for precise values (0.001s precision)._\n\n"
-                f"_Available time range: {min_time_calc:.3f}s to {max_time_calc:.3f}s_"
-            ),
-            mo.hstack([time_start_slider, time_start_number], justify="start", widths=[3, 1]),
-            mo.hstack([time_end_slider, time_end_number], justify="start", widths=[3, 1]),
-        ])
+        time_range_ui = mo.vstack(
+            [
+                mo.md("**Select time range for comparison:**"),
+                mo.md(f"_Use **sliders** for quick selection or **number inputs** for precise values (0.001s precision)._\n\n_Available time range: {min_time_calc:.3f}s to {max_time_calc:.3f}s_"),
+                mo.hstack([time_start_slider, time_start_number], justify="start", widths=[3, 1]),
+                mo.hstack([time_end_slider, time_end_number], justify="start", widths=[3, 1]),
+            ]
+        )
     else:
         time_start_slider = None
         time_end_slider = None
         time_start_number = None
         time_end_number = None
         time_range_ui = mo.md("_Select at least 2 results to enable time range comparison._")
-
     return (
         time_end_number,
         time_end_slider,
@@ -1539,12 +1540,7 @@ def _(
         return stats
 
     # 計算実行
-    if (len(selected_results) >= 2 and
-        time_start_slider is not None and
-        time_end_slider is not None and
-        time_start_number is not None and
-        time_end_number is not None):
-
+    if len(selected_results) >= 2 and time_start_slider is not None and time_end_slider is not None and time_start_number is not None and time_end_number is not None:
         # 数値入力を優先（より正確な値の入力が可能なため）
         # ユーザーが数値入力を使用した場合、その値を使用
         # そうでない場合はスライダーの値を使用
@@ -1556,28 +1552,22 @@ def _(
             trajectory_diff_stats = None
             trajectory_diff_message = mo.md(f"⚠️ **Invalid time range**: Start time ({t_start:.3f}s) must be less than end time ({t_end:.3f}s)")
         else:
-            trajectory_diff_stats = calculate_trajectory_difference(
-                selected_results[0],
-                selected_results[1],
-                t_start,
-                t_end
-            )
+            trajectory_diff_stats = calculate_trajectory_difference(selected_results[0], selected_results[1], t_start, t_end)
 
             if trajectory_diff_stats is None:
                 trajectory_diff_message = mo.md("⚠️ **Error**: Could not calculate trajectory difference. Check data availability.")
             else:
                 trajectory_diff_message = mo.md(
                     f"""
-**Comparing trajectories:**
-- **Baseline**: {selected_results[0]["label"]}
-- **Comparison**: {selected_results[1]["label"]}
-- **Time range**: {t_start:.3f}s to {t_end:.3f}s ({trajectory_diff_stats['n_samples']} samples)
+    **Comparing trajectories:**
+    - **Baseline**: {selected_results[0]["label"]}
+    - **Comparison**: {selected_results[1]["label"]}
+    - **Time range**: {t_start:.3f}s to {t_end:.3f}s ({trajectory_diff_stats["n_samples"]} samples)
                     """
                 )
     else:
         trajectory_diff_stats = None
         trajectory_diff_message = mo.md("_Waiting for time range selection..._")
-
     return trajectory_diff_message, trajectory_diff_stats
 
 
@@ -1618,10 +1608,12 @@ def _(mo, pd, selected_results, trajectory_diff_stats):
 
         pos_error_table_df = pd.DataFrame(pos_error_data)
 
-        pos_error_table_section = mo.vstack([
-            mo.md("### 📏 Position Trajectory Error (Time Range)"),
-            mo.ui.table(pos_error_table_df, selection=None),
-        ])
+        pos_error_table_section = mo.vstack(
+            [
+                mo.md("### 📏 Position Trajectory Error (Time Range)"),
+                mo.ui.table(pos_error_table_df, selection=None),
+            ]
+        )
 
         # 速度誤差テーブル
         vel_error_data = {
@@ -1643,14 +1635,15 @@ def _(mo, pd, selected_results, trajectory_diff_stats):
 
         vel_error_table_df = pd.DataFrame(vel_error_data)
 
-        vel_error_table_section = mo.vstack([
-            mo.md("### 🚀 Velocity Trajectory Error (Time Range)"),
-            mo.ui.table(vel_error_table_df, selection=None),
-        ])
+        vel_error_table_section = mo.vstack(
+            [
+                mo.md("### 🚀 Velocity Trajectory Error (Time Range)"),
+                mo.ui.table(vel_error_table_df, selection=None),
+            ]
+        )
     else:
         pos_error_table_section = None
         vel_error_table_section = None
-
     return pos_error_table_section, vel_error_table_section
 
 
@@ -1676,24 +1669,28 @@ def _(go, mo, selected_results, trajectory_diff_stats):
         fig_pos_compare = go.Figure()
 
         # Baseline軌跡
-        fig_pos_compare.add_trace(go.Scatter(
-            x=trajectory_diff_stats["time"],
-            y=trajectory_diff_stats["pos1"],
-            mode="lines",
-            name=f"Baseline: {selected_results[0]['name']}",
-            line=dict(color="#1f77b4", width=2),
-            hovertemplate="<b>Baseline</b><br>Time: %{x:.4f} s<br>Position: %{y:.6f} m<extra></extra>",
-        ))
+        fig_pos_compare.add_trace(
+            go.Scatter(
+                x=trajectory_diff_stats["time"],
+                y=trajectory_diff_stats["pos1"],
+                mode="lines",
+                name=f"Baseline: {selected_results[0]['name']}",
+                line=dict(color="#1f77b4", width=2),
+                hovertemplate="<b>Baseline</b><br>Time: %{x:.4f} s<br>Position: %{y:.6f} m<extra></extra>",
+            )
+        )
 
         # Comparison軌跡
-        fig_pos_compare.add_trace(go.Scatter(
-            x=trajectory_diff_stats["time"],
-            y=trajectory_diff_stats["pos2"],
-            mode="lines",
-            name=f"Comparison: {selected_results[1]['name']}",
-            line=dict(color="#ff7f0e", width=2, dash="dash"),
-            hovertemplate="<b>Comparison</b><br>Time: %{x:.4f} s<br>Position: %{y:.6f} m<extra></extra>",
-        ))
+        fig_pos_compare.add_trace(
+            go.Scatter(
+                x=trajectory_diff_stats["time"],
+                y=trajectory_diff_stats["pos2"],
+                mode="lines",
+                name=f"Comparison: {selected_results[1]['name']}",
+                line=dict(color="#ff7f0e", width=2, dash="dash"),
+                hovertemplate="<b>Comparison</b><br>Time: %{x:.4f} s<br>Position: %{y:.6f} m<extra></extra>",
+            )
+        )
 
         fig_pos_compare.update_layout(
             title="Position Trajectory Comparison (Selected Time Range)",
@@ -1711,16 +1708,18 @@ def _(go, mo, selected_results, trajectory_diff_stats):
         # 誤差プロット
         fig_error = go.Figure()
 
-        fig_error.add_trace(go.Scatter(
-            x=trajectory_diff_stats["time"],
-            y=trajectory_diff_stats["position_error"],
-            mode="lines",
-            name="Position Error",
-            line=dict(color="#d62728", width=2),
-            fill="tozeroy",
-            fillcolor="rgba(214, 39, 40, 0.2)",
-            hovertemplate="<b>Position Error</b><br>Time: %{x:.4f} s<br>Error: %{y:.6f} m<extra></extra>",
-        ))
+        fig_error.add_trace(
+            go.Scatter(
+                x=trajectory_diff_stats["time"],
+                y=trajectory_diff_stats["position_error"],
+                mode="lines",
+                name="Position Error",
+                line=dict(color="#d62728", width=2),
+                fill="tozeroy",
+                fillcolor="rgba(214, 39, 40, 0.2)",
+                hovertemplate="<b>Position Error</b><br>Time: %{x:.4f} s<br>Error: %{y:.6f} m<extra></extra>",
+            )
+        )
 
         fig_error.add_hline(y=0, line_dash="dot", line_color="black", line_width=1)
 
@@ -1731,7 +1730,7 @@ def _(go, mo, selected_results, trajectory_diff_stats):
             line_dash="dash",
             line_color="green",
             annotation_text=f"RMSE: {rmse:.6f}m",
-            annotation_position="right"
+            annotation_position="right",
         )
         fig_error.add_hline(
             y=-rmse,
@@ -1751,14 +1750,15 @@ def _(go, mo, selected_results, trajectory_diff_stats):
         fig_error.update_xaxes(showgrid=True, gridwidth=1, gridcolor="LightGray")
         fig_error.update_yaxes(showgrid=True, gridwidth=1, gridcolor="LightGray")
 
-        trajectory_comparison_plots = mo.vstack([
-            mo.md("### 📊 Trajectory Comparison Plots"),
-            fig_pos_compare,
-            fig_error,
-        ])
+        trajectory_comparison_plots = mo.vstack(
+            [
+                mo.md("### 📊 Trajectory Comparison Plots"),
+                fig_pos_compare,
+                fig_error,
+            ]
+        )
     else:
         trajectory_comparison_plots = None
-
     return (trajectory_comparison_plots,)
 
 
@@ -1774,26 +1774,26 @@ def _(mo):
     """メトリクス定義"""
     definitions = mo.md(
         """
----
+    ---
 
-### 📖 Metric Definitions
+    ### 📖 Metric Definitions
 
-- **RMS Error**: Root Mean Square error - overall accuracy measure
-- **Max Error**: Maximum absolute deviation from target
-- **Mean |Error|**: Average absolute error magnitude
-- **Std Error**: Standard deviation of position error
-- **Final Error**: Average error in last 10% of simulation
-- **Overshoot**: Maximum position beyond target
-- **Rise Time**: Time from 10% to 90% of target position
-- **Settling Time (5%)**: Time to stay within 5% of target permanently
-- **Settling Time (2%)**: Time to stay within 2% of target permanently
-- **ISE**: Integral of Squared Error - penalizes large errors
-- **IAE**: Integral of Absolute Error - total error magnitude
-- **ITAE**: Integral of Time-weighted Absolute Error - penalizes persistent errors
-- **Control Effort**: Total variation of control input (sum of absolute changes)
-- **Max Thrust**: Maximum control input magnitude
-- **Mean |Thrust|**: Average control input magnitude
-- **Max Velocity**: Maximum velocity during trajectory
+    - **RMS Error**: Root Mean Square error - overall accuracy measure
+    - **Max Error**: Maximum absolute deviation from target
+    - **Mean |Error|**: Average absolute error magnitude
+    - **Std Error**: Standard deviation of position error
+    - **Final Error**: Average error in last 10% of simulation
+    - **Overshoot**: Maximum position beyond target
+    - **Rise Time**: Time from 10% to 90% of target position
+    - **Settling Time (5%)**: Time to stay within 5% of target permanently
+    - **Settling Time (2%)**: Time to stay within 2% of target permanently
+    - **ISE**: Integral of Squared Error - penalizes large errors
+    - **IAE**: Integral of Absolute Error - total error magnitude
+    - **ITAE**: Integral of Time-weighted Absolute Error - penalizes persistent errors
+    - **Control Effort**: Total variation of control input (sum of absolute changes)
+    - **Max Thrust**: Maximum control input magnitude
+    - **Mean |Thrust|**: Average control input magnitude
+    - **Max Velocity**: Maximum velocity during trajectory
         """
     )
     return (definitions,)
