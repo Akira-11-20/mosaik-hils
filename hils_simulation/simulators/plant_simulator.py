@@ -8,6 +8,7 @@ PlantSimulator - 1DOF推力測定器シミュレーター
 """
 
 import mosaik_api
+import numpy as np
 
 
 meta = {
@@ -15,12 +16,13 @@ meta = {
     "models": {
         "ThrustStand": {
             "public": True,
-            "params": ["stand_id", "time_constant", "enable_lag"],
+            "params": ["stand_id", "time_constant", "time_constant_std", "enable_lag"],
             "attrs": [
                 "command",  # 入力: 制御コマンド（辞書: {thrust, duration}）
                 "measured_thrust",  # 出力: 測定された推力 [N]
                 "actual_thrust",  # 出力: 1次遅延後の実推力 [N]
                 "status",  # 状態: "idle", "thrusting"
+                "time_constant",  # 出力: 実際の時定数 [ms] (ばらつき適用後)
             ],
         },
     },
@@ -80,6 +82,7 @@ class PlantSimulator(mosaik_api.Simulator):
         model,
         stand_id="thrust_stand_01",
         time_constant=50.0,  # 1次遅延時定数 [ms]
+        time_constant_std=0.0,  # 時定数の標準偏差 [ms]
         enable_lag=True,  # 1次遅延の有効化
     ):
         """
@@ -89,13 +92,21 @@ class PlantSimulator(mosaik_api.Simulator):
             num: 作成数
             model: モデル名
             stand_id: 測定器ID
-            time_constant: 1次遅延の時定数 [ms]
+            time_constant: 1次遅延の時定数（平均値） [ms]
+            time_constant_std: 時定数のばらつき（標準偏差） [ms]
             enable_lag: 1次遅延を有効にするか
         """
         entities = []
 
         for i in range(num):
             eid = f"{model}_{i}"
+
+            # ばらつきの適用（ガウス分布から時定数をサンプリング）
+            if time_constant_std > 0:
+                # 負の値にならないように max(0, ...) でクリップ
+                actual_time_constant = max(0.0, np.random.normal(time_constant, time_constant_std))
+            else:
+                actual_time_constant = time_constant
 
             self.entities[eid] = {
                 "stand_id": stand_id,
@@ -107,15 +118,23 @@ class PlantSimulator(mosaik_api.Simulator):
                 "thrust_start_time": None,  # 推力開始時刻
                 "thrust_end_time": None,  # 推力終了時刻
                 # 1次遅延パラメータ
-                "time_constant": time_constant,  # 時定数 [ms]
+                "time_constant": actual_time_constant,  # 時定数 [ms] (ばらつき適用後)
                 "enable_lag": enable_lag,  # 1次遅延の有効/無効
             }
 
             entities.append({"eid": eid, "type": model})
             lag_status = "enabled" if enable_lag else "disabled"
-            print(
-                f"[PlantSim] Created {eid} (ID: {stand_id}, τ={time_constant}ms, lag={lag_status})"
-            )
+
+            if time_constant_std > 0:
+                print(
+                    f"[PlantSim] Created {eid} (ID: {stand_id}, "
+                    f"τ={actual_time_constant:.2f}ms (mean={time_constant}ms, std={time_constant_std}ms), "
+                    f"lag={lag_status})"
+                )
+            else:
+                print(
+                    f"[PlantSim] Created {eid} (ID: {stand_id}, τ={actual_time_constant}ms, lag={lag_status})"
+                )
 
         return entities
 

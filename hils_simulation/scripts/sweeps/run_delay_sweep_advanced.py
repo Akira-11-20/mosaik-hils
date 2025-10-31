@@ -10,6 +10,9 @@ import sys
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 
+# Add parent directory to path to enable imports from hils_simulation root
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
 from config.parameters import SimulationParameters
 from scenarios import HILSScenario, InverseCompScenario
 
@@ -24,6 +27,7 @@ class DelayConfig:
         use_inverse_comp: bool = False,
         comp_gain: Optional[float] = None,
         plant_time_constant: Optional[float] = None,
+        plant_time_constant_std: Optional[float] = None,
         plant_enable_lag: Optional[bool] = None,
         label: Optional[str] = None
     ):
@@ -34,6 +38,7 @@ class DelayConfig:
             use_inverse_comp: Enable inverse compensation
             comp_gain: Custom compensation gain (if None, uses default from .env)
             plant_time_constant: Plant 1st-order lag time constant in milliseconds (if None, uses default from .env)
+            plant_time_constant_std: Standard deviation for time constant variability in milliseconds (if None, uses default from .env)
             plant_enable_lag: Enable plant lag (if None, uses default from .env)
             label: Custom label for this configuration
         """
@@ -42,6 +47,7 @@ class DelayConfig:
         self.use_inverse_comp = use_inverse_comp
         self.comp_gain = comp_gain
         self.plant_time_constant = plant_time_constant
+        self.plant_time_constant_std = plant_time_constant_std
         self.plant_enable_lag = plant_enable_lag
         self.label = label or self._generate_label()
 
@@ -58,6 +64,10 @@ class DelayConfig:
         # Add plant time constant if specified
         if self.plant_time_constant is not None:
             label += f"_tau{self.plant_time_constant:.0f}ms"
+
+        # Add plant time constant std if specified
+        if self.plant_time_constant_std is not None and self.plant_time_constant_std > 0:
+            label += f"_std{self.plant_time_constant_std:.0f}ms"
 
         # Add plant lag disabled flag if specified
         if self.plant_enable_lag is not None and not self.plant_enable_lag:
@@ -76,6 +86,9 @@ class DelayConfig:
 
         if self.plant_time_constant is not None:
             parts.append(f"plant_tau={self.plant_time_constant}ms")
+
+        if self.plant_time_constant_std is not None:
+            parts.append(f"plant_tau_std={self.plant_time_constant_std}ms")
 
         if self.plant_enable_lag is not None:
             parts.append(f"plant_lag={self.plant_enable_lag}")
@@ -174,6 +187,8 @@ def run_simulation(config: DelayConfig) -> Dict[str, Any]:
         # Override plant parameters
         if config.plant_time_constant is not None:
             params.plant.time_constant = config.plant_time_constant
+        if config.plant_time_constant_std is not None:
+            params.plant.time_constant_std = config.plant_time_constant_std
         if config.plant_enable_lag is not None:
             params.plant.enable_lag = config.plant_enable_lag
 

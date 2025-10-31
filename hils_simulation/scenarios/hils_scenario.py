@@ -91,6 +91,7 @@ class HILSScenario(BaseScenario):
         self.plant = plant_sim.ThrustStand(
             stand_id="stand_01",
             time_constant=self.params.plant.time_constant,
+            time_constant_std=self.params.plant.time_constant_std,
             enable_lag=self.params.plant.enable_lag,
         )
 

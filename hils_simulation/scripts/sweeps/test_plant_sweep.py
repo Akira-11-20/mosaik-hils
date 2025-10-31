@@ -2,7 +2,13 @@
 Plant time constant sweep - Run simulations with different actuator dynamics
 """
 
-from run_delay_sweep_advanced import DelayConfig, run_simulation, print_summary
+import sys
+from pathlib import Path
+
+# Add parent directory to path to enable imports from hils_simulation root
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
+from scripts.sweeps.run_delay_sweep_advanced import DelayConfig, run_simulation, print_summary
 
 # Test plant time constant sweep
 configs = [

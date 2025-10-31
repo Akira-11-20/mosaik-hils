@@ -5,6 +5,9 @@ Run inverse compensation simulation with different gain values
 import sys
 from pathlib import Path
 
+# Add parent directory to path to enable imports from hils_simulation root
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
 from config.parameters import SimulationParameters
 from scenarios import InverseCompScenario
 
