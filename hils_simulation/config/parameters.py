@@ -137,6 +137,22 @@ class SpacecraftParams:
 
 
 @dataclass
+class PlantParams:
+    """Plant (actuator) dynamics parameters."""
+
+    time_constant: float = 50.0  # First-order lag time constant [ms]
+    enable_lag: bool = True  # Enable first-order lag dynamics
+
+    @classmethod
+    def from_env(cls) -> "PlantParams":
+        """Load plant parameters from environment variables."""
+        return cls(
+            time_constant=get_env_float("PLANT_TIME_CONSTANT", 50.0),
+            enable_lag=get_env_bool("PLANT_ENABLE_LAG", True),
+        )
+
+
+@dataclass
 class InverseCompParams:
     """Inverse compensation parameters."""
 
@@ -171,6 +187,7 @@ class SimulationParameters:
     control: ControlParams = None
     simulators: SimulatorParams = None
     spacecraft: SpacecraftParams = None
+    plant: PlantParams = None
     inverse_comp: InverseCompParams = None
 
     def __post_init__(self):
@@ -183,6 +200,8 @@ class SimulationParameters:
             self.simulators = SimulatorParams()
         if self.spacecraft is None:
             self.spacecraft = SpacecraftParams()
+        if self.plant is None:
+            self.plant = PlantParams()
         if self.inverse_comp is None:
             self.inverse_comp = InverseCompParams()
 
@@ -207,6 +226,7 @@ class SimulationParameters:
             control=ControlParams.from_env(),
             simulators=SimulatorParams.from_env(),
             spacecraft=SpacecraftParams.from_env(),
+            plant=PlantParams.from_env(),
             inverse_comp=InverseCompParams.from_env(),
         )
 
@@ -274,6 +294,10 @@ class SimulationParameters:
                 "initial_position_m": self.spacecraft.initial_position,
                 "initial_velocity_m_s": self.spacecraft.initial_velocity,
                 "gravity_m_s2": self.spacecraft.gravity,
+            },
+            "plant": {
+                "time_constant_s": self.plant.time_constant / 1000.0,
+                "enable_lag": self.plant.enable_lag,
             },
             "inverse_compensation": {
                 "enabled": self.inverse_comp.enabled,

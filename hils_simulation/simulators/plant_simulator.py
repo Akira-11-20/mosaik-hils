@@ -15,10 +15,11 @@ meta = {
     "models": {
         "ThrustStand": {
             "public": True,
-            "params": ["stand_id"],
+            "params": ["stand_id", "time_constant", "enable_lag"],
             "attrs": [
                 "command",  # 入力: 制御コマンド（辞書: {thrust, duration}）
                 "measured_thrust",  # 出力: 測定された推力 [N]
+                "actual_thrust",  # 出力: 1次遅延後の実推力 [N]
                 "status",  # 状態: "idle", "thrusting"
             ],
         },
@@ -38,8 +39,13 @@ class PlantSimulator(mosaik_api.Simulator):
             }
 
     出力:
-        measured_thrust: 実際に測定される推力 [N]
+        measured_thrust: 理想的な推力指令値 [N]
+        actual_thrust: 1次遅延を考慮した実推力 [N]
         status: 測定器の状態
+
+    1次遅延モデル:
+        τ * dy/dt + y = u
+        離散化: y[k+1] = y[k] + (dt/τ) * (u[k] - y[k])
     """
 
     def __init__(self):
@@ -47,6 +53,7 @@ class PlantSimulator(mosaik_api.Simulator):
         self.entities = {}
         self.step_size = 1  # デフォルト: 1ms
         self.time = 0
+        self.time_resolution = 0.001  # デフォルト: 1ms
 
     def init(
         self,
@@ -72,6 +79,8 @@ class PlantSimulator(mosaik_api.Simulator):
         num,
         model,
         stand_id="thrust_stand_01",
+        time_constant=50.0,  # 1次遅延時定数 [ms]
+        enable_lag=True,  # 1次遅延の有効化
     ):
         """
         推力測定器エンティティの作成
@@ -80,6 +89,8 @@ class PlantSimulator(mosaik_api.Simulator):
             num: 作成数
             model: モデル名
             stand_id: 測定器ID
+            time_constant: 1次遅延の時定数 [ms]
+            enable_lag: 1次遅延を有効にするか
         """
         entities = []
 
@@ -90,14 +101,21 @@ class PlantSimulator(mosaik_api.Simulator):
                 "stand_id": stand_id,
                 "thrust_cmd": 0.0,  # 現在の推力指令
                 "duration_cmd": 0.0,  # 持続時間指令
-                "measured_thrust": 0.0,  # 測定値（出力）
+                "measured_thrust": 0.0,  # 理想的な測定値（出力）
+                "actual_thrust": 0.0,  # 1次遅延後の実推力（出力）
                 "status": "idle",  # 初期状態
                 "thrust_start_time": None,  # 推力開始時刻
                 "thrust_end_time": None,  # 推力終了時刻
+                # 1次遅延パラメータ
+                "time_constant": time_constant,  # 時定数 [ms]
+                "enable_lag": enable_lag,  # 1次遅延の有効/無効
             }
 
             entities.append({"eid": eid, "type": model})
-            print(f"[PlantSim] Created {eid} (ID: {stand_id})")
+            lag_status = "enabled" if enable_lag else "disabled"
+            print(
+                f"[PlantSim] Created {eid} (ID: {stand_id}, τ={time_constant}ms, lag={lag_status})"
+            )
 
         return entities
 
@@ -149,6 +167,30 @@ class PlantSimulator(mosaik_api.Simulator):
             else:
                 # アイドル状態
                 entity["measured_thrust"] = 0.0
+
+            # 1次遅延ダイナミクス（アクチュエーター応答遅れ）
+            if entity["enable_lag"]:
+                # 1次遅延モデル: τ * dy/dt + y = u
+                # 離散化: y[k+1] = y[k] + (dt/τ) * (u[k] - y[k])
+                # dt is the actual step size in ms
+                dt = self.step_size * self.time_resolution * 1000  # [ms]
+                tau = entity["time_constant"]  # [ms]
+
+                u = entity["measured_thrust"]  # 入力: 理想推力
+                y = entity["actual_thrust"]  # 現在の実推力
+
+                # 1次遅延の更新式（dtが大きい場合は複数の小ステップで計算）
+                # より正確にするため、dtをサブステップに分割
+                sub_steps = max(1, int(dt / 0.1))  # 0.1ms刻みでサブステップ
+                dt_sub = dt / sub_steps
+
+                for _ in range(sub_steps):
+                    y = y + (dt_sub / tau) * (u - y)
+
+                entity["actual_thrust"] = y
+            else:
+                # 1次遅延なし（理想的な応答）
+                entity["actual_thrust"] = entity["measured_thrust"]
 
         return time + self.step_size
 

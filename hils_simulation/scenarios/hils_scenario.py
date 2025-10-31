@@ -88,7 +88,11 @@ class HILSScenario(BaseScenario):
             integral_limit=self.params.control.integral_limit,
         )
 
-        self.plant = plant_sim.ThrustStand(stand_id="stand_01")
+        self.plant = plant_sim.ThrustStand(
+            stand_id="stand_01",
+            time_constant=self.params.plant.time_constant,
+            enable_lag=self.params.plant.enable_lag,
+        )
 
         self.spacecraft = env_sim.Spacecraft1DOF(
             mass=self.params.spacecraft.mass,
@@ -143,10 +147,11 @@ class HILSScenario(BaseScenario):
         )
 
         # 3. Plant → Bridge(sense) - measurement path
+        # Uses actual_thrust (with first-order lag) instead of measured_thrust (ideal)
         self.world.connect(
             self.plant,
             self.bridge_sense,
-            ("measured_thrust", "input"),
+            ("actual_thrust", "input"),
         )
 
         # 4. Bridge(sense) → Env - delayed measurement
@@ -205,6 +210,7 @@ class HILSScenario(BaseScenario):
             [self.plant],
             self.collector,
             "measured_thrust",
+            "actual_thrust",
             "status",
         )
 

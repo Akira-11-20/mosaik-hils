@@ -95,6 +95,16 @@ def _(Path, json, os):
                 alpha = inv_comp.get("gain", 0)
                 delay_info = f"{delay_info}, α={alpha:.1f}"
 
+            # Plant遅延情報
+            plant = config.get("plant", {})
+            plant_enabled = plant.get("enable_lag", True)
+            plant_tau = plant.get("time_constant_s", 0) * 1000 if plant_enabled else None
+
+            if plant_tau is not None and plant_tau > 0:
+                delay_info = f"{delay_info}, Plant-τ:{plant_tau:.0f}ms"
+            elif not plant_enabled:
+                delay_info = f"{delay_info}, Plant:ideal"
+
             label = f"[{dir_type}] {subdir.name} ({delay_info})"
 
             all_results.append(
@@ -164,7 +174,7 @@ def _(mo, num_plots_selector, title):
     """タイトル表示"""
     title_display = mo.vstack([title, num_plots_selector] if num_plots_selector else [title])
     title_display
-    return (title_display,)
+    return
 
 
 @app.cell
@@ -194,7 +204,6 @@ def _(all_results, mo, num_plots_selector):
         # mo.ui.arrayでラップしてリアクティビティを確保
         dropdowns_list = [_create_dropdown(i) for i in range(num_plots)]
         result_dropdowns_array = mo.ui.array(dropdowns_list)
-
     return (result_dropdowns_array,)
 
 
@@ -423,8 +432,8 @@ def _(
         # メトリクスを保存するリスト
         all_metrics = []
 
-        # プロット作成
-        fig, axes = plt.subplots(4, 1, figsize=(14, 16))
+        # プロット作成（5つに増やす：Position, Velocity, Command Thrust, Measured Thrust, Error）
+        fig, axes = plt.subplots(5, 1, figsize=(14, 20))
         # 10色に拡張（カラーマップから取得）
         colors = [
             "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
@@ -456,32 +465,49 @@ def _(
                 # Velocity: position を velocity に置き換え
                 result_vel_key = result_pos_key.replace("position", "velocity")
 
-                # Thrust: 優先順位で検索
-                # 1. command_thrust (コントローラーからの指令)
-                # 2. output_thrust (補償器がある場合の出力)
-                # 3. 最初に見つかった _thrust
-                result_thrust_key = None
+                # Command Thrust: コントローラーからの指令
+                # 優先順位: compensated_output_thrust (逆補償あり) > command_thrust (逆補償なし)
+                result_cmd_thrust_key = None
                 for k in result_data.keys():
-                    if k.startswith("command_thrust"):
-                        result_thrust_key = k
+                    if k.startswith("compensated_output") and k.endswith("_thrust"):
+                        result_cmd_thrust_key = k
                         break
-                if not result_thrust_key:
+                if not result_cmd_thrust_key:
                     for k in result_data.keys():
-                        if k.startswith("output_thrust"):
-                            result_thrust_key = k
+                        if k.startswith("command_thrust"):
+                            result_cmd_thrust_key = k
                             break
-                if not result_thrust_key:
-                    result_thrust_key = find_key_by_suffix(result_data, "_thrust")
+
+                # Actual Thrust: Plantで測定された実際のthrust（遅延後）
+                result_actual_thrust_key = None
+                for k in result_data.keys():
+                    if k.startswith("actual_thrust") and "ThrustStand" in k:
+                        result_actual_thrust_key = k
+                        break
+                if not result_actual_thrust_key:
+                    for k in result_data.keys():
+                        if k.startswith("actual_thrust"):
+                            result_actual_thrust_key = k
+                            break
 
                 # Error: error_..._Controller...
-                result_error_key = find_key_by_prefix_and_suffix(result_data, "error_", "Controller_0")
+                # Error key search
+                result_error_key = None
+                for k in result_data.keys():
+                    if k.startswith("error_") and "Controller" in k:
+                        result_error_key = k
+                        break
                 if not result_error_key:
-                    result_error_key = find_key_by_suffix(result_data, "error_Controller")
+                    for k in result_data.keys():
+                        if "error" in k and "Controller" in k:
+                            result_error_key = k
+                            break
 
                 # データ取得（コピーを作成して元のresult_dataを削除可能にする）
                 result_position = result_data.get(result_pos_key, np.array([])).copy()
                 result_velocity = result_data.get(result_vel_key, np.array([])).copy()
-                result_thrust = result_data.get(result_thrust_key, np.array([])).copy()
+                result_cmd_thrust = result_data.get(result_cmd_thrust_key, np.array([])).copy()
+                result_actual_thrust = result_data.get(result_actual_thrust_key, np.array([])).copy()
                 result_error = result_data.get(result_error_key, np.array([])).copy()
 
                 # 大きなresult_dataを即座に削除
@@ -491,20 +517,21 @@ def _(
                 print(f"\n{result_item['name']}:")
                 print(f"  pos_key: {result_pos_key} (len={len(result_position)})")
                 print(f"  vel_key: {result_vel_key} (len={len(result_velocity)})")
-                print(f"  thrust_key: {result_thrust_key} (len={len(result_thrust)})")
+                print(f"  cmd_thrust_key: {result_cmd_thrust_key} (len={len(result_cmd_thrust)})")
+                print(f"  actual_thrust_key: {result_actual_thrust_key} (len={len(result_actual_thrust)})")
                 print(f"  error_key: {result_error_key} (len={len(result_error)})")
 
                 # 目標位置の取得
                 target_position = result_item["config"].get("control", {}).get("target_position_m", 5.0)
 
-                # メトリクス計算
-                if len(time_data) > 0 and len(result_position) > 0 and len(result_velocity) > 0 and len(result_error) > 0 and len(result_thrust) > 0:
+                # メトリクス計算（command thrustを使用）
+                if len(time_data) > 0 and len(result_position) > 0 and len(result_velocity) > 0 and len(result_error) > 0 and len(result_cmd_thrust) > 0:
                     metrics = calculate_detailed_metrics(
                         time_data,
                         result_position,
                         result_velocity,
                         result_error,
-                        result_thrust,
+                        result_cmd_thrust,
                         target_position,
                     )
                     all_metrics.append(
@@ -547,10 +574,11 @@ def _(
                 else:
                     print(f"  ⚠️ No velocity data")
 
-                if len(result_thrust) > 0:
+                # Command Thrust（コントローラー出力）
+                if len(result_cmd_thrust) > 0:
                     axes[2].plot(
                         time_data,
-                        result_thrust,
+                        result_cmd_thrust,
                         color=result_color,
                         ls=result_style,
                         label=result_label,
@@ -558,10 +586,24 @@ def _(
                         alpha=0.8,
                     )
                 else:
-                    print(f"  ⚠️ No thrust data")
+                    print(f"  ⚠️ No command thrust data")
+
+                # Actual Thrust（Plant入力、遅延後）
+                if len(result_actual_thrust) > 0:
+                    axes[3].plot(
+                        time_data,
+                        result_actual_thrust,
+                        color=result_color,
+                        ls=result_style,
+                        label=result_label,
+                        lw=1.5,
+                        alpha=0.8,
+                    )
+                else:
+                    print(f"  ⚠️ No actual thrust data")
 
                 if len(result_error) > 0:
-                    axes[3].plot(
+                    axes[4].plot(
                         time_data,
                         result_error,
                         color=result_color,
@@ -596,17 +638,22 @@ def _(
         axes[1].legend(fontsize=9, loc="best")
         axes[1].grid(True, alpha=0.3)
 
-        axes[2].set_ylabel("Thrust [N]", fontsize=11)
-        axes[2].set_title("Control Input Comparison", fontsize=13, fontweight="bold")
+        axes[2].set_ylabel("Command Thrust [N]", fontsize=11)
+        axes[2].set_title("Command Thrust (Controller Output)", fontsize=13, fontweight="bold")
         axes[2].legend(fontsize=9, loc="best")
         axes[2].grid(True, alpha=0.3)
 
-        axes[3].set_xlabel("Time [s]", fontsize=11)
-        axes[3].set_ylabel("Position Error [m]", fontsize=11)
-        axes[3].set_title("Control Error Comparison", fontsize=13, fontweight="bold")
-        axes[3].axhline(0, color="k", linestyle=":", lw=1)
+        axes[3].set_ylabel("Actual Thrust [N]", fontsize=11)
+        axes[3].set_title("Actual Thrust (Plant Input, After Delay)", fontsize=13, fontweight="bold")
         axes[3].legend(fontsize=9, loc="best")
         axes[3].grid(True, alpha=0.3)
+
+        axes[4].set_xlabel("Time [s]", fontsize=11)
+        axes[4].set_ylabel("Position Error [m]", fontsize=11)
+        axes[4].set_title("Control Error Comparison", fontsize=13, fontweight="bold")
+        axes[4].axhline(0, color="k", linestyle=":", lw=1)
+        axes[4].legend(fontsize=9, loc="best")
+        axes[4].grid(True, alpha=0.3)
 
         plt.tight_layout()
 
@@ -672,7 +719,8 @@ def _(mo):
         {
             "Position": "position",
             "Velocity": "velocity",
-            "Control Input (Thrust)": "thrust",
+            "Command Thrust (Controller Output)": "cmd_thrust",
+            "Actual Thrust (Plant Input, After Delay)": "actual_thrust",
             "Position Error": "error",
         },
         value="Position",
@@ -738,23 +786,41 @@ def _(go, load_hdf5_data, mo, np, plot_selector, selected_results):
 
                 result_vel_key = result_pos_key.replace("position", "velocity")
 
-                # Thrust: 優先順位で検索（静的プロットと同じロジック）
-                result_thrust_key = None
+                # Command Thrust: コントローラーからの指令
+                result_cmd_thrust_key = None
                 for k in result_data.keys():
-                    if k.startswith("command_thrust"):
-                        result_thrust_key = k
+                    if k.startswith("compensated_output") and k.endswith("_thrust"):
+                        result_cmd_thrust_key = k
                         break
-                if not result_thrust_key:
+                if not result_cmd_thrust_key:
                     for k in result_data.keys():
-                        if k.startswith("output_thrust"):
-                            result_thrust_key = k
+                        if k.startswith("command_thrust"):
+                            result_cmd_thrust_key = k
                             break
-                if not result_thrust_key:
-                    result_thrust_key = find_key_by_suffix(result_data, "_thrust")
 
-                result_error_key = find_key_by_prefix_and_suffix(result_data, "error_", "Controller_0")
+                # Actual Thrust: Plantで測定された実際のthrust（遅延後）
+                result_actual_thrust_key = None
+                for k in result_data.keys():
+                    if k.startswith("actual_thrust") and "ThrustStand" in k:
+                        result_actual_thrust_key = k
+                        break
+                if not result_actual_thrust_key:
+                    for k in result_data.keys():
+                        if k.startswith("actual_thrust"):
+                            result_actual_thrust_key = k
+                            break
+
+                # Error key search
+                result_error_key = None
+                for k in result_data.keys():
+                    if k.startswith("error_") and "Controller" in k:
+                        result_error_key = k
+                        break
                 if not result_error_key:
-                    result_error_key = find_key_by_suffix(result_data, "error_Controller")
+                    for k in result_data.keys():
+                        if "error" in k and "Controller" in k:
+                            result_error_key = k
+                            break
 
                 # プロットタイプに応じてデータを選択（コピーを作成）
                 if plot_type == "position":
@@ -765,10 +831,14 @@ def _(go, load_hdf5_data, mo, np, plot_selector, selected_results):
                     y_data = result_data.get(result_vel_key, np.array([])).copy()
                     y_label = "Velocity [m/s]"
                     title = "Velocity Comparison (Interactive)"
-                elif plot_type == "thrust":
-                    y_data = result_data.get(result_thrust_key, np.array([])).copy()
-                    y_label = "Thrust [N]"
-                    title = "Control Input Comparison (Interactive)"
+                elif plot_type == "cmd_thrust":
+                    y_data = result_data.get(result_cmd_thrust_key, np.array([])).copy()
+                    y_label = "Command Thrust [N]"
+                    title = "Command Thrust (Controller Output) - Interactive"
+                elif plot_type == "actual_thrust":
+                    y_data = result_data.get(result_actual_thrust_key, np.array([])).copy()
+                    y_label = "Actual Thrust [N]"
+                    title = "Actual Thrust (Plant Input, After Delay) - Interactive"
                 elif plot_type == "error":
                     y_data = result_data.get(result_error_key, np.array([])).copy()
                     y_label = "Position Error [m]"

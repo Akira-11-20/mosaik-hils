@@ -82,7 +82,11 @@ class RTScenario(BaseScenario):
             integral_limit=self.params.control.integral_limit,
         )
 
-        self.plant = plant_sim.ThrustStand(stand_id="stand_01")
+        self.plant = plant_sim.ThrustStand(
+            stand_id="stand_01",
+            time_constant=self.params.plant.time_constant,
+            enable_lag=False,
+        )
 
         self.spacecraft = env_sim.Spacecraft1DOF(
             mass=self.params.spacecraft.mass,
@@ -111,11 +115,12 @@ class RTScenario(BaseScenario):
         )
 
         # 2. Plant → Env - direct connection (no delay)
+        # Uses actual_thrust (with first-order lag) instead of measured_thrust (ideal)
         print("   ⚡ Plant → Env: direct connection (no delay)")
         self.world.connect(
             self.plant,
             self.spacecraft,
-            ("measured_thrust", "force"),
+            ("actual_thrust", "force"),
         )
 
         # 3. Env → Controller - state feedback (same step)
@@ -152,6 +157,7 @@ class RTScenario(BaseScenario):
             [self.plant],
             self.collector,
             "measured_thrust",
+            "actual_thrust",
             "status",
         )
 
