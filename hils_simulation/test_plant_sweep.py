@@ -6,10 +6,10 @@ from run_delay_sweep_advanced import DelayConfig, run_simulation, print_summary
 
 # Test plant time constant sweep
 configs = [
-    DelayConfig(0.0, 0.0, plant_time_constant=30.0, plant_enable_lag=True),
-    DelayConfig(0.0, 0.0, plant_time_constant=90.0, plant_enable_lag=True),
-    DelayConfig(0.0, 0.0, plant_time_constant=150.0, plant_enable_lag=True),
-    DelayConfig(0.0, 0.0, plant_time_constant=300.0, plant_enable_lag=True),
+    DelayConfig(0.0, 0.0, plant_time_constant=30.0, plant_enable_lag=True, use_inverse_comp=True, comp_gain=4),
+    DelayConfig(0.0, 0.0, plant_time_constant=90.0, plant_enable_lag=True, use_inverse_comp=True, comp_gain=10),
+    DelayConfig(0.0, 0.0, plant_time_constant=150.0, plant_enable_lag=True, use_inverse_comp=True, comp_gain=16),
+    DelayConfig(0.0, 0.0, plant_time_constant=300.0, plant_enable_lag=True, use_inverse_comp=True, comp_gain=31),
     DelayConfig(0.0, 0.0, plant_enable_lag=False),
 ]
 
@@ -28,6 +28,9 @@ for i, config in enumerate(configs, 1):
         print(f"   Plant τ: {config.plant_time_constant}ms")
     if config.plant_enable_lag is not None:
         print(f"   Plant lag enabled: {config.plant_enable_lag}")
+    print(f"   Inverse compensation: {config.use_inverse_comp}")
+    if config.use_inverse_comp and config.comp_gain is not None:
+        print(f"   Compensation gain: {config.comp_gain}")
     print()
 
 print("=" * 70)
