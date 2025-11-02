@@ -46,8 +46,40 @@ cd hils_simulation
 uv run python scripts/sweeps/run_gain_sweep.py
 ```
 
+### `run_sweep.py` ⭐ (Recommended)
+Plant parameter sweep with pre-configured scenarios - comprehensive sweep tool for plant dynamics.
+
+**Usage:**
+```bash
+cd hils_simulation
+uv run python scripts/sweeps/run_sweep.py
+```
+
+**Features:**
+- **5 pre-configured scenarios**:
+  - Scenario 1: Basic time constant sweep (τ variation)
+  - Scenario 2: Individual variability (manufacturing variation)
+  - Scenario 3: Time-varying noise (environmental disturbances)
+  - Scenario 4: Combined variability + noise
+  - Scenario 5: Realistic scenario (delays + compensation + variability)
+- Easy scenario selection (uncomment line in script)
+- Tests plant time constant, variability (std), and time-varying noise
+- Compares with/without inverse compensation
+
+**Example Scenarios:**
+
+```python
+# Scenario 2: Individual variability (uncomment in script)
+configs = SCENARIO_2_VARIABILITY
+# Tests: σ = 0, 2, 5, 10 ms
+
+# Scenario 4: Combined effects
+configs = SCENARIO_4_COMBINED
+# Tests: baseline, std only, noise only, both combined
+```
+
 ### `test_plant_sweep.py`
-Plant time constant sweep - tests different actuator dynamics with varying time constants.
+Basic plant time constant sweep - tests different actuator dynamics.
 
 **Usage:**
 ```bash
@@ -57,9 +89,8 @@ uv run python scripts/sweeps/test_plant_sweep.py
 
 **Features:**
 - Tests multiple plant time constants (τ)
-- Supports time constant variability (standard deviation)
+- Fixed test cases for basic validation
 - Compares with/without inverse compensation
-- Configurable compensation gains per test case
 
 ## Analysis Scripts (`analysis/`)
 

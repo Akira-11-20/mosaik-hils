@@ -28,6 +28,7 @@ class DelayConfig:
         comp_gain: Optional[float] = None,
         plant_time_constant: Optional[float] = None,
         plant_time_constant_std: Optional[float] = None,
+        plant_time_constant_noise: Optional[float] = None,
         plant_enable_lag: Optional[bool] = None,
         label: Optional[str] = None
     ):
@@ -39,6 +40,7 @@ class DelayConfig:
             comp_gain: Custom compensation gain (if None, uses default from .env)
             plant_time_constant: Plant 1st-order lag time constant in milliseconds (if None, uses default from .env)
             plant_time_constant_std: Standard deviation for time constant variability in milliseconds (if None, uses default from .env)
+            plant_time_constant_noise: Time-varying noise for time constant in milliseconds (if None, uses default from .env)
             plant_enable_lag: Enable plant lag (if None, uses default from .env)
             label: Custom label for this configuration
         """
@@ -48,6 +50,7 @@ class DelayConfig:
         self.comp_gain = comp_gain
         self.plant_time_constant = plant_time_constant
         self.plant_time_constant_std = plant_time_constant_std
+        self.plant_time_constant_noise = plant_time_constant_noise
         self.plant_enable_lag = plant_enable_lag
         self.label = label or self._generate_label()
 
@@ -69,6 +72,10 @@ class DelayConfig:
         if self.plant_time_constant_std is not None and self.plant_time_constant_std > 0:
             label += f"_std{self.plant_time_constant_std:.0f}ms"
 
+        # Add plant time constant noise if specified
+        if self.plant_time_constant_noise is not None and self.plant_time_constant_noise > 0:
+            label += f"_noise{self.plant_time_constant_noise:.0f}ms"
+
         # Add plant lag disabled flag if specified
         if self.plant_enable_lag is not None and not self.plant_enable_lag:
             label += "_nolag"
@@ -89,6 +96,9 @@ class DelayConfig:
 
         if self.plant_time_constant_std is not None:
             parts.append(f"plant_tau_std={self.plant_time_constant_std}ms")
+
+        if self.plant_time_constant_noise is not None:
+            parts.append(f"plant_tau_noise={self.plant_time_constant_noise}ms")
 
         if self.plant_enable_lag is not None:
             parts.append(f"plant_lag={self.plant_enable_lag}")
@@ -189,6 +199,8 @@ def run_simulation(config: DelayConfig) -> Dict[str, Any]:
             params.plant.time_constant = config.plant_time_constant
         if config.plant_time_constant_std is not None:
             params.plant.time_constant_std = config.plant_time_constant_std
+        if config.plant_time_constant_noise is not None:
+            params.plant.time_constant_noise = config.plant_time_constant_noise
         if config.plant_enable_lag is not None:
             params.plant.enable_lag = config.plant_enable_lag
 

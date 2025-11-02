@@ -99,9 +99,20 @@ def _(Path, json, os):
             plant = config.get("plant", {})
             plant_enabled = plant.get("enable_lag", True)
             plant_tau = plant.get("time_constant_s", 0) * 1000 if plant_enabled else None
+            plant_tau_std = plant.get("time_constant_std_s", 0) * 1000
+            plant_tau_noise = plant.get("time_constant_noise_s", 0) * 1000
 
             if plant_tau is not None and plant_tau > 0:
-                delay_info = f"{delay_info}, Plant-τ:{plant_tau:.0f}ms"
+                tau_info = f"Plant-τ:{plant_tau:.0f}ms"
+                if plant_tau_std > 0 or plant_tau_noise > 0:
+                    # 個体差やノイズがある場合は追加表示
+                    variability_parts = []
+                    if plant_tau_std > 0:
+                        variability_parts.append(f"σ={plant_tau_std:.0f}ms")
+                    if plant_tau_noise > 0:
+                        variability_parts.append(f"noise={plant_tau_noise:.0f}ms")
+                    tau_info += f" ({', '.join(variability_parts)})"
+                delay_info = f"{delay_info}, {tau_info}"
             elif not plant_enabled:
                 delay_info = f"{delay_info}, Plant:ideal"
 

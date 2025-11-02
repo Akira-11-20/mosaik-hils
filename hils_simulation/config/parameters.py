@@ -142,6 +142,7 @@ class PlantParams:
 
     time_constant: float = 50.0  # First-order lag time constant [ms]
     time_constant_std: float = 0.0  # Standard deviation for time constant variability [ms]
+    time_constant_noise: float = 0.0  # Time-varying noise std (white noise added at each step) [ms]
     enable_lag: bool = True  # Enable first-order lag dynamics
 
     @classmethod
@@ -150,6 +151,7 @@ class PlantParams:
         return cls(
             time_constant=get_env_float("PLANT_TIME_CONSTANT", 50.0),
             time_constant_std=get_env_float("PLANT_TIME_CONSTANT_STD", 0.0),
+            time_constant_noise=get_env_float("PLANT_TIME_CONSTANT_NOISE", 0.0),
             enable_lag=get_env_bool("PLANT_ENABLE_LAG", True),
         )
 
@@ -300,6 +302,7 @@ class SimulationParameters:
             "plant": {
                 "time_constant_s": self.plant.time_constant / 1000.0,
                 "time_constant_std_s": self.plant.time_constant_std / 1000.0,
+                "time_constant_noise_s": self.plant.time_constant_noise / 1000.0,
                 "enable_lag": self.plant.enable_lag,
             },
             "inverse_compensation": {

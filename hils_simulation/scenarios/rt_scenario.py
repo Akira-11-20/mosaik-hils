@@ -86,6 +86,7 @@ class RTScenario(BaseScenario):
             stand_id="stand_01",
             time_constant=self.params.plant.time_constant,
             time_constant_std=self.params.plant.time_constant_std,
+            time_constant_noise=self.params.plant.time_constant_noise,
             enable_lag=False,
         )
 
@@ -160,6 +161,7 @@ class RTScenario(BaseScenario):
             "measured_thrust",
             "actual_thrust",
             "status",
+            "time_constant",  # Record actual sampled time constant
         )
 
         mosaik.util.connect_many_to_one(

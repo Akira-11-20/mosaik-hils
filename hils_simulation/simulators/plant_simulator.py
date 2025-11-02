@@ -16,7 +16,7 @@ meta = {
     "models": {
         "ThrustStand": {
             "public": True,
-            "params": ["stand_id", "time_constant", "time_constant_std", "enable_lag"],
+            "params": ["stand_id", "time_constant", "time_constant_std", "time_constant_noise", "enable_lag"],
             "attrs": [
                 "command",  # 入力: 制御コマンド（辞書: {thrust, duration}）
                 "measured_thrust",  # 出力: 測定された推力 [N]
@@ -83,6 +83,7 @@ class PlantSimulator(mosaik_api.Simulator):
         stand_id="thrust_stand_01",
         time_constant=50.0,  # 1次遅延時定数 [ms]
         time_constant_std=0.0,  # 時定数の標準偏差 [ms]
+        time_constant_noise=0.0,  # 時定数の時間変動ノイズ [ms]
         enable_lag=True,  # 1次遅延の有効化
     ):
         """
@@ -94,6 +95,7 @@ class PlantSimulator(mosaik_api.Simulator):
             stand_id: 測定器ID
             time_constant: 1次遅延の時定数（平均値） [ms]
             time_constant_std: 時定数のばらつき（標準偏差） [ms]
+            time_constant_noise: 時定数の時間変動ノイズ（標準偏差） [ms]
             enable_lag: 1次遅延を有効にするか
         """
         entities = []
@@ -104,7 +106,7 @@ class PlantSimulator(mosaik_api.Simulator):
             # ばらつきの適用（ガウス分布から時定数をサンプリング）
             if time_constant_std > 0:
                 # 負の値にならないように max(0, ...) でクリップ
-                actual_time_constant = max(0.0, np.random.normal(time_constant, time_constant_std))
+                actual_time_constant = max(0.1, np.random.normal(time_constant, time_constant_std))
             else:
                 actual_time_constant = time_constant
 
@@ -118,17 +120,20 @@ class PlantSimulator(mosaik_api.Simulator):
                 "thrust_start_time": None,  # 推力開始時刻
                 "thrust_end_time": None,  # 推力終了時刻
                 # 1次遅延パラメータ
-                "time_constant": actual_time_constant,  # 時定数 [ms] (ばらつき適用後)
+                "time_constant_base": actual_time_constant,  # ベース時定数 [ms] (個体差のみ、固定値)
+                "time_constant": actual_time_constant,  # 記録用時定数 [ms] (ノイズ反映後、毎ステップ更新)
+                "time_constant_noise": time_constant_noise,  # 時間変動ノイズ [ms]
                 "enable_lag": enable_lag,  # 1次遅延の有効/無効
             }
 
             entities.append({"eid": eid, "type": model})
             lag_status = "enabled" if enable_lag else "disabled"
 
-            if time_constant_std > 0:
+            if time_constant_std > 0 or time_constant_noise > 0:
+                noise_str = f", noise={time_constant_noise}ms" if time_constant_noise > 0 else ""
                 print(
                     f"[PlantSim] Created {eid} (ID: {stand_id}, "
-                    f"τ={actual_time_constant:.2f}ms (mean={time_constant}ms, std={time_constant_std}ms), "
+                    f"τ={actual_time_constant:.2f}ms (mean={time_constant}ms, std={time_constant_std}ms{noise_str}), "
                     f"lag={lag_status})"
                 )
             else:
@@ -193,7 +198,18 @@ class PlantSimulator(mosaik_api.Simulator):
                 # 離散化: y[k+1] = y[k] + (dt/τ) * (u[k] - y[k])
                 # dt is the actual step size in ms
                 dt = self.step_size * self.time_resolution * 1000  # [ms]
-                tau = entity["time_constant"]  # [ms]
+
+                # ベース時定数を取得（個体差のみ反映、固定値）
+                tau_base = entity["time_constant_base"]  # ベース時定数 [ms]
+
+                # 時定数に時間変動ノイズを追加（オプション）
+                if entity["time_constant_noise"] > 0:
+                    # 各ステップでホワイトノイズを追加
+                    # tau = tau_base + N(0, σ_noise^2) ← ベース値は毎回同じ
+                    noise = np.random.normal(0, entity["time_constant_noise"])
+                    tau = max(0.1, tau_base + noise)  # 時定数が0以下にならないようにクリップ
+                else:
+                    tau = tau_base
 
                 u = entity["measured_thrust"]  # 入力: 理想推力
                 y = entity["actual_thrust"]  # 現在の実推力
@@ -207,9 +223,15 @@ class PlantSimulator(mosaik_api.Simulator):
                     y = y + (dt_sub / tau) * (u - y)
 
                 entity["actual_thrust"] = y
+
+                # 実際に使用された時定数を記録用変数に保存（ノイズ反映後）
+                # これによりHDF5に各ステップの実際の時定数が記録される
+                entity["time_constant"] = tau
             else:
                 # 1次遅延なし（理想的な応答）
                 entity["actual_thrust"] = entity["measured_thrust"]
+                # lag無効時はベース時定数を保持（比較のため）
+                # time_constantはcreate時に設定されているのでそのまま
 
         return time + self.step_size
 
