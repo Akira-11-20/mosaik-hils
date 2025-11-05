@@ -57,3 +57,4 @@ hils_simulation/results_*/
 # Comparison results
 hils_simulation/comparison_results/
 hils_simulation/comparisons/comparison_results/
+hils_simulation/archive/results*
