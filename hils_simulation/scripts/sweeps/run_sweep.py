@@ -22,10 +22,10 @@ from scripts.sweeps.run_delay_sweep_advanced import DelayConfig, run_simulation,
 
 # Scenario: Time constant sweep with time-varying noise
 configs = [
-    DelayConfig(0.0, 0.0, plant_time_constant=150.0, plant_time_constant_noise=130.0, comp_gain=16, plant_enable_lag=True, use_inverse_comp=False),
-    DelayConfig(0.0, 0.0, plant_time_constant=300.0, plant_time_constant_noise=130.0, comp_gain=31, plant_enable_lag=True, use_inverse_comp=False),
-    DelayConfig(0.0, 0.0, plant_time_constant=150.0, plant_time_constant_noise=130.0, comp_gain=16, plant_enable_lag=True, use_inverse_comp=True),
-    DelayConfig(0.0, 0.0, plant_time_constant=300.0, plant_time_constant_noise=130.0, comp_gain=31, plant_enable_lag=True, use_inverse_comp=True),
+    DelayConfig(0.0, 0.0, plant_time_constant=300.0, plant_time_constant_noise=50.0, comp_gain=31, plant_enable_lag=True, use_inverse_comp=True),
+    DelayConfig(0.0, 0.0, plant_time_constant=300.0, plant_time_constant_noise=100.0, comp_gain=31, plant_enable_lag=True, use_inverse_comp=True),
+    DelayConfig(0.0, 0.0, plant_time_constant=300.0, plant_time_constant_noise=150.0, comp_gain=31, plant_enable_lag=True, use_inverse_comp=True),
+    DelayConfig(0.0, 0.0, plant_time_constant=300.0, plant_time_constant_noise=220.0, comp_gain=31, plant_enable_lag=True, use_inverse_comp=True),
     DelayConfig(0.0, 0.0, plant_time_constant_std=0.0, plant_enable_lag=False),  # No lag (ideal)
 ]
 
