@@ -21,9 +21,9 @@ import json
 from pathlib import Path
 from typing import Dict
 
-from hdf5_helper import load_hdf5_data, get_dataset
 import matplotlib.pyplot as plt
 import numpy as np
+from hdf5_helper import load_hdf5_data
 
 
 def load_hdf5_data(hdf5_path: str) -> Dict[str, np.ndarray]:
@@ -63,7 +63,7 @@ def load_simulation_config(result_dir: Path) -> Dict:
     """
     config_path = result_dir / "simulation_config.json"
     if config_path.exists():
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             return json.load(f)
     return {}
 
@@ -272,14 +272,14 @@ def plot_comparison(
     print("Performance Metrics Comparison: Pure Python vs RT (Mosaik)")
     print("=" * 70)
 
-    print(f"\nPure Python Configuration:")
-    print(f"  - No Mosaik framework")
-    print(f"  - No communication delays")
+    print("\nPure Python Configuration:")
+    print("  - No Mosaik framework")
+    print("  - No communication delays")
     print(f"  - Control period: {pure_config.get('control', {}).get('control_period_s', 0) * 1000:.1f} ms")
 
-    print(f"\nRT (Mosaik) Configuration:")
-    print(f"  - Mosaik framework-based")
-    print(f"  - No communication delays")
+    print("\nRT (Mosaik) Configuration:")
+    print("  - Mosaik framework-based")
+    print("  - No communication delays")
     print(f"  - Control period: {rt_config.get('control', {}).get('control_period_s', 0) * 1000:.1f} ms")
 
     # 性能指標の比較表
@@ -330,12 +330,12 @@ def plot_comparison(
         overshoot_overhead = ((rt_metrics["overshoot"] - pure_metrics["overshoot"]) / pure_metrics["overshoot"]) * 100
         print(f"Overshoot degradation due to Mosaik: {overshoot_overhead:+.2f}%")
 
-    print(f"\n📌 Key Findings:")
-    print(f"   Both simulations use the same control period (10ms) and no communication delays.")
-    print(f"   Differences in performance are attributed to Mosaik framework overhead.")
+    print("\n📌 Key Findings:")
+    print("   Both simulations use the same control period (10ms) and no communication delays.")
+    print("   Differences in performance are attributed to Mosaik framework overhead.")
 
     if abs(rms_overhead) < 1.0:
-        print(f"   ✓ Mosaik overhead is negligible (<1% RMS error difference).")
+        print("   ✓ Mosaik overhead is negligible (<1% RMS error difference).")
     elif abs(rms_overhead) < 5.0:
         print(f"   ⚠ Mosaik introduces minor overhead ({abs(rms_overhead):.1f}% RMS error difference).")
     else:

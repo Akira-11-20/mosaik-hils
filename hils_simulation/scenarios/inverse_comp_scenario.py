@@ -7,9 +7,9 @@ in the command path to pre-compensate for communication delays.
 
 import mosaik
 import mosaik.util
-
 from config.parameters import SimulationParameters
 from config.sim_config import get_simulator_config
+
 from .base_scenario import BaseScenario
 
 
@@ -253,7 +253,6 @@ class InverseCompScenario(BaseScenario):
                 "input_thrust",
                 "output_thrust",
             )
-
 
         # mosaik.util.connect_many_to_one(
         #     self.world,

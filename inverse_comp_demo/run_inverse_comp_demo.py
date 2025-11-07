@@ -239,7 +239,7 @@ def step_rise_time(t: np.ndarray, sig: np.ndarray, cfg: SimulationConfig, baseli
         90%値に到達した時刻 [s]（到達しない場合は NaN）
     """
     idx_step = np.searchsorted(t, cfg.step_time)  # ステップ開始時刻のインデックス
-    target = baseline + cfg.step_amp  # 最終目標値
+    baseline + cfg.step_amp  # 最終目標値
     threshold = baseline + 0.9 * cfg.step_amp  # 90%到達判定の閾値
     # ステップ時刻以降で90%値を超える最初の時刻を探す
     for idx in range(idx_step, len(sig)):
@@ -248,7 +248,9 @@ def step_rise_time(t: np.ndarray, sig: np.ndarray, cfg: SimulationConfig, baseli
     return float("nan")  # 到達しなかった場合
 
 
-def compute_metrics(t: np.ndarray, x: np.ndarray, y_delayed: np.ndarray, y_comp: np.ndarray, cfg: SimulationConfig) -> Dict[str, float]:
+def compute_metrics(
+    t: np.ndarray, x: np.ndarray, y_delayed: np.ndarray, y_comp: np.ndarray, cfg: SimulationConfig
+) -> Dict[str, float]:
     """補償あり・なしの両方について各種評価指標を計算
 
     以下の3種類の指標を計算します：
@@ -420,8 +422,12 @@ def main() -> None:
     print(f"RMSE (inverse)          : {metrics['rmse_inverse']:.4f}")
     print(f"Lag  (no compensation)  : {metrics['lag_no_samples']} samples (~{metrics['lag_no_ms']:.1f} ms)")
     print(f"Lag  (inverse)          : {metrics['lag_inv_samples']} samples (~{metrics['lag_inv_ms']:.1f} ms)")
-    print(f"Phase delay (no comp)   : {metrics['phase_delay_no_time'] * 1000:.1f} ms ({metrics['phase_delay_no_rad']:.3f} rad)")
-    print(f"Phase delay (inverse)   : {metrics['phase_delay_inv_time'] * 1000:.1f} ms ({metrics['phase_delay_inv_rad']:.3f} rad)")
+    print(
+        f"Phase delay (no comp)   : {metrics['phase_delay_no_time'] * 1000:.1f} ms ({metrics['phase_delay_no_rad']:.3f} rad)"
+    )
+    print(
+        f"Phase delay (inverse)   : {metrics['phase_delay_inv_time'] * 1000:.1f} ms ({metrics['phase_delay_inv_rad']:.3f} rad)"
+    )
     print()
     print(f"Rise time (true)        : {metrics['rise_time_true']:.3f} s  | reference step @ {cfg.step_time:.1f} s")
     print(f"Rise delay (no comp)    : {metrics['rise_delay_no']:.3f} s")

@@ -1,0 +1,52 @@
+# Ruff configuration for mosaik-hils project
+
+# Line length (top level)
+line-length = 120
+
+# Exclude directories
+extend-exclude = [
+    "archive",
+    "results",
+    "results_rt",
+    "results_pure",
+    "*.egg-info",
+]
+
+[lint]
+# Enable select rule sets
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+]
+
+# Ignore specific rules that are common in scientific/control theory code
+ignore = [
+    "N803",    # Argument name should be lowercase (allow A, B, C, K matrix names)
+    "N806",    # Variable in function should be lowercase (allow matrix names)
+    "RUF002",  # Ambiguous unicode in docstrings (allow Japanese full-width chars)
+    "RUF003",  # Ambiguous unicode in comments (allow Japanese full-width chars)
+    "RUF046",  # Unnecessary int() cast
+    "RUF059",  # Unused unpacked variable
+    "UP006",   # Use `type` instead of `Type` (optional upgrade)
+    "UP035",   # `typing.X` is deprecated (optional upgrade)
+    "E501",    # Line too long (enforced by formatter instead)
+    "E722",    # Bare except (allow for simple error handling)
+    "E741",    # Ambiguous variable name (allow O matrix in Kalman filter)
+]
+
+# Allow autofix for all enabled rules (when `--fix` is used)
+fixable = ["ALL"]
+unfixable = []
+
+[format]
+# Use double quotes for strings
+quote-style = "double"
+
+# Indent with 4 spaces
+indent-style = "space"
+
+# Line ending style
+line-ending = "auto"

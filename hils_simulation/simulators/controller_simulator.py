@@ -9,7 +9,6 @@ ControllerSimulator - PID制御器
 
 import mosaik_api
 
-
 meta = {
     "type": "time-based",
     "models": {
@@ -194,7 +193,9 @@ class ControllerSimulator(mosaik_api.Simulator):
 
             # デバッグ出力（10制御周期に1回）
             if time % (self.step_size * 10) == 0:
-                print(f"[ControllerSim] t={time}ms: pos={entity['position']:.3f}m, vel={entity['velocity']:.3f}m/s, error={error:.3f}m, integral={entity['integral']:.3f}m·s, thrust={thrust:.3f}N")
+                print(
+                    f"[ControllerSim] t={time}ms: pos={entity['position']:.3f}m, vel={entity['velocity']:.3f}m/s, error={error:.3f}m, integral={entity['integral']:.3f}m·s, thrust={thrust:.3f}N"
+                )
 
         return time + self.step_size
 

@@ -385,10 +385,9 @@ def main():
     print("✅ Simulation completed successfully!")
 
     # 実行グラフの生成（オプション）
-    print(f"\n📊 Generating execution graphs...")
+    print("\n📊 Generating execution graphs...")
     try:
         from utils.plot_utils import (
-            plot_execution_graph_with_data_only,
             plot_dataflow_graph_custom,
         )
 

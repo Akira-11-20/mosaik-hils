@@ -8,13 +8,11 @@ BridgeSimulator - 通信遅延シミュレーター
 """
 
 import random
-from pathlib import Path
-from typing import Any, List, Tuple
 
 import mosaik_api
 
 try:
-    from utils.event_logger import EventLogger, DataTag
+    from utils.event_logger import DataTag, EventLogger
 except ImportError:
     EventLogger = None
     DataTag = None
@@ -143,7 +141,7 @@ class BridgeSimulator(mosaik_api.Simulator):
             actual_delay = base_delay
             if compensate_time_shifted and time_shifted_delay_ms > 0:
                 actual_delay = max(0, base_delay - time_shifted_delay_ms)
-                print(f"[BridgeSim] Compensating for time_shifted delay:")
+                print("[BridgeSim] Compensating for time_shifted delay:")
                 print(f"  Configured delay: {base_delay}ms")
                 print(f"  time_shifted delay: {time_shifted_delay_ms}ms")
                 print(f"  Actual Bridge delay: {actual_delay}ms")
@@ -179,9 +177,13 @@ class BridgeSimulator(mosaik_api.Simulator):
 
             entities.append({"eid": eid, "type": model})
             if compensate_time_shifted:
-                print(f"[BridgeSim] Created {eid} ({bridge_type}): configured_delay={base_delay}ms (actual={actual_delay}ms), jitter={jitter_std}ms, loss={packet_loss_rate * 100:.1f}%")
+                print(
+                    f"[BridgeSim] Created {eid} ({bridge_type}): configured_delay={base_delay}ms (actual={actual_delay}ms), jitter={jitter_std}ms, loss={packet_loss_rate * 100:.1f}%"
+                )
             else:
-                print(f"[BridgeSim] Created {eid} ({bridge_type}): delay={actual_delay}ms, jitter={jitter_std}ms, loss={packet_loss_rate * 100:.1f}%")
+                print(
+                    f"[BridgeSim] Created {eid} ({bridge_type}): delay={actual_delay}ms, jitter={jitter_std}ms, loss={packet_loss_rate * 100:.1f}%"
+                )
 
             # イベントロガーの作成
             if EventLogger and self.output_dir:

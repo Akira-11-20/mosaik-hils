@@ -8,11 +8,12 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent / "archive" / "comparisons"))
 
-import h5py
-import numpy as np
-import matplotlib.pyplot as plt
 import json
-from hdf5_helper import load_hdf5_data, get_dataset
+
+import h5py
+import matplotlib.pyplot as plt
+import numpy as np
+from hdf5_helper import get_dataset, load_hdf5_data
 
 
 def analyze_integral_behavior(filepath):
@@ -25,15 +26,29 @@ def analyze_integral_behavior(filepath):
     time_s = data.get("time_s")
 
     # Load control signals
-    position = get_dataset(data, "position_EnvSim-0.Spacecraft1DOF_0") or get_dataset(data, "position_EnvSim-0_Spacecraft1DOF_0")
-    velocity = get_dataset(data, "velocity_EnvSim-0.Spacecraft1DOF_0") or get_dataset(data, "velocity_EnvSim-0_Spacecraft1DOF_0")
-    error = get_dataset(data, "error_ControllerSim-0.PIDController_0") or get_dataset(data, "error_ControllerSim-0_PIDController_0")
+    position = get_dataset(data, "position_EnvSim-0.Spacecraft1DOF_0") or get_dataset(
+        data, "position_EnvSim-0_Spacecraft1DOF_0"
+    )
+    velocity = get_dataset(data, "velocity_EnvSim-0.Spacecraft1DOF_0") or get_dataset(
+        data, "velocity_EnvSim-0_Spacecraft1DOF_0"
+    )
+    error = get_dataset(data, "error_ControllerSim-0.PIDController_0") or get_dataset(
+        data, "error_ControllerSim-0_PIDController_0"
+    )
 
     # Load thrust signals
-    controller_thrust = get_dataset(data, "command_ControllerSim-0.PIDController_0_thrust") or get_dataset(data, "command_thrust_ControllerSim-0_PIDController_0")
-    compensated_thrust = get_dataset(data, "compensated_output_InverseCompSim-0.cmd_compensator_thrust") or get_dataset(data, "compensated_output_thrust_InverseCompSim-0_cmd_compensator")
-    measured_thrust = get_dataset(data, "measured_thrust_PlantSim-0.ThrustStand_0") or get_dataset(data, "measured_thrust_PlantSim-0_ThrustStand_0")
-    applied_force = get_dataset(data, "force_EnvSim-0.Spacecraft1DOF_0") or get_dataset(data, "force_EnvSim-0_Spacecraft1DOF_0")
+    controller_thrust = get_dataset(data, "command_ControllerSim-0.PIDController_0_thrust") or get_dataset(
+        data, "command_thrust_ControllerSim-0_PIDController_0"
+    )
+    compensated_thrust = get_dataset(data, "compensated_output_InverseCompSim-0.cmd_compensator_thrust") or get_dataset(
+        data, "compensated_output_thrust_InverseCompSim-0_cmd_compensator"
+    )
+    get_dataset(data, "measured_thrust_PlantSim-0.ThrustStand_0") or get_dataset(
+        data, "measured_thrust_PlantSim-0_ThrustStand_0"
+    )
+    applied_force = get_dataset(data, "force_EnvSim-0.Spacecraft1DOF_0") or get_dataset(
+        data, "force_EnvSim-0_Spacecraft1DOF_0"
+    )
 
     # Load metadata
     with h5py.File(filepath, "r") as f:
@@ -63,7 +78,7 @@ def analyze_integral_behavior(filepath):
     print("=" * 80)
     print("INTEGRAL WINDUP & INVERSE COMPENSATION ANALYSIS")
     print("=" * 80)
-    print(f"\nControl Parameters:")
+    print("\nControl Parameters:")
     print(f"  Kp = {kp}, Ki = {ki}, Kd = {kd}")
     print(f"  Target position = {target} m")
     print(f"  Integral limit = {integral_limit} m·s")
@@ -117,7 +132,9 @@ def analyze_integral_behavior(filepath):
 
     print(f"Controller thrust change range: [{np.min(controller_delta):.3f}, {np.max(controller_delta):.3f}] N")
     print(f"Compensated thrust change range: [{np.min(compensated_delta):.3f}, {np.max(compensated_delta):.3f}] N")
-    print(f"Amplification ratio range: [{np.min(amplification_ratio[nonzero_mask]):.3f}, {np.max(amplification_ratio[nonzero_mask]):.3f}]")
+    print(
+        f"Amplification ratio range: [{np.min(amplification_ratio[nonzero_mask]):.3f}, {np.max(amplification_ratio[nonzero_mask]):.3f}]"
+    )
     print(f"Mean amplification ratio: {np.mean(np.abs(amplification_ratio[nonzero_mask])):.3f}")
     print(f"Expected amplification (gain): {comp_gain:.3f}")
 
@@ -139,12 +156,20 @@ def analyze_integral_behavior(filepath):
         window_start = max(0, divergence_idx[0] - 1000)
         window_end = min(len(time_s), divergence_idx[0] + 100)
 
-        print(f"\nBehavior around divergence onset:")
+        print("\nBehavior around divergence onset:")
         print(f"  Time window: [{time_s[window_start]:.3f}, {time_s[window_end]:.3f}]s")
-        print(f"  Position range: [{np.min(position[window_start:window_end]):.3f}, {np.max(position[window_start:window_end]):.3f}]m")
-        print(f"  Controller thrust range: [{np.min(controller_thrust[window_start:window_end]):.3f}, {np.max(controller_thrust[window_start:window_end]):.3f}]N")
-        print(f"  Compensated thrust range: [{np.min(compensated_thrust[window_start:window_end]):.3f}, {np.max(compensated_thrust[window_start:window_end]):.3f}]N")
-        print(f"  Estimated integral range: [{np.min(estimated_integral[window_start:window_end]):.3f}, {np.max(estimated_integral[window_start:window_end]):.3f}]m·s")
+        print(
+            f"  Position range: [{np.min(position[window_start:window_end]):.3f}, {np.max(position[window_start:window_end]):.3f}]m"
+        )
+        print(
+            f"  Controller thrust range: [{np.min(controller_thrust[window_start:window_end]):.3f}, {np.max(controller_thrust[window_start:window_end]):.3f}]N"
+        )
+        print(
+            f"  Compensated thrust range: [{np.min(compensated_thrust[window_start:window_end]):.3f}, {np.max(compensated_thrust[window_start:window_end]):.3f}]N"
+        )
+        print(
+            f"  Estimated integral range: [{np.min(estimated_integral[window_start:window_end]):.3f}, {np.max(estimated_integral[window_start:window_end]):.3f}]m·s"
+        )
     else:
         print("✓ No significant divergence detected (threshold = 10x target)")
 

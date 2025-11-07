@@ -2,11 +2,12 @@
 Debug script to analyze inverse compensation simulation results
 """
 
-import h5py
-import numpy as np
-import matplotlib.pyplot as plt
 import json
 import sys
+
+import h5py
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 def analyze_inverse_comp_data(filepath):

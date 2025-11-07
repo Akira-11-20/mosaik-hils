@@ -7,25 +7,17 @@ Systems With Bernoulli Distribution k-step Random Delay and Packet Loss" (2024)
 Table 3の結果を再現
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from estimators.mckf import MaximumCorrentropyKalmanFilter
 
 # 論文のシステムパラメータ
 T = 0.3  # サンプリング時間 [s]
 
-F = np.array([
-    [1, 0, T, 0],
-    [0, 1, 0, T],
-    [0, 0, 1, 0],
-    [0, 0, 0, 1]
-])
+F = np.array([[1, 0, T, 0], [0, 1, 0, T], [0, 0, 1, 0], [0, 0, 0, 1]])
 
 B = np.zeros((4, 1))
-H = np.array([
-    [-1, 0, -1, 0],
-    [0, -1, 0, -1]
-])
+H = np.array([[-1, 0, -1, 0], [0, -1, 0, -1]])
 
 Q = np.diag([0.001, 0.001, 0.001, 0.001])
 R = np.diag([10.0, 10.0])
@@ -56,18 +48,23 @@ all_rmse = np.zeros((num_monte_carlo, 4))
 
 for mc_run in range(num_monte_carlo):
     if mc_run % 10 == 0:
-        print(f"Progress: {mc_run}/{num_monte_carlo} ({mc_run/num_monte_carlo*100:.0f}%)")
+        print(f"Progress: {mc_run}/{num_monte_carlo} ({mc_run / num_monte_carlo * 100:.0f}%)")
     # 各実行で異なるシード
     np.random.seed(mc_run)
 
     # MCKFの初期化
     mckf = MaximumCorrentropyKalmanFilter(
-        A=F, B=B, C=H, Q=Q, R=R,
-        x0=x0, P0=P0,
+        A=F,
+        B=B,
+        C=H,
+        Q=Q,
+        R=R,
+        x0=x0,
+        P0=P0,
         max_delay=max_delay,
         kernel_bandwidth=kernel_bandwidth,
         max_iterations=10,
-        convergence_threshold=1e-4
+        convergence_threshold=1e-4,
     )
 
     # 真の状態の生成
@@ -76,7 +73,7 @@ for mc_run in range(num_monte_carlo):
 
     for k in range(1, N):
         w = np.random.multivariate_normal(np.zeros(4), Q)
-        x_true[k] = F @ x_true[k-1] + w
+        x_true[k] = F @ x_true[k - 1] + w
 
     # 観測値の生成（遅延あり）
     y_measurements = []
@@ -151,18 +148,18 @@ print(f"s4: {diff[3]:+.4f} ({relative_diff[3]:+.1f}%)")
 
 # RMSEの分布をプロット
 fig, axes = plt.subplots(2, 2, figsize=(12, 10))
-states = ['s1 (x position)', 's2 (y position)', 's3 (x velocity)', 's4 (y velocity)']
+states = ["s1 (x position)", "s2 (y position)", "s3 (x velocity)", "s4 (y velocity)"]
 
 for i, (ax, state_name) in enumerate(zip(axes.flat, states)):
-    ax.hist(all_rmse[:, i], bins=20, edgecolor='black', alpha=0.7, label='Our MCKF')
-    ax.axvline(mean_rmse[i], color='red', linestyle='--', linewidth=2, label=f'Mean: {mean_rmse[i]:.4f}')
-    ax.axvline(paper_rmse[i], color='green', linestyle='--', linewidth=2, label=f'Paper: {paper_rmse[i]:.4f}')
-    ax.set_xlabel('RMSE')
-    ax.set_ylabel('Frequency')
+    ax.hist(all_rmse[:, i], bins=20, edgecolor="black", alpha=0.7, label="Our MCKF")
+    ax.axvline(mean_rmse[i], color="red", linestyle="--", linewidth=2, label=f"Mean: {mean_rmse[i]:.4f}")
+    ax.axvline(paper_rmse[i], color="green", linestyle="--", linewidth=2, label=f"Paper: {paper_rmse[i]:.4f}")
+    ax.set_xlabel("RMSE")
+    ax.set_ylabel("Frequency")
     ax.set_title(state_name)
     ax.legend()
     ax.grid(True, alpha=0.3)
 
 plt.tight_layout()
-plt.savefig('delay_estimation/mckf_monte_carlo.png', dpi=150)
-print(f"\nPlot saved to: delay_estimation/mckf_monte_carlo.png")
+plt.savefig("delay_estimation/mckf_monte_carlo.png", dpi=150)
+print("\nPlot saved to: delay_estimation/mckf_monte_carlo.png")

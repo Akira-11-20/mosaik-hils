@@ -29,7 +29,6 @@ from typing import Any, Dict, Optional
 
 import mosaik_api
 
-
 meta = {
     "type": "time-based",
     "models": {
@@ -66,7 +65,7 @@ class InverseCompensatorSimulator(mosaik_api.Simulator):
         self.sid: Optional[str] = None
         self.step_size: int = 1
         self.time_resolution: float = 0.001
-        self.compensators: Dict[str, "InverseCompensator"] = {}
+        self.compensators: Dict[str, InverseCompensator] = {}
 
     def init(self, sid: str, time_resolution: float = 1.0, **sim_params):
         """
@@ -264,7 +263,9 @@ class InverseCompensator:
 
                 # Debug logging (every 1000 steps)
                 if self.input_count % 1000 == 0:
-                    print(f"[InverseComp-{self.comp_id}] Step {self.input_count}: input={numeric_value:.3f}N → output={compensated_thrust:.3f}N (gain={self.gain:.1f}, delta={self.delta_value:.3f})")
+                    print(
+                        f"[InverseComp-{self.comp_id}] Step {self.input_count}: input={numeric_value:.3f}N → output={compensated_thrust:.3f}N (gain={self.gain:.1f}, delta={self.delta_value:.3f})"
+                    )
 
                 # Reconstruct command dict with compensated value
                 self.current_output = {
@@ -278,13 +279,12 @@ class InverseCompensator:
                         compensated_val = self._apply_compensation(val)
                         self.current_output = {**value, key: compensated_val}
                         break
+        # Numeric input - direct compensation
+        elif isinstance(value, (int, float)):
+            self.current_output = self._apply_compensation(value)
         else:
-            # Numeric input - direct compensation
-            if isinstance(value, (int, float)):
-                self.current_output = self._apply_compensation(value)
-            else:
-                # Pass through if unable to process
-                self.current_output = value
+            # Pass through if unable to process
+            self.current_output = value
 
     def _apply_compensation(self, value: float) -> float:
         """

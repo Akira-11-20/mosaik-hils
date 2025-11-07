@@ -5,14 +5,14 @@ mosaikの標準プロットを拡張し、データのやり取りがあるス�
 """
 
 from pathlib import Path
-from typing import Dict, List, Tuple, Literal, Optional
+from typing import Dict, List, Literal, Optional, Tuple
 
 try:
     import matplotlib.pyplot as plt
-    from matplotlib import rcParams
-    from matplotlib.ticker import MaxNLocator
-    from matplotlib.patches import ConnectionPatch
     import networkx as nx
+    from matplotlib import rcParams
+    from matplotlib.patches import ConnectionPatch
+    from matplotlib.ticker import MaxNLocator
 
     HAS_MATPLOTLIB = True
 except ImportError:
@@ -168,7 +168,7 @@ def plot_execution_graph_comparison(
             show_plot=show_plot,
             save_plot=True,
         )
-        print(f"   📊 Full execution graph saved")
+        print("   📊 Full execution graph saved")
     except Exception as e:
         print(f"   ⚠️  Full execution graph failed: {e}")
 
@@ -304,7 +304,9 @@ def plot_dataflow_graph_custom(
     }
 
     # ラベル位置のオフセット計算
-    def calculate_label_offset(pos_x: float, pos_y: float, all_positions: dict, position_mode: str) -> Tuple[float, float]:
+    def calculate_label_offset(
+        pos_x: float, pos_y: float, all_positions: dict, position_mode: str
+    ) -> Tuple[float, float]:
         """ラベルのオフセット位置を計算（ノードと重ならないように）"""
         offset_distance = 0.15  # ノードからの距離
 

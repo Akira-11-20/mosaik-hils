@@ -1,8 +1,9 @@
 """Network delay simulator"""
 
-import numpy as np
 from collections import deque
 from typing import Optional, Tuple
+
+import numpy as np
 
 
 class NetworkDelay:
@@ -56,9 +57,7 @@ class NetworkDelay:
         """
         self.buffer.append((time_step, measurement.copy()))
 
-    def get_delayed_measurement(
-        self, current_time_step: int
-    ) -> Tuple[Optional[np.ndarray], int]:
+    def get_delayed_measurement(self, current_time_step: int) -> Tuple[Optional[np.ndarray], int]:
         """
         Get delayed measurement
 
@@ -78,17 +77,12 @@ class NetworkDelay:
         elif self.delay_type == "random":
             delay = max(
                 0,
-                int(
-                    np.random.normal(self.mean_delay_steps, self.delay_std_steps)
-                ),
+                int(np.random.normal(self.mean_delay_steps, self.delay_std_steps)),
             )
             delay = min(delay, self.max_delay)
         elif self.delay_type == "varying":
             # Sinusoidal variation
-            delay = int(
-                self.mean_delay_steps
-                + self.delay_std_steps * np.sin(current_time_step * 0.1)
-            )
+            delay = int(self.mean_delay_steps + self.delay_std_steps * np.sin(current_time_step * 0.1))
             delay = max(0, min(delay, self.max_delay))
         else:
             delay = self.mean_delay_steps

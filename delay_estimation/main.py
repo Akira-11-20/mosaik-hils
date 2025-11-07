@@ -1,19 +1,19 @@
 """Main entry point for delay estimation experiments"""
 
-import numpy as np
-from pathlib import Path
-from datetime import datetime
 import argparse
+from datetime import datetime
+from pathlib import Path
 
+import numpy as np
 from config.parameters import SimulationParameters
-from simulators.system import OneDOFSystem
-from simulators.network import NetworkDelay
-from estimators.kalman_filter import KalmanFilter
 from estimators.delay_estimator import create_estimator
+from estimators.kalman_filter import KalmanFilter
+from simulators.network import NetworkDelay
+from simulators.system import OneDOFSystem
 from utils.visualization import (
-    plot_estimation_results,
-    plot_delay_comparison,
     compute_metrics,
+    plot_delay_comparison,
+    plot_estimation_results,
 )
 
 
@@ -135,9 +135,7 @@ def main():
         choices=["innovation", "ml", "bayesian"],
         help="Delay estimation method",
     )
-    parser.add_argument(
-        "--compare", action="store_true", help="Compare with and without estimation"
-    )
+    parser.add_argument("--compare", action="store_true", help="Compare with and without estimation")
     parser.add_argument("--show", action="store_true", help="Show plots")
     args = parser.parse_args()
 
@@ -214,9 +212,7 @@ def main():
         print(f"Max Error:     {metrics['position_max_error']:.4f} m")
 
         # Plot results
-        plot_estimation_results(
-            results, save_path=results_dir / "results.png", show=args.show
-        )
+        plot_estimation_results(results, save_path=results_dir / "results.png", show=args.show)
 
     print("\nDone!")
 

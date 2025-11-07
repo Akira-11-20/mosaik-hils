@@ -14,7 +14,7 @@ from pathlib import Path
 # Add parent directory to path to enable imports from hils_simulation root
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from scripts.sweeps.run_delay_sweep_advanced import DelayConfig, run_simulation, print_summary
+from scripts.sweeps.run_delay_sweep_advanced import DelayConfig, print_summary, run_simulation
 
 # ============================================================================
 # Configure your sweep scenario here
@@ -22,10 +22,42 @@ from scripts.sweeps.run_delay_sweep_advanced import DelayConfig, run_simulation,
 
 # Scenario: Time constant sweep with time-varying noise
 configs = [
-    DelayConfig(0.0, 0.0, plant_time_constant=150.0, plant_time_constant_noise=130.0, comp_gain=16, plant_enable_lag=True, use_inverse_comp=False),
-    DelayConfig(0.0, 0.0, plant_time_constant=300.0, plant_time_constant_noise=130.0, comp_gain=31, plant_enable_lag=True, use_inverse_comp=False),
-    DelayConfig(0.0, 0.0, plant_time_constant=150.0, plant_time_constant_noise=130.0, comp_gain=16, plant_enable_lag=True, use_inverse_comp=True),
-    DelayConfig(0.0, 0.0, plant_time_constant=300.0, plant_time_constant_noise=130.0, comp_gain=31, plant_enable_lag=True, use_inverse_comp=True),
+    DelayConfig(
+        0.0,
+        0.0,
+        plant_time_constant=150.0,
+        plant_time_constant_noise=130.0,
+        comp_gain=16,
+        plant_enable_lag=True,
+        use_inverse_comp=False,
+    ),
+    DelayConfig(
+        0.0,
+        0.0,
+        plant_time_constant=300.0,
+        plant_time_constant_noise=130.0,
+        comp_gain=31,
+        plant_enable_lag=True,
+        use_inverse_comp=False,
+    ),
+    DelayConfig(
+        0.0,
+        0.0,
+        plant_time_constant=150.0,
+        plant_time_constant_noise=130.0,
+        comp_gain=16,
+        plant_enable_lag=True,
+        use_inverse_comp=True,
+    ),
+    DelayConfig(
+        0.0,
+        0.0,
+        plant_time_constant=300.0,
+        plant_time_constant_noise=130.0,
+        comp_gain=31,
+        plant_enable_lag=True,
+        use_inverse_comp=True,
+    ),
     DelayConfig(0.0, 0.0, plant_time_constant_std=0.0, plant_enable_lag=False),  # No lag (ideal)
 ]
 
@@ -43,7 +75,7 @@ for i, config in enumerate(configs, 1):
     if config.plant_time_constant is not None:
         print(f"   Plant τ: {config.plant_time_constant}ms")
     if config.plant_time_constant_std is not None and config.plant_time_constant_std > 0:
-        print(f"   Plant τ std: {config.plant_time_constant_std}ms (±{3*config.plant_time_constant_std:.1f}ms @ 3σ)")
+        print(f"   Plant τ std: {config.plant_time_constant_std}ms (±{3 * config.plant_time_constant_std:.1f}ms @ 3σ)")
     if config.plant_time_constant_noise is not None and config.plant_time_constant_noise > 0:
         print(f"   Plant τ noise: {config.plant_time_constant_noise}ms (time-varying)")
     if config.plant_enable_lag is not None:
@@ -56,7 +88,7 @@ for i, config in enumerate(configs, 1):
 print("=" * 70)
 response = input("Proceed with simulations? [y/N]: ")
 
-if response.lower() != 'y':
+if response.lower() != "y":
     print("Cancelled.")
     exit()
 

@@ -12,7 +12,6 @@ from typing import Optional
 
 import mosaik
 import mosaik.util
-
 from config.parameters import SimulationParameters
 
 
@@ -85,7 +84,7 @@ class BaseScenario(ABC):
 
     def print_simulation_info(self):
         """Print simulation configuration information."""
-        print(f"\n🌍 Simulation Info:")
+        print("\n🌍 Simulation Info:")
         print(f"   Time: {self.params.simulation_time}s")
         print(f"   Resolution: {self.params.time_resolution}s ({self.params.time_resolution * 1000}ms)")
         print(f"   Steps: {self.params.simulation_steps}")
@@ -129,7 +128,7 @@ class BaseScenario(ABC):
         if self.run_dir is None or self.world is None:
             return
 
-        print(f"\n📊 Generating execution graphs...")
+        print("\n📊 Generating execution graphs...")
         try:
             from utils.plot_utils import plot_dataflow_graph_custom
 
@@ -184,19 +183,19 @@ class BaseScenario(ABC):
         self.print_simulation_info()
 
         # Create world
-        print(f"\n🌍 Creating Mosaik World...")
+        print("\n🌍 Creating Mosaik World...")
         self.world = self.create_world()
 
         # Setup entities
-        print(f"\n📦 Creating entities...")
+        print("\n📦 Creating entities...")
         self.setup_entities()
 
         # Connect entities
-        print(f"\n🔗 Connecting data flows...")
+        print("\n🔗 Connecting data flows...")
         self.connect_entities()
 
         # Setup data collection
-        print(f"\n📊 Setting up data collection...")
+        print("\n📊 Setting up data collection...")
         self.setup_data_collection()
 
         # Run simulation
@@ -234,16 +233,16 @@ class BaseScenario(ABC):
         self.save_configuration()
         self.print_simulation_info()
 
-        print(f"\n🌍 Creating Mosaik World...")
+        print("\n🌍 Creating Mosaik World...")
         self.world = self.create_world()
 
-        print(f"\n📦 Creating entities...")
+        print("\n📦 Creating entities...")
         self.setup_entities()
 
-        print(f"\n🔗 Connecting data flows...")
+        print("\n🔗 Connecting data flows...")
         self.connect_entities()
 
-        print(f"\n📊 Setting up data collection...")
+        print("\n📊 Setting up data collection...")
         self.setup_data_collection()
 
         print(f"\n▶️  Running simulation until {self.params.simulation_time}s ({self.params.simulation_steps} steps)...")

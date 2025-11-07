@@ -1,9 +1,10 @@
 """Visualization utilities for delay estimation results"""
 
-import numpy as np
-import matplotlib.pyplot as plt
 from pathlib import Path
 from typing import Dict, Optional
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 def plot_estimation_results(
@@ -25,9 +26,7 @@ def plot_estimation_results(
 
     # Position
     axes[0].plot(time, results["true_position"], "k-", label="True", linewidth=1.5)
-    axes[0].plot(
-        time, results["measured_position"], "r.", label="Measured", markersize=3, alpha=0.5
-    )
+    axes[0].plot(time, results["measured_position"], "r.", label="Measured", markersize=3, alpha=0.5)
     axes[0].plot(
         time,
         results["estimated_position"],
@@ -42,9 +41,7 @@ def plot_estimation_results(
 
     # Velocity
     axes[1].plot(time, results["true_velocity"], "k-", label="True", linewidth=1.5)
-    axes[1].plot(
-        time, results["estimated_velocity"], "b-", label="Estimated (KF)", linewidth=1
-    )
+    axes[1].plot(time, results["estimated_velocity"], "b-", label="Estimated (KF)", linewidth=1)
     axes[1].set_ylabel("Velocity [m/s]")
     axes[1].legend()
     axes[1].grid(True, alpha=0.3)
@@ -124,9 +121,7 @@ def plot_delay_comparison(
 
     # Estimation errors
     error_no_est = results_no_est["true_position"] - results_no_est["estimated_position"]
-    error_with_est = (
-        results_with_est["true_position"] - results_with_est["estimated_position"]
-    )
+    error_with_est = results_with_est["true_position"] - results_with_est["estimated_position"]
 
     axes[1].plot(time, error_no_est, "r--", label="Standard KF", linewidth=1)
     axes[1].plot(time, error_with_est, "b-", label="KF with Delay Est.", linewidth=1)
@@ -136,12 +131,8 @@ def plot_delay_comparison(
 
     # RMSE over time (sliding window)
     window = 100
-    rmse_no_est = np.sqrt(
-        np.convolve(error_no_est**2, np.ones(window) / window, mode="same")
-    )
-    rmse_with_est = np.sqrt(
-        np.convolve(error_with_est**2, np.ones(window) / window, mode="same")
-    )
+    rmse_no_est = np.sqrt(np.convolve(error_no_est**2, np.ones(window) / window, mode="same"))
+    rmse_with_est = np.sqrt(np.convolve(error_with_est**2, np.ones(window) / window, mode="same"))
 
     axes[2].plot(time, rmse_no_est, "r--", label="Standard KF", linewidth=1.5)
     axes[2].plot(time, rmse_with_est, "b-", label="KF with Delay Est.", linewidth=1.5)

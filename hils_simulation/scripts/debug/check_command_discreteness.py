@@ -24,14 +24,14 @@ print("=" * 80)
 if len(change_indices) > 1:
     update_intervals = np.diff(change_indices)
     print(f"Number of controller updates: {len(change_indices)}")
-    print(f"Update interval stats:")
+    print("Update interval stats:")
     print(f"  Mean: {np.mean(update_intervals):.1f} samples ({np.mean(update_intervals) * 0.0001:.6f}s)")
     print(f"  Std: {np.std(update_intervals):.1f} samples")
     print(f"  Min: {np.min(update_intervals)} samples")
     print(f"  Max: {np.max(update_intervals)} samples")
 
     # Expected update interval = control period / time resolution = 0.01s / 0.0001s = 100 samples
-    print(f"\nExpected update interval: 100 samples (10ms control period)")
+    print("\nExpected update interval: 100 samples (10ms control period)")
 
 print("\n" + "=" * 80)
 print("SAMPLE UPDATES AROUND DIVERGENCE (2.7-2.85s)")
@@ -66,7 +66,9 @@ print("=" * 80)
 # Look at what happens exactly at controller update points
 sample_updates = change_indices[change_indices > start_idx][:10]  # First 10 updates after 2.7s
 
-print(f"{'Time [s]':>10} | {'Ctrl[k-1]':>12} | {'Ctrl[k]':>12} | {'Delta':>12} | {'Comp[k]':>12} | {'Expected':>12} | {'Actual Gain':>12}")
+print(
+    f"{'Time [s]':>10} | {'Ctrl[k-1]':>12} | {'Ctrl[k]':>12} | {'Delta':>12} | {'Comp[k]':>12} | {'Expected':>12} | {'Actual Gain':>12}"
+)
 print("-" * 130)
 
 gain = 15.0
@@ -87,7 +89,9 @@ for idx in sample_updates:
     else:
         actual_gain = 0
 
-    print(f"{t:10.4f} | {prev_val:12.3f} | {curr_val:12.3f} | {delta:12.3f} | {comp_val:12.3f} | {expected_comp:12.3f} | {actual_gain:12.3f}")
+    print(
+        f"{t:10.4f} | {prev_val:12.3f} | {curr_val:12.3f} | {delta:12.3f} | {comp_val:12.3f} | {expected_comp:12.3f} | {actual_gain:12.3f}"
+    )
 
 print("\n" + "=" * 80)
 print("ZERO-ORDER HOLD EFFECT")

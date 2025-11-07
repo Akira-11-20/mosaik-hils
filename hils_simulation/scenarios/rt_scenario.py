@@ -7,9 +7,9 @@ representing an ideal control loop for comparison with HILS.
 
 import mosaik
 import mosaik.util
-
 from config.parameters import SimulationParameters
 from config.sim_config import get_simulator_config
+
 from .base_scenario import BaseScenario
 
 
@@ -181,7 +181,7 @@ class RTScenario(BaseScenario):
         if self.run_dir is None or self.world is None:
             return
 
-        print(f"\n📊 Generating execution graphs...")
+        print("\n📊 Generating execution graphs...")
         try:
             from utils.plot_utils import plot_dataflow_graph_custom
 

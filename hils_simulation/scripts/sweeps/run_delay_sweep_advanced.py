@@ -8,7 +8,7 @@ Advanced delay sweep script with fine-grained control
 
 import sys
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 # Add parent directory to path to enable imports from hils_simulation root
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -30,7 +30,7 @@ class DelayConfig:
         plant_time_constant_std: Optional[float] = None,
         plant_time_constant_noise: Optional[float] = None,
         plant_enable_lag: Optional[bool] = None,
-        label: Optional[str] = None
+        label: Optional[str] = None,
     ):
         """
         Args:
@@ -106,10 +106,7 @@ class DelayConfig:
         return f"DelayConfig({', '.join(parts)})"
 
 
-def create_symmetric_sweep(
-    delays: List[float],
-    use_inverse_comp: bool = False
-) -> List[DelayConfig]:
+def create_symmetric_sweep(delays: List[float], use_inverse_comp: bool = False) -> List[DelayConfig]:
     """
     Create configurations with symmetric delays (cmd_delay = sense_delay)
 
@@ -120,16 +117,11 @@ def create_symmetric_sweep(
     Returns:
         List of DelayConfig objects
     """
-    return [
-        DelayConfig(d, d, use_inverse_comp=use_inverse_comp)
-        for d in delays
-    ]
+    return [DelayConfig(d, d, use_inverse_comp=use_inverse_comp) for d in delays]
 
 
 def create_asymmetric_sweep(
-    cmd_delays: List[float],
-    sense_delays: List[float],
-    use_inverse_comp: bool = False
+    cmd_delays: List[float], sense_delays: List[float], use_inverse_comp: bool = False
 ) -> List[DelayConfig]:
     """
     Create configurations with asymmetric delays (different cmd/sense)
@@ -145,15 +137,11 @@ def create_asymmetric_sweep(
     configs = []
     for cmd_delay in cmd_delays:
         for sense_delay in sense_delays:
-            configs.append(
-                DelayConfig(cmd_delay, sense_delay, use_inverse_comp=use_inverse_comp)
-            )
+            configs.append(DelayConfig(cmd_delay, sense_delay, use_inverse_comp=use_inverse_comp))
     return configs
 
 
-def create_comparison_sweep(
-    delays: List[float]
-) -> List[DelayConfig]:
+def create_comparison_sweep(delays: List[float]) -> List[DelayConfig]:
     """
     Create configurations comparing HILS vs Inverse Compensation for each delay
 
@@ -182,9 +170,9 @@ def run_simulation(config: DelayConfig) -> Dict[str, Any]:
     Returns:
         Dictionary with simulation results
     """
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Running: {config}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     try:
         # Load parameters from .env
@@ -218,12 +206,7 @@ def run_simulation(config: DelayConfig) -> Dict[str, Any]:
         # Run scenario
         scenario.run()
 
-        result = {
-            "config": config,
-            "scenario_type": scenario_type,
-            "status": "success",
-            "output_dir": scenario.run_dir
-        }
+        result = {"config": config, "scenario_type": scenario_type, "status": "success", "output_dir": scenario.run_dir}
 
         print(f"\n✅ Completed: {config.label}")
         print(f"   Results saved to: {scenario.run_dir}")
@@ -236,9 +219,9 @@ def run_simulation(config: DelayConfig) -> Dict[str, Any]:
 
         return {
             "config": config,
-            "scenario_type": scenario_type if 'scenario_type' in locals() else "unknown",
+            "scenario_type": scenario_type if "scenario_type" in locals() else "unknown",
             "status": "failed",
-            "error": str(e)
+            "error": str(e),
         }
 
 
@@ -259,7 +242,7 @@ def print_summary(results: List[Dict[str, Any]]):
             gain_str = f"{config.comp_gain}" if config.comp_gain else "default"
             print(f"   inverse_comp=True (gain={gain_str})")
         else:
-            print(f"   inverse_comp=False")
+            print("   inverse_comp=False")
 
         if config.plant_time_constant is not None:
             print(f"   plant_time_constant={config.plant_time_constant} ms")
@@ -347,7 +330,7 @@ def main():
     # Confirm before running
     print("\n" + "=" * 60)
     response = input("Proceed with simulations? [y/N]: ")
-    if response.lower() != 'y':
+    if response.lower() != "y":
         print("Cancelled.")
         return
 

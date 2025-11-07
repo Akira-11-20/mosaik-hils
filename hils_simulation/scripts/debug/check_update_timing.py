@@ -35,7 +35,7 @@ if len(change_indices) > 1:
     print("UPDATE INTERVAL ANALYSIS")
     print(f"{'=' * 80}")
     print(f"Update intervals (first 10): {intervals[:10]}")
-    print(f"Expected interval: 100 samples (10ms)")
+    print("Expected interval: 100 samples (10ms)")
     print(f"Actual mean interval: {np.mean(intervals):.1f} samples")
     print(f"Actual std interval: {np.std(intervals):.1f} samples")
 

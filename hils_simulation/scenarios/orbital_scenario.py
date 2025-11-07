@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Optional
 
 import mosaik
-
 from config.orbital_parameters import OrbitalSimulationConfig
 
 
@@ -46,7 +45,9 @@ class OrbitalScenario:
     @property
     def scenario_description(self) -> str:
         orbit = self.config.orbit
-        return f"Two-body orbital dynamics - {orbit.altitude/1e3:.0f}km altitude, {orbit.eccentricity:.2f} eccentricity"
+        return (
+            f"Two-body orbital dynamics - {orbit.altitude / 1e3:.0f}km altitude, {orbit.eccentricity:.2f} eccentricity"
+        )
 
     @property
     def results_base_dir(self) -> str:
@@ -113,18 +114,18 @@ class OrbitalScenario:
         orbit = self.config.orbit
         sc = self.config.spacecraft
 
-        print(f"\n🛰️  Orbital Parameters:")
+        print("\n🛰️  Orbital Parameters:")
         print(f"   Altitude: {orbit.altitude / 1e3:.2f} km")
         print(f"   Semi-major axis: {orbit.semi_major_axis / 1e3:.2f} km")
         print(f"   Eccentricity: {orbit.eccentricity:.4f}")
         print(f"   Inclination: {orbit.inclination:.2f}°")
         print(f"   Orbital period: {orbit.orbital_period / 60:.2f} min")
 
-        print(f"\n🚀 Spacecraft:")
+        print("\n🚀 Spacecraft:")
         print(f"   Mass: {sc.mass} kg")
         print(f"   Max thrust: {sc.max_thrust} N")
 
-        print(f"\n⏱️  Simulation:")
+        print("\n⏱️  Simulation:")
         print(f"   Duration: {self.config.simulation_time} s ({self.config.simulation_time / 60:.2f} min)")
         print(f"   Time resolution: {self.config.time_resolution} s")
         total_steps = int(self.config.simulation_time / self.config.time_resolution)
@@ -176,14 +177,14 @@ class OrbitalScenario:
 
         self.collector = collector_sim.Collector(output_dir=str(self.run_dir))
 
-        print(f"   ✅ Spacecraft entity created")
+        print("   ✅ Spacecraft entity created")
         print(f"   ✅ Data collector created: {self.run_dir}")
 
     def connect_entities(self):
         """エンティティの接続"""
         # 現在は制御入力なし（自由軌道運動）
         # 将来的には制御器を追加可能
-        print(f"   ℹ️  Free orbital motion (no control input)")
+        print("   ℹ️  Free orbital motion (no control input)")
 
     def setup_data_collection(self):
         """データ収集の設定"""
@@ -211,14 +212,14 @@ class OrbitalScenario:
             self.collector,
             *attrs,
         )
-        print(f"   ✅ Data collection configured")
+        print("   ✅ Data collection configured")
 
     def generate_plots(self):
         """プロット生成"""
         if self.run_dir is None:
             return
 
-        print(f"\n📊 Generating plots...")
+        print("\n📊 Generating plots...")
         try:
             from scripts.analysis.visualize_orbital_results import plot_orbital_simulation
 
@@ -232,7 +233,7 @@ class OrbitalScenario:
             plot_orbital_simulation(str(h5_path), output_dir=str(self.run_dir))
             print(f"   ✅ Plots saved to {self.run_dir}/")
         except ImportError:
-            print(f"   ℹ️  Visualization script not found (will create later)")
+            print("   ℹ️  Visualization script not found (will create later)")
         except Exception as e:
             print(f"   ⚠️  Plot generation failed: {e}")
 
@@ -252,19 +253,19 @@ class OrbitalScenario:
         self.print_simulation_info()
 
         # ワールド作成
-        print(f"\n🌍 Creating Mosaik World...")
+        print("\n🌍 Creating Mosaik World...")
         self.create_world()
 
         # エンティティ作成
-        print(f"\n📦 Creating entities...")
+        print("\n📦 Creating entities...")
         self.setup_entities()
 
         # エンティティ接続
-        print(f"\n🔗 Connecting data flows...")
+        print("\n🔗 Connecting data flows...")
         self.connect_entities()
 
         # データ収集設定
-        print(f"\n📊 Setting up data collection...")
+        print("\n📊 Setting up data collection...")
         self.setup_data_collection()
 
         # シミュレーション実行
