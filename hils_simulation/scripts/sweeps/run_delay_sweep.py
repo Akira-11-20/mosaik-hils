@@ -5,7 +5,6 @@ Supports both HILS and Inverse Compensation scenarios
 
 import sys
 from pathlib import Path
-from typing import List, Dict, Any
 
 # Add parent directory to path to enable imports from hils_simulation root
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -45,14 +44,14 @@ def main():
     for use_comp in use_inverse_compensation:
         comp_label = "WITH Inverse Compensation" if use_comp else "WITHOUT Inverse Compensation"
 
-        print(f"\n{'#'*60}")
+        print(f"\n{'#' * 60}")
         print(f"# {comp_label}")
-        print(f"{'#'*60}")
+        print(f"{'#' * 60}")
 
         for delay in delays:
-            print(f"\n{'='*60}")
+            print(f"\n{'=' * 60}")
             print(f"Running: delay={delay} ms, inverse_comp={use_comp}")
-            print(f"{'='*60}")
+            print(f"{'=' * 60}")
 
             try:
                 # Load parameters from .env
@@ -74,13 +73,15 @@ def main():
                 # Run scenario
                 scenario.run()
 
-                results.append({
-                    "delay": delay,
-                    "inverse_comp": use_comp,
-                    "scenario_type": scenario_type,
-                    "status": "success",
-                    "output_dir": scenario.run_dir
-                })
+                results.append(
+                    {
+                        "delay": delay,
+                        "inverse_comp": use_comp,
+                        "scenario_type": scenario_type,
+                        "status": "success",
+                        "output_dir": scenario.run_dir,
+                    }
+                )
 
                 print(f"\n✅ Completed: delay={delay} ms, inverse_comp={use_comp}")
                 print(f"   Results saved to: {scenario.run_dir}")
@@ -88,13 +89,15 @@ def main():
             except Exception as e:
                 print(f"\n❌ Failed: delay={delay} ms, inverse_comp={use_comp}")
                 print(f"   Error: {e}")
-                results.append({
-                    "delay": delay,
-                    "inverse_comp": use_comp,
-                    "scenario_type": scenario_type if 'scenario_type' in locals() else "unknown",
-                    "status": "failed",
-                    "error": str(e)
-                })
+                results.append(
+                    {
+                        "delay": delay,
+                        "inverse_comp": use_comp,
+                        "scenario_type": scenario_type if "scenario_type" in locals() else "unknown",
+                        "status": "failed",
+                        "error": str(e),
+                    }
+                )
 
     # ========================================
     # Summary

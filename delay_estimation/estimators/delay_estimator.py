@@ -1,8 +1,8 @@
 """Delay estimation algorithms for Kalman Filter"""
 
-import numpy as np
-from typing import Tuple, Optional, List
 from collections import deque
+
+import numpy as np
 
 
 class DelayEstimator:
@@ -25,9 +25,7 @@ class DelayEstimator:
         self.window_size = window_size
         self.innovation_history = deque(maxlen=window_size)
 
-    def estimate_delay(
-        self, innovation: np.ndarray, innovation_covariance: np.ndarray
-    ) -> int:
+    def estimate_delay(self, innovation: np.ndarray, innovation_covariance: np.ndarray) -> int:
         """
         Estimate current measurement delay
 
@@ -57,9 +55,7 @@ class InnovationBasedEstimator(DelayEstimator):
         super().__init__(max_delay, window_size)
         self.delay_estimate = 0
 
-    def estimate_delay(
-        self, innovation: np.ndarray, innovation_covariance: np.ndarray
-    ) -> int:
+    def estimate_delay(self, innovation: np.ndarray, innovation_covariance: np.ndarray) -> int:
         """
         Estimate delay using innovation sequence
 
@@ -89,9 +85,7 @@ class MLDelayEstimator(DelayEstimator):
         super().__init__(max_delay, window_size)
         self.likelihoods = np.zeros(max_delay + 1)
 
-    def estimate_delay(
-        self, innovation: np.ndarray, innovation_covariance: np.ndarray
-    ) -> int:
+    def estimate_delay(self, innovation: np.ndarray, innovation_covariance: np.ndarray) -> int:
         """
         Estimate delay using maximum likelihood
 
@@ -123,9 +117,7 @@ class BayesianDelayEstimator(DelayEstimator):
         self.prior = np.ones(max_delay + 1) / (max_delay + 1)
         self.posterior = self.prior.copy()
 
-    def estimate_delay(
-        self, innovation: np.ndarray, innovation_covariance: np.ndarray
-    ) -> int:
+    def estimate_delay(self, innovation: np.ndarray, innovation_covariance: np.ndarray) -> int:
         """
         Estimate delay using Bayesian inference
 

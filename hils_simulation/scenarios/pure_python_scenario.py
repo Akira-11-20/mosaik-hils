@@ -5,14 +5,12 @@ This scenario implements a simple numerical simulation without any
 framework overhead, serving as a baseline for performance comparison.
 """
 
-from datetime import datetime
-from pathlib import Path
 from typing import Dict, List
 
 import h5py
 import numpy as np
-
 from config.parameters import SimulationParameters
+
 from .base_scenario import BaseScenario
 
 
@@ -196,7 +194,6 @@ class PurePythonScenario(BaseScenario):
         # Actual period = step_size × time_resolution
         control_period_steps = self.params.control_period_steps
         env_period_steps = self.params.env_sim_period_steps
-        plant_period_steps = self.params.plant_sim_period_steps
 
         thrust = 0.0
         next_thrust = 0.0  # For time-shifted behavior (like Mosaik)
@@ -219,11 +216,13 @@ class PurePythonScenario(BaseScenario):
             # Compute control at specified period AFTER physics update
             if step % control_period_steps == 0:
                 next_thrust = self.controller.compute_control(self.spacecraft.position, self.spacecraft.velocity)
-                measured_thrust = self.plant.measure(next_thrust)
+                self.plant.measure(next_thrust)
 
                 # Periodic logging
                 if step % log_interval_steps == 0:
-                    print(f"[t={time_ms:.0f}ms] pos={self.spacecraft.position:.3f}m, vel={self.spacecraft.velocity:.3f}m/s, error={self.controller.error:.3f}m, thrust={thrust:.3f}N")
+                    print(
+                        f"[t={time_ms:.0f}ms] pos={self.spacecraft.position:.3f}m, vel={self.spacecraft.velocity:.3f}m/s, error={self.controller.error:.3f}m, thrust={thrust:.3f}N"
+                    )
 
             # Record data (AFTER physics update to match Mosaik DataCollector behavior)
             self.data["time_s"].append(time_s)
@@ -239,7 +238,7 @@ class PurePythonScenario(BaseScenario):
 
     def generate_graphs(self):
         """Pure Python scenario doesn't generate Mosaik graphs."""
-        print(f"\n📊 Skipping graph generation (Pure Python scenario)")
+        print("\n📊 Skipping graph generation (Pure Python scenario)")
 
     def run(self):
         """Execute complete Pure Python simulation."""
@@ -257,15 +256,15 @@ class PurePythonScenario(BaseScenario):
         self.print_simulation_info()
 
         # Create components
-        print(f"\n📦 Creating components...")
+        print("\n📦 Creating components...")
         self.setup_entities()
 
         # Connect (dummy for Pure Python)
-        print(f"\n🔗 Connecting data flows...")
+        print("\n🔗 Connecting data flows...")
         self.connect_entities()
 
         # Setup data collection
-        print(f"\n📊 Setting up data collection...")
+        print("\n📊 Setting up data collection...")
         self.setup_data_collection()
 
         # Run simulation
@@ -282,7 +281,7 @@ class PurePythonScenario(BaseScenario):
         self.save_data_to_hdf5()
 
         # Print final state
-        print(f"\n📊 Final state:")
+        print("\n📊 Final state:")
         print(f"   Position: {self.spacecraft.position:.3f} m (target: {self.params.control.target_position} m)")
         print(f"   Velocity: {self.spacecraft.velocity:.3f} m/s")
         print(f"   Error: {self.controller.error:.3f} m")

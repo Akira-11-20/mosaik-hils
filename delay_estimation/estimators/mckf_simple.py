@@ -6,8 +6,9 @@ Simplified Maximum Correntropy Kalman Filter (MCKF)
 「最大コレンロピー基準による外れ値抑制」に焦点を当てています。
 """
 
+from typing import Optional, Tuple
+
 import numpy as np
-from typing import Tuple, Optional
 
 
 class SimpleMCKF:
@@ -108,7 +109,7 @@ class SimpleMCKF:
         Returns:
             weights: 重みベクトル
         """
-        return np.exp(-residual**2 / (2 * self.eta**2))
+        return np.exp(-(residual**2) / (2 * self.eta**2))
 
     def update_mckf(self, y: np.ndarray) -> Tuple[np.ndarray, np.ndarray, int]:
         """
@@ -195,9 +196,7 @@ class SimpleMCKF:
             # MATLABコード: Gk = inv(H'*R_hat_inv*H + Pke_hat_inv) * H' * R_hat_inv
             try:
                 # Information formのゲイン計算
-                K_tilde = np.linalg.inv(
-                    self.C.T @ R_tilde_inv @ self.C + P_tilde_inv
-                ) @ self.C.T @ R_tilde_inv
+                K_tilde = np.linalg.inv(self.C.T @ R_tilde_inv @ self.C + P_tilde_inv) @ self.C.T @ R_tilde_inv
             except np.linalg.LinAlgError:
                 break
 
@@ -239,9 +238,7 @@ class SimpleMCKF:
 
         return x_updated, P_updated, 0
 
-    def step(
-        self, y: np.ndarray, u: Optional[np.ndarray] = None
-    ) -> Tuple[np.ndarray, np.ndarray, dict]:
+    def step(self, y: np.ndarray, u: Optional[np.ndarray] = None) -> Tuple[np.ndarray, np.ndarray, dict]:
         """
         完全なフィルタステップ (予測 + MCKF更新)
 
@@ -261,8 +258,8 @@ class SimpleMCKF:
         self.x, self.P, num_iter = self.update_mckf(y)
 
         info = {
-            'num_iterations': num_iter,
-            'innovation': y - self.C @ self.x,
+            "num_iterations": num_iter,
+            "innovation": y - self.C @ self.x,
         }
 
         return self.x.copy(), self.P.copy(), info

@@ -11,9 +11,10 @@ Data 2: 50ms遅延あり
 """
 
 import argparse
-import matplotlib.pyplot as plt
 from pathlib import Path
-from hdf5_helper import load_hdf5_data, get_dataset
+
+import matplotlib.pyplot as plt
+from hdf5_helper import get_dataset, load_hdf5_data
 
 
 def main():
@@ -95,19 +96,19 @@ def main():
     print(f"✅ Plot saved to: {output_path}")
 
     # 統計情報を表示
-    print(f"\nData 1 (No Delay):")
+    print("\nData 1 (No Delay):")
     print(f"  File: {file1}")
     print(f"  Time range: {time1[0]:.3f}s - {time1[-1]:.3f}s")
     print(f"  Position range: {position1.min():.3f}m - {position1.max():.3f}m")
     print(f"  Final position: {position1[-1]:.3f}m")
 
-    print(f"\nData 2 (With Delay):")
+    print("\nData 2 (With Delay):")
     print(f"  File: {file2}")
     print(f"  Time range: {time2[0]:.3f}s - {time2[-1]:.3f}s")
     print(f"  Position range: {position2.min():.3f}m - {position2.max():.3f}m")
     print(f"  Final position: {position2[-1]:.3f}m")
 
-    print(f"\nDifference:")
+    print("\nDifference:")
     print(f"  Final position difference: {abs(position2[-1] - position1[-1]):.3f}m")
     print(f"  Max position difference: {abs(position2.max() - position1.max()):.3f}m")
 

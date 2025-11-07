@@ -1,12 +1,12 @@
 """Parameter configuration for delay estimation experiments"""
 
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
 class SystemParameters:
     """System dynamics parameters"""
+
     # State space dimensions
     state_dim: int = 2  # [position, velocity]
     measurement_dim: int = 1  # [position]
@@ -24,6 +24,7 @@ class SystemParameters:
 @dataclass
 class NetworkParameters:
     """Network delay and noise parameters"""
+
     # Delay characteristics
     mean_delay: float = 0.05  # mean delay [s]
     delay_std: float = 0.01  # delay standard deviation [s]
@@ -37,6 +38,7 @@ class NetworkParameters:
 @dataclass
 class KalmanParameters:
     """Kalman filter parameters"""
+
     # Process noise covariance Q
     q_position: float = 0.01
     q_velocity: float = 0.01
@@ -52,6 +54,7 @@ class KalmanParameters:
 @dataclass
 class EstimatorParameters:
     """Delay estimator parameters"""
+
     # Estimation method
     method: str = "innovation"  # "innovation", "ml", "bayesian"
 
@@ -65,6 +68,7 @@ class EstimatorParameters:
 @dataclass
 class SimulationParameters:
     """Overall simulation parameters"""
+
     total_time: float = 10.0  # total simulation time [s]
     dt: float = 0.01  # time step [s]
 

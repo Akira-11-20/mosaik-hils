@@ -1,7 +1,8 @@
 """Standard Kalman Filter implementation"""
 
+from typing import Optional, Tuple
+
 import numpy as np
-from typing import Tuple, Optional
 
 
 class KalmanFilter:
@@ -100,9 +101,7 @@ class KalmanFilter:
 
         return self.x.copy(), self.P.copy(), innovation
 
-    def step(
-        self, y: np.ndarray, u: Optional[np.ndarray] = None
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def step(self, y: np.ndarray, u: Optional[np.ndarray] = None) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Complete filter step (predict + update)
 

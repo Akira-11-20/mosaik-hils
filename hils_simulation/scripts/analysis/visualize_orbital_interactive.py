@@ -9,11 +9,12 @@ HDF5ファイルから軌道データを読み込み、インタラクティブ�
 """
 
 import argparse
+from pathlib import Path
+
 import h5py
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from pathlib import Path
 
 
 def load_orbital_data(h5_path: str):
@@ -186,7 +187,7 @@ def plot_3d_trajectory_interactive(data, output_dir=None):
     if output_dir:
         output_path = Path(output_dir) / "orbital_3d_interactive.html"
         fig.write_html(str(output_path))
-        print(f"   Saved: orbital_3d_interactive.html")
+        print("   Saved: orbital_3d_interactive.html")
 
     return fig
 
@@ -331,7 +332,7 @@ def plot_3d_trajectory_animated(data, output_dir=None):
     if output_dir:
         output_path = Path(output_dir) / "orbital_3d_animation.html"
         fig.write_html(str(output_path))
-        print(f"   Saved: orbital_3d_animation.html")
+        print("   Saved: orbital_3d_animation.html")
 
     return fig
 
@@ -520,7 +521,7 @@ def plot_timeseries_interactive(data, output_dir=None):
     if output_dir:
         output_path = Path(output_dir) / "orbital_timeseries_interactive.html"
         fig.write_html(str(output_path))
-        print(f"   Saved: orbital_timeseries_interactive.html")
+        print("   Saved: orbital_timeseries_interactive.html")
 
     return fig
 
@@ -542,7 +543,7 @@ def plot_orbital_simulation_interactive(h5_path: str, output_dir: str = None):
     else:
         output_dir = Path(output_dir)
 
-    print(f"📊 Generating interactive plots...")
+    print("📊 Generating interactive plots...")
 
     # 3D軌道（静止）
     plot_3d_trajectory_interactive(data, output_dir)
@@ -557,9 +558,7 @@ def plot_orbital_simulation_interactive(h5_path: str, output_dir: str = None):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Visualize orbital simulation results (Interactive Plotly version)"
-    )
+    parser = argparse.ArgumentParser(description="Visualize orbital simulation results (Interactive Plotly version)")
     parser.add_argument("h5_file", type=str, help="Path to HDF5 data file")
     parser.add_argument("--output-dir", type=str, default=None, help="Output directory for plots")
 

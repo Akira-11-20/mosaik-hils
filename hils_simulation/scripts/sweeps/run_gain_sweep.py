@@ -27,9 +27,9 @@ def main():
     results = []
 
     for gain in gains:
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"Running with gain = {gain}")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
         try:
             # Load parameters from .env
@@ -43,11 +43,7 @@ def main():
             scenario = InverseCompScenario(params)
             scenario.run()
 
-            results.append({
-                "gain": gain,
-                "status": "success",
-                "output_dir": scenario.run_dir
-            })
+            results.append({"gain": gain, "status": "success", "output_dir": scenario.run_dir})
 
             print(f"\n✅ Completed: gain={gain}")
             print(f"   Results saved to: {scenario.run_dir}")
@@ -55,11 +51,7 @@ def main():
         except Exception as e:
             print(f"\n❌ Failed: gain={gain}")
             print(f"   Error: {e}")
-            results.append({
-                "gain": gain,
-                "status": "failed",
-                "error": str(e)
-            })
+            results.append({"gain": gain, "status": "failed", "error": str(e)})
 
     # Summary
     print("\n" + "=" * 60)

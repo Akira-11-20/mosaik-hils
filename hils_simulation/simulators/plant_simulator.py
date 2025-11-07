@@ -10,7 +10,6 @@ PlantSimulator - 1DOF推力測定器シミュレーター
 import mosaik_api
 import numpy as np
 
-
 meta = {
     "type": "time-based",
     "models": {
@@ -132,14 +131,10 @@ class PlantSimulator(mosaik_api.Simulator):
             if time_constant_std > 0 or time_constant_noise > 0:
                 noise_str = f", noise={time_constant_noise}ms" if time_constant_noise > 0 else ""
                 print(
-                    f"[PlantSim] Created {eid} (ID: {stand_id}, "
-                    f"τ={actual_time_constant:.2f}ms (mean={time_constant}ms, std={time_constant_std}ms{noise_str}), "
-                    f"lag={lag_status})"
+                    f"[PlantSim] Created {eid} (ID: {stand_id}, τ={actual_time_constant:.2f}ms (mean={time_constant}ms, std={time_constant_std}ms{noise_str}), lag={lag_status})"
                 )
             else:
-                print(
-                    f"[PlantSim] Created {eid} (ID: {stand_id}, τ={actual_time_constant}ms, lag={lag_status})"
-                )
+                print(f"[PlantSim] Created {eid} (ID: {stand_id}, τ={actual_time_constant}ms, lag={lag_status})")
 
         return entities
 

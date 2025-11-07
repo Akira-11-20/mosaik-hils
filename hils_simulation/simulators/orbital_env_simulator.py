@@ -11,9 +11,8 @@ OrbitalEnvSimulator - 軌道力学環境シミュレーター
 - RK4法による数値積分
 """
 
-import numpy as np
 import mosaik_api
-
+import numpy as np
 
 meta = {
     "type": "time-based",
@@ -165,8 +164,8 @@ class OrbitalEnvSimulator(mosaik_api.Simulator):
             print(f"  Mass: {mass} kg")
             print(f"  Position: {position} m")
             print(f"  Velocity: {velocity} m/s")
-            print(f"  Altitude: {altitude/1e3:.2f} km")
-            print(f"  Orbital radius: {r_norm/1e3:.2f} km")
+            print(f"  Altitude: {altitude / 1e3:.2f} km")
+            print(f"  Orbital radius: {r_norm / 1e3:.2f} km")
             print(f"  Orbital velocity: {v_norm:.2f} m/s")
 
         return entities
@@ -216,9 +215,7 @@ class OrbitalEnvSimulator(mosaik_api.Simulator):
             # 状態更新
             entity["position"] = r + (dt / 6.0) * (k1_r + 2 * k2_r + 2 * k3_r + k4_r)
             entity["velocity"] = v + (dt / 6.0) * (k1_v + 2 * k2_v + 2 * k3_v + k4_v)
-            entity["acceleration"] = self._acceleration(
-                entity["position"], entity["velocity"], force, entity
-            )
+            entity["acceleration"] = self._acceleration(entity["position"], entity["velocity"], force, entity)
 
         return time + self.step_size
 
@@ -287,7 +284,7 @@ class OrbitalEnvSimulator(mosaik_api.Simulator):
 
             # 角運動量ベクトル: h = r × v
             h = np.cross(r, v)
-            h_norm = np.linalg.norm(h)
+            np.linalg.norm(h)
 
             # 離心率ベクトル: e = (v × h)/μ - r/|r|
             e_vec = np.cross(v, h) / mu - r / r_norm

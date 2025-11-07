@@ -21,11 +21,11 @@
 import argparse
 import json
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict
 
-from hdf5_helper import load_hdf5_data, get_dataset
 import matplotlib.pyplot as plt
 import numpy as np
+from hdf5_helper import load_hdf5_data
 
 
 def load_hdf5_data(hdf5_path: str) -> Dict[str, np.ndarray]:
@@ -65,7 +65,7 @@ def load_simulation_config(result_dir: Path) -> Dict:
     """
     config_path = result_dir / "simulation_config.json"
     if config_path.exists():
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             return json.load(f)
     return {}
 
@@ -311,17 +311,17 @@ def plot_3way_comparison(
 
     # 設定の表示
     hils_comm = hils_config.get("communication", {})
-    print(f"\nHILS Configuration:")
+    print("\nHILS Configuration:")
     print(f"  - Command delay: {hils_comm.get('cmd_delay_s', 0) * 1000:.1f} ms")
     print(f"  - Command jitter: {hils_comm.get('cmd_jitter_s', 0) * 1000:.1f} ms")
     print(f"  - Sense delay: {hils_comm.get('sense_delay_s', 0) * 1000:.1f} ms")
     print(f"  - Sense jitter: {hils_comm.get('sense_jitter_s', 0) * 1000:.1f} ms")
 
-    print(f"\nRT Configuration:")
-    print(f"  - No communication delays (Mosaik-based)")
+    print("\nRT Configuration:")
+    print("  - No communication delays (Mosaik-based)")
 
-    print(f"\nPure Python Configuration:")
-    print(f"  - No Mosaik framework overhead (ideal)")
+    print("\nPure Python Configuration:")
+    print("  - No Mosaik framework overhead (ideal)")
 
     # 性能指標の比較表
     print(f"\n{'Metric':<25} {'HILS':>15} {'RT':>15} {'Pure':>15}")

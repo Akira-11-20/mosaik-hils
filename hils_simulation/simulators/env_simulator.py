@@ -9,7 +9,6 @@ EnvSimulator - 1DOF環境シミュレーター
 
 import mosaik_api
 
-
 meta = {
     "type": "time-based",
     "models": {
@@ -113,7 +112,9 @@ class EnvSimulator(mosaik_api.Simulator):
 
             entities.append({"eid": eid, "type": model})
             gravity_str = f", g={gravity}m/s²" if gravity != 0.0 else ""
-            print(f"[EnvSim] Created {eid} (mass={mass}kg, x0={initial_position}m, v0={initial_velocity}m/s{gravity_str})")
+            print(
+                f"[EnvSim] Created {eid} (mass={mass}kg, x0={initial_position}m, v0={initial_velocity}m/s{gravity_str})"
+            )
 
         return entities
 

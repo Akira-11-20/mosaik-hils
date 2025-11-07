@@ -18,6 +18,7 @@ app = marimo.App(width="medium")
 @app.cell
 def _():
     import marimo as mo
+
     return (mo,)
 
 
@@ -32,6 +33,7 @@ def _():
     import numpy as np
     import pandas as pd
     import plotly.graph_objects as go
+
     return Path, go, h5py, json, np, os, pd, plt
 
 
@@ -76,7 +78,7 @@ def _(Path, json, os):
             config_file = subdir / "simulation_config.json"
             config = {}
             if config_file.exists():
-                with open(config_file, "r") as f:
+                with open(config_file) as f:
                     config = json.load(f)
 
             # 遅延情報
@@ -185,7 +187,6 @@ def _(mo, num_plots_selector, title):
     """タイトル表示"""
     title_display = mo.vstack([title, num_plots_selector] if num_plots_selector else [title])
     title_display
-    return
 
 
 @app.cell
@@ -208,9 +209,9 @@ def _(all_results, mo, num_plots_selector):
         def _create_dropdown(index):
             default_val = labels[index] if index < len(labels) else "(None)"
             if index == 0:
-                return mo.ui.dropdown(opts, value=default_val, label=f"📊 Result {index+1}")
+                return mo.ui.dropdown(opts, value=default_val, label=f"📊 Result {index + 1}")
             else:
-                return mo.ui.dropdown(opts_with_none, value=default_val, label=f"📊 Result {index+1} (optional)")
+                return mo.ui.dropdown(opts_with_none, value=default_val, label=f"📊 Result {index + 1} (optional)")
 
         # mo.ui.arrayでラップしてリアクティビティを確保
         dropdowns_list = [_create_dropdown(i) for i in range(num_plots)]
@@ -222,7 +223,6 @@ def _(all_results, mo, num_plots_selector):
 def _(result_dropdowns_array):
     """ドロップダウン表示"""
     result_dropdowns_array
-    return
 
 
 @app.cell
@@ -238,10 +238,7 @@ def _(all_results, result_dropdowns_array):
         selected_results = [
             all_results[val]
             for val in dropdown_values
-            if val is not None
-            and isinstance(val, int)
-            and val >= 0
-            and val < len(all_results)
+            if val is not None and isinstance(val, int) and val >= 0 and val < len(all_results)
         ]
     return (selected_results,)
 
@@ -365,6 +362,7 @@ def _(np):
             metrics["itae"] = 0
 
         return metrics
+
     return (calculate_detailed_metrics,)
 
 
@@ -406,6 +404,7 @@ def _(h5py):
 
                 read_group(f)
         return hdf5_data
+
     return (load_hdf5_data,)
 
 
@@ -447,11 +446,30 @@ def _(
         fig, axes = plt.subplots(5, 1, figsize=(14, 20))
         # 10色に拡張（カラーマップから取得）
         colors = [
-            "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
-            "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"
+            "#1f77b4",
+            "#ff7f0e",
+            "#2ca02c",
+            "#d62728",
+            "#9467bd",
+            "#8c564b",
+            "#e377c2",
+            "#7f7f7f",
+            "#bcbd22",
+            "#17becf",
         ]
         # 線スタイルを拡張
-        styles = ["-", "--", "-.", ":", (0, (3, 1, 1, 1)), (0, (5, 2, 1, 2)), (0, (3, 5, 1, 5)), (0, (1, 1)), (0, (5, 1)), (0, (3, 1, 1, 1, 1, 1))]
+        styles = [
+            "-",
+            "--",
+            "-.",
+            ":",
+            (0, (3, 1, 1, 1)),
+            (0, (5, 2, 1, 2)),
+            (0, (3, 5, 1, 5)),
+            (0, (1, 1)),
+            (0, (5, 1)),
+            (0, (3, 1, 1, 1, 1, 1)),
+        ]
 
         for plot_idx, result_item in enumerate(results_list):
             try:
@@ -536,7 +554,13 @@ def _(
                 target_position = result_item["config"].get("control", {}).get("target_position_m", 5.0)
 
                 # メトリクス計算（command thrustを使用）
-                if len(time_data) > 0 and len(result_position) > 0 and len(result_velocity) > 0 and len(result_error) > 0 and len(result_cmd_thrust) > 0:
+                if (
+                    len(time_data) > 0
+                    and len(result_position) > 0
+                    and len(result_velocity) > 0
+                    and len(result_error) > 0
+                    and len(result_cmd_thrust) > 0
+                ):
                     metrics = calculate_detailed_metrics(
                         time_data,
                         result_position,
@@ -570,7 +594,7 @@ def _(
                         alpha=0.8,
                     )
                 else:
-                    print(f"  ⚠️ No position data")
+                    print("  ⚠️ No position data")
 
                 if len(result_velocity) > 0:
                     axes[1].plot(
@@ -583,7 +607,7 @@ def _(
                         alpha=0.8,
                     )
                 else:
-                    print(f"  ⚠️ No velocity data")
+                    print("  ⚠️ No velocity data")
 
                 # Command Thrust（コントローラー出力）
                 if len(result_cmd_thrust) > 0:
@@ -597,7 +621,7 @@ def _(
                         alpha=0.8,
                     )
                 else:
-                    print(f"  ⚠️ No command thrust data")
+                    print("  ⚠️ No command thrust data")
 
                 # Actual Thrust（Plant入力、遅延後）
                 if len(result_actual_thrust) > 0:
@@ -611,7 +635,7 @@ def _(
                         alpha=0.8,
                     )
                 else:
-                    print(f"  ⚠️ No actual thrust data")
+                    print("  ⚠️ No actual thrust data")
 
                 if len(result_error) > 0:
                     axes[4].plot(
@@ -624,7 +648,7 @@ def _(
                         alpha=0.8,
                     )
                 else:
-                    print(f"  ⚠️ No error data")
+                    print("  ⚠️ No error data")
 
             except Exception as exc:
                 import traceback
@@ -698,7 +722,6 @@ def _(mo, plot_fig):
 def _(plot_display):
     """プロット描画"""
     plot_display
-    return
 
 
 @app.cell
@@ -720,7 +743,6 @@ def _(mo):
 def _(interactive_header):
     """インタラクティブヘッダー表示"""
     interactive_header
-    return
 
 
 @app.cell
@@ -744,7 +766,6 @@ def _(mo):
 def _(plot_selector):
     """プロット選択表示"""
     plot_selector
-    return
 
 
 @app.cell
@@ -761,12 +782,30 @@ def _(go, load_hdf5_data, mo, np, plot_selector, selected_results):
 
         # 10色に拡張
         colors = [
-            "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
-            "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"
+            "#1f77b4",
+            "#ff7f0e",
+            "#2ca02c",
+            "#d62728",
+            "#9467bd",
+            "#8c564b",
+            "#e377c2",
+            "#7f7f7f",
+            "#bcbd22",
+            "#17becf",
         ]
         # 線スタイルを拡張
-        styles = ["solid", "dash", "dot", "dashdot", "longdash", "longdashdot",
-                  (5, (10, 3)), (0, (5, 5)), (0, (3, 1, 1, 1)), (0, (1, 1))]
+        styles = [
+            "solid",
+            "dash",
+            "dot",
+            "dashdot",
+            "longdash",
+            "longdashdot",
+            (5, (10, 3)),
+            (0, (5, 5)),
+            (0, (3, 1, 1, 1)),
+            (0, (1, 1)),
+        ]
 
         # データキー検索用の関数
         def find_key_by_suffix(key_data, suffix):
@@ -876,7 +915,11 @@ def _(go, load_hdf5_data, mo, np, plot_selector, selected_results):
                             width=2,
                             dash=styles[plot_idx % len(styles)],
                         ),
-                        hovertemplate="<b>%{fullData.name}</b><br>" + "Time: %{x:.4f} s<br>" + f"{y_label}: " + "%{y:.6f}<br>" + "<extra></extra>",
+                        hovertemplate="<b>%{fullData.name}</b><br>"
+                        + "Time: %{x:.4f} s<br>"
+                        + f"{y_label}: "
+                        + "%{y:.6f}<br>"
+                        + "<extra></extra>",
                     )
                 )
 
@@ -927,7 +970,6 @@ def _(go, load_hdf5_data, mo, np, plot_selector, selected_results):
 def _(interactive_fig):
     """インタラクティブプロット表示"""
     interactive_fig
-    return
 
 
 @app.cell
@@ -940,7 +982,6 @@ def _(computed_metrics, mo, pd):
         transient_table = None
         integral_table = None
         control_table = None
-        relative_table = None
     else:
         # メトリクスをDataFrameに変換（数値型で保持）
         rows = []
@@ -979,12 +1020,20 @@ def _(computed_metrics, mo, pd):
         error_table["Std Error"] = error_table["Std Error"].apply(lambda x: f"{x:.6f}")
         error_table["Final Error"] = error_table["Final Error"].apply(lambda x: f"{x:.6f}")
 
-        transient_table = df[["Simulation", "Overshoot", "Overshoot %", "Rise Time", "Settling 5%", "Settling 2%"]].copy()
+        transient_table = df[
+            ["Simulation", "Overshoot", "Overshoot %", "Rise Time", "Settling 5%", "Settling 2%"]
+        ].copy()
         transient_table["Overshoot"] = transient_table["Overshoot"].apply(lambda x: f"{x:.6f}")
         transient_table["Overshoot %"] = transient_table["Overshoot %"].apply(lambda x: f"{x:.2f}%")
-        transient_table["Rise Time"] = transient_table["Rise Time"].apply(lambda x: f"{x:.4f}" if pd.notna(x) else "N/A")
-        transient_table["Settling 5%"] = transient_table["Settling 5%"].apply(lambda x: f"{x:.4f}" if pd.notna(x) else "N/A")
-        transient_table["Settling 2%"] = transient_table["Settling 2%"].apply(lambda x: f"{x:.4f}" if pd.notna(x) else "N/A")
+        transient_table["Rise Time"] = transient_table["Rise Time"].apply(
+            lambda x: f"{x:.4f}" if pd.notna(x) else "N/A"
+        )
+        transient_table["Settling 5%"] = transient_table["Settling 5%"].apply(
+            lambda x: f"{x:.4f}" if pd.notna(x) else "N/A"
+        )
+        transient_table["Settling 2%"] = transient_table["Settling 2%"].apply(
+            lambda x: f"{x:.4f}" if pd.notna(x) else "N/A"
+        )
 
         integral_table = df[["Simulation", "ISE", "IAE", "ITAE"]].copy()
         integral_table["ISE"] = integral_table["ISE"].apply(lambda x: f"{x:.6f}")
@@ -1009,25 +1058,33 @@ def _(computed_metrics, mo, pd):
 
                 # RMS Error
                 if ref_metrics["rms_error"] != 0:
-                    rel_row["RMS Error Δ%"] = f"{((comp_metrics['rms_error'] - ref_metrics['rms_error']) / ref_metrics['rms_error'] * 100):+.2f}%"
+                    rel_row["RMS Error Δ%"] = (
+                        f"{((comp_metrics['rms_error'] - ref_metrics['rms_error']) / ref_metrics['rms_error'] * 100):+.2f}%"
+                    )
                 else:
                     rel_row["RMS Error Δ%"] = "N/A"
 
                 # Max Error
                 if ref_metrics["max_error"] != 0:
-                    rel_row["Max Error Δ%"] = f"{((comp_metrics['max_error'] - ref_metrics['max_error']) / ref_metrics['max_error'] * 100):+.2f}%"
+                    rel_row["Max Error Δ%"] = (
+                        f"{((comp_metrics['max_error'] - ref_metrics['max_error']) / ref_metrics['max_error'] * 100):+.2f}%"
+                    )
                 else:
                     rel_row["Max Error Δ%"] = "N/A"
 
                 # Mean Abs Error
                 if ref_metrics["mean_abs_error"] != 0:
-                    rel_row["Mean |Error| Δ%"] = f"{((comp_metrics['mean_abs_error'] - ref_metrics['mean_abs_error']) / ref_metrics['mean_abs_error'] * 100):+.2f}%"
+                    rel_row["Mean |Error| Δ%"] = (
+                        f"{((comp_metrics['mean_abs_error'] - ref_metrics['mean_abs_error']) / ref_metrics['mean_abs_error'] * 100):+.2f}%"
+                    )
                 else:
                     rel_row["Mean |Error| Δ%"] = "N/A"
 
                 # Final Error
                 if ref_metrics["final_error"] != 0:
-                    rel_row["Final Error Δ%"] = f"{((comp_metrics['final_error'] - ref_metrics['final_error']) / ref_metrics['final_error'] * 100):+.2f}%"
+                    rel_row["Final Error Δ%"] = (
+                        f"{((comp_metrics['final_error'] - ref_metrics['final_error']) / ref_metrics['final_error'] * 100):+.2f}%"
+                    )
                 else:
                     rel_row["Final Error Δ%"] = "N/A"
 
@@ -1043,25 +1100,45 @@ def _(computed_metrics, mo, pd):
 
                 # Overshoot
                 if ref_metrics["overshoot"] != 0:
-                    rel_row["Overshoot Δ%"] = f"{((comp_metrics['overshoot'] - ref_metrics['overshoot']) / ref_metrics['overshoot'] * 100):+.2f}%"
+                    rel_row["Overshoot Δ%"] = (
+                        f"{((comp_metrics['overshoot'] - ref_metrics['overshoot']) / ref_metrics['overshoot'] * 100):+.2f}%"
+                    )
                 else:
                     rel_row["Overshoot Δ%"] = "N/A"
 
                 # Rise Time
-                if ref_metrics["rise_time"] is not None and comp_metrics["rise_time"] is not None and ref_metrics["rise_time"] != 0:
-                    rel_row["Rise Time Δ%"] = f"{((comp_metrics['rise_time'] - ref_metrics['rise_time']) / ref_metrics['rise_time'] * 100):+.2f}%"
+                if (
+                    ref_metrics["rise_time"] is not None
+                    and comp_metrics["rise_time"] is not None
+                    and ref_metrics["rise_time"] != 0
+                ):
+                    rel_row["Rise Time Δ%"] = (
+                        f"{((comp_metrics['rise_time'] - ref_metrics['rise_time']) / ref_metrics['rise_time'] * 100):+.2f}%"
+                    )
                 else:
                     rel_row["Rise Time Δ%"] = "N/A"
 
                 # Settling 5%
-                if ref_metrics["settling_time_5pct"] is not None and comp_metrics["settling_time_5pct"] is not None and ref_metrics["settling_time_5pct"] != 0:
-                    rel_row["Settling 5% Δ%"] = f"{((comp_metrics['settling_time_5pct'] - ref_metrics['settling_time_5pct']) / ref_metrics['settling_time_5pct'] * 100):+.2f}%"
+                if (
+                    ref_metrics["settling_time_5pct"] is not None
+                    and comp_metrics["settling_time_5pct"] is not None
+                    and ref_metrics["settling_time_5pct"] != 0
+                ):
+                    rel_row["Settling 5% Δ%"] = (
+                        f"{((comp_metrics['settling_time_5pct'] - ref_metrics['settling_time_5pct']) / ref_metrics['settling_time_5pct'] * 100):+.2f}%"
+                    )
                 else:
                     rel_row["Settling 5% Δ%"] = "N/A"
 
                 # Settling 2%
-                if ref_metrics["settling_time_2pct"] is not None and comp_metrics["settling_time_2pct"] is not None and ref_metrics["settling_time_2pct"] != 0:
-                    rel_row["Settling 2% Δ%"] = f"{((comp_metrics['settling_time_2pct'] - ref_metrics['settling_time_2pct']) / ref_metrics['settling_time_2pct'] * 100):+.2f}%"
+                if (
+                    ref_metrics["settling_time_2pct"] is not None
+                    and comp_metrics["settling_time_2pct"] is not None
+                    and ref_metrics["settling_time_2pct"] != 0
+                ):
+                    rel_row["Settling 2% Δ%"] = (
+                        f"{((comp_metrics['settling_time_2pct'] - ref_metrics['settling_time_2pct']) / ref_metrics['settling_time_2pct'] * 100):+.2f}%"
+                    )
                 else:
                     rel_row["Settling 2% Δ%"] = "N/A"
 
@@ -1077,19 +1154,25 @@ def _(computed_metrics, mo, pd):
 
                 # ISE
                 if ref_metrics["ise"] != 0:
-                    rel_row["ISE Δ%"] = f"{((comp_metrics['ise'] - ref_metrics['ise']) / ref_metrics['ise'] * 100):+.2f}%"
+                    rel_row["ISE Δ%"] = (
+                        f"{((comp_metrics['ise'] - ref_metrics['ise']) / ref_metrics['ise'] * 100):+.2f}%"
+                    )
                 else:
                     rel_row["ISE Δ%"] = "N/A"
 
                 # IAE
                 if ref_metrics["iae"] != 0:
-                    rel_row["IAE Δ%"] = f"{((comp_metrics['iae'] - ref_metrics['iae']) / ref_metrics['iae'] * 100):+.2f}%"
+                    rel_row["IAE Δ%"] = (
+                        f"{((comp_metrics['iae'] - ref_metrics['iae']) / ref_metrics['iae'] * 100):+.2f}%"
+                    )
                 else:
                     rel_row["IAE Δ%"] = "N/A"
 
                 # ITAE
                 if ref_metrics["itae"] != 0:
-                    rel_row["ITAE Δ%"] = f"{((comp_metrics['itae'] - ref_metrics['itae']) / ref_metrics['itae'] * 100):+.2f}%"
+                    rel_row["ITAE Δ%"] = (
+                        f"{((comp_metrics['itae'] - ref_metrics['itae']) / ref_metrics['itae'] * 100):+.2f}%"
+                    )
                 else:
                     rel_row["ITAE Δ%"] = "N/A"
 
@@ -1105,25 +1188,33 @@ def _(computed_metrics, mo, pd):
 
                 # Max Thrust
                 if ref_metrics["max_thrust"] != 0:
-                    rel_row["Max Thrust Δ%"] = f"{((comp_metrics['max_thrust'] - ref_metrics['max_thrust']) / ref_metrics['max_thrust'] * 100):+.2f}%"
+                    rel_row["Max Thrust Δ%"] = (
+                        f"{((comp_metrics['max_thrust'] - ref_metrics['max_thrust']) / ref_metrics['max_thrust'] * 100):+.2f}%"
+                    )
                 else:
                     rel_row["Max Thrust Δ%"] = "N/A"
 
                 # Mean Thrust
                 if ref_metrics["mean_thrust"] != 0:
-                    rel_row["Mean |Thrust| Δ%"] = f"{((comp_metrics['mean_thrust'] - ref_metrics['mean_thrust']) / ref_metrics['mean_thrust'] * 100):+.2f}%"
+                    rel_row["Mean |Thrust| Δ%"] = (
+                        f"{((comp_metrics['mean_thrust'] - ref_metrics['mean_thrust']) / ref_metrics['mean_thrust'] * 100):+.2f}%"
+                    )
                 else:
                     rel_row["Mean |Thrust| Δ%"] = "N/A"
 
                 # Control Effort
                 if ref_metrics["control_effort"] != 0:
-                    rel_row["Control Effort Δ%"] = f"{((comp_metrics['control_effort'] - ref_metrics['control_effort']) / ref_metrics['control_effort'] * 100):+.2f}%"
+                    rel_row["Control Effort Δ%"] = (
+                        f"{((comp_metrics['control_effort'] - ref_metrics['control_effort']) / ref_metrics['control_effort'] * 100):+.2f}%"
+                    )
                 else:
                     rel_row["Control Effort Δ%"] = "N/A"
 
                 # Max Velocity
                 if ref_metrics["max_velocity"] != 0:
-                    rel_row["Max Velocity Δ%"] = f"{((comp_metrics['max_velocity'] - ref_metrics['max_velocity']) / ref_metrics['max_velocity'] * 100):+.2f}%"
+                    rel_row["Max Velocity Δ%"] = (
+                        f"{((comp_metrics['max_velocity'] - ref_metrics['max_velocity']) / ref_metrics['max_velocity'] * 100):+.2f}%"
+                    )
                 else:
                     rel_row["Max Velocity Δ%"] = "N/A"
 
@@ -1132,13 +1223,11 @@ def _(computed_metrics, mo, pd):
             control_relative_table = pd.DataFrame(control_rel_rows) if control_rel_rows else None
 
             # 統合用（後方互換性のため残す）
-            relative_table = error_relative_table
         else:
             error_relative_table = None
             transient_relative_table = None
             integral_relative_table = None
             control_relative_table = None
-            relative_table = None
 
         metrics_display = mo.md(
             f"""
@@ -1164,7 +1253,6 @@ def _(computed_metrics, mo, pd):
 def _(metrics_display):
     """メトリクスヘッダー表示"""
     metrics_display
-    return
 
 
 @app.cell
@@ -1186,7 +1274,6 @@ def _(error_table, mo):
 def _(error_section):
     """誤差テーブル表示"""
     error_section
-    return
 
 
 @app.cell
@@ -1208,7 +1295,6 @@ def _(mo, transient_table):
 def _(transient_section):
     """過渡応答テーブル表示"""
     transient_section
-    return
 
 
 @app.cell
@@ -1230,7 +1316,6 @@ def _(integral_table, mo):
 def _(integral_section):
     """積分性能指標テーブル表示"""
     integral_section
-    return
 
 
 @app.cell
@@ -1252,7 +1337,6 @@ def _(control_table, mo):
 def _(control_section):
     """制御入力統計テーブル表示"""
     control_section
-    return
 
 
 @app.cell
@@ -1337,35 +1421,30 @@ def _(
 def _(relative_header):
     """相対比較ヘッダー表示"""
     relative_header
-    return
 
 
 @app.cell
 def _(error_relative_section):
     """誤差相対比較表示"""
     error_relative_section
-    return
 
 
 @app.cell
 def _(transient_relative_section):
     """過渡応答相対比較表示"""
     transient_relative_section
-    return
 
 
 @app.cell
 def _(integral_relative_section):
     """積分性能相対比較表示"""
     integral_relative_section
-    return
 
 
 @app.cell
 def _(control_relative_section):
     """制御入力相対比較表示"""
     control_relative_section
-    return
 
 
 @app.cell
@@ -1387,7 +1466,6 @@ def _(mo):
 def _(time_range_header):
     """時刻範囲ヘッダー表示"""
     time_range_header
-    return
 
 
 @app.cell
@@ -1463,7 +1541,9 @@ def _(max_time_calc, min_time_calc, mo, selected_results):
         time_range_ui = mo.vstack(
             [
                 mo.md("**Select time range for comparison:**"),
-                mo.md(f"_Use **sliders** for quick selection or **number inputs** for precise values (0.001s precision)._\n\n_Available time range: {min_time_calc:.3f}s to {max_time_calc:.3f}s_"),
+                mo.md(
+                    f"_Use **sliders** for quick selection or **number inputs** for precise values (0.001s precision)._\n\n_Available time range: {min_time_calc:.3f}s to {max_time_calc:.3f}s_"
+                ),
                 mo.hstack([time_start_slider, time_start_number], justify="start", widths=[3, 1]),
                 mo.hstack([time_end_slider, time_end_number], justify="start", widths=[3, 1]),
             ]
@@ -1487,7 +1567,6 @@ def _(max_time_calc, min_time_calc, mo, selected_results):
 def _(time_range_ui):
     """時刻範囲UI表示"""
     time_range_ui
-    return
 
 
 @app.cell
@@ -1586,7 +1665,11 @@ def _(
         # 時刻を統一（線形補間）
         # result1の時刻を基準とする
         pos2_interp = np.interp(time1_filtered, time2_filtered, pos2_filtered)
-        vel2_interp = np.interp(time1_filtered, time2_filtered, vel2_filtered) if len(vel2_filtered) > 0 else np.zeros_like(pos2_interp)
+        vel2_interp = (
+            np.interp(time1_filtered, time2_filtered, vel2_filtered)
+            if len(vel2_filtered) > 0
+            else np.zeros_like(pos2_interp)
+        )
 
         # 誤差計算
         position_error = pos1_filtered - pos2_interp
@@ -1653,7 +1736,13 @@ def _(
         return stats
 
     # 計算実行
-    if len(selected_results) >= 2 and time_start_slider is not None and time_end_slider is not None and time_start_number is not None and time_end_number is not None:
+    if (
+        len(selected_results) >= 2
+        and time_start_slider is not None
+        and time_end_slider is not None
+        and time_start_number is not None
+        and time_end_number is not None
+    ):
         # 数値入力を優先（より正確な値の入力が可能なため）
         # ユーザーが数値入力を使用した場合、その値を使用
         # そうでない場合はスライダーの値を使用
@@ -1663,12 +1752,18 @@ def _(
         # 時刻範囲の妥当性チェック
         if t_start >= t_end:
             trajectory_diff_stats = None
-            trajectory_diff_message = mo.md(f"⚠️ **Invalid time range**: Start time ({t_start:.3f}s) must be less than end time ({t_end:.3f}s)")
+            trajectory_diff_message = mo.md(
+                f"⚠️ **Invalid time range**: Start time ({t_start:.3f}s) must be less than end time ({t_end:.3f}s)"
+            )
         else:
-            trajectory_diff_stats = calculate_trajectory_difference(selected_results[0], selected_results[1], t_start, t_end)
+            trajectory_diff_stats = calculate_trajectory_difference(
+                selected_results[0], selected_results[1], t_start, t_end
+            )
 
             if trajectory_diff_stats is None:
-                trajectory_diff_message = mo.md("⚠️ **Error**: Could not calculate trajectory difference. Check data availability.")
+                trajectory_diff_message = mo.md(
+                    "⚠️ **Error**: Could not calculate trajectory difference. Check data availability."
+                )
             else:
                 trajectory_diff_message = mo.md(
                     f"""
@@ -1688,7 +1783,6 @@ def _(
 def _(trajectory_diff_message):
     """軌跡差分メッセージ表示"""
     trajectory_diff_message
-    return
 
 
 @app.cell
@@ -1764,14 +1858,12 @@ def _(mo, pd, selected_results, trajectory_diff_stats):
 def _(pos_error_table_section):
     """位置誤差テーブル表示"""
     pos_error_table_section
-    return
 
 
 @app.cell
 def _(vel_error_table_section):
     """速度誤差テーブル表示"""
     vel_error_table_section
-    return
 
 
 @app.cell
@@ -1879,7 +1971,6 @@ def _(go, mo, selected_results, trajectory_diff_stats):
 def _(trajectory_comparison_plots):
     """軌跡比較プロット表示"""
     trajectory_comparison_plots
-    return
 
 
 @app.cell
@@ -1916,7 +2007,6 @@ def _(mo):
 def _(definitions):
     """定義表示"""
     definitions
-    return
 
 
 if __name__ == "__main__":

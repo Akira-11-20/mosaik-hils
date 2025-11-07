@@ -8,10 +8,11 @@ HDF5ファイルから軌道データを読み込み、以下をプロット:
 """
 
 import argparse
+from pathlib import Path
+
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
-from pathlib import Path
 
 
 def load_orbital_data(h5_path: str):
@@ -121,7 +122,7 @@ def plot_orbital_simulation(h5_path: str, output_dir: str = None):
 
     fig1.tight_layout()
     fig1.savefig(output_dir / "orbital_3d_trajectory.png", dpi=300)
-    print(f"   Saved: orbital_3d_trajectory.png")
+    print("   Saved: orbital_3d_trajectory.png")
     plt.close(fig1)
 
     # プロット2: 位置の時間変化
@@ -163,7 +164,7 @@ def plot_orbital_simulation(h5_path: str, output_dir: str = None):
 
     fig2.tight_layout()
     fig2.savefig(output_dir / "orbital_position.png", dpi=300)
-    print(f"   Saved: orbital_position.png")
+    print("   Saved: orbital_position.png")
     plt.close(fig2)
 
     # プロット3: 速度の時間変化
@@ -214,7 +215,7 @@ def plot_orbital_simulation(h5_path: str, output_dir: str = None):
 
     fig3.tight_layout()
     fig3.savefig(output_dir / "orbital_velocity.png", dpi=300)
-    print(f"   Saved: orbital_velocity.png")
+    print("   Saved: orbital_velocity.png")
     plt.close(fig3)
 
     # プロット4: 軌道要素
@@ -254,7 +255,7 @@ def plot_orbital_simulation(h5_path: str, output_dir: str = None):
 
     fig4.tight_layout()
     fig4.savefig(output_dir / "orbital_elements.png", dpi=300)
-    print(f"   Saved: orbital_elements.png")
+    print("   Saved: orbital_elements.png")
     plt.close(fig4)
 
 

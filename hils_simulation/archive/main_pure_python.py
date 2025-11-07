@@ -20,7 +20,7 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import h5py
 import numpy as np
@@ -319,7 +319,7 @@ def run_simulation():
     print("\n💾 Saving data...")
     save_data_to_hdf5(run_dir, data)
 
-    print(f"\n📊 Final state:")
+    print("\n📊 Final state:")
     print(f"   Position: {spacecraft.position:.3f} m (target: {TARGET_POSITION} m)")
     print(f"   Velocity: {spacecraft.velocity:.3f} m/s")
     print(f"   Error: {controller.error:.3f} m")

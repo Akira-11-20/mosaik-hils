@@ -16,7 +16,6 @@ from datetime import datetime
 from pathlib import Path
 
 import mosaik_api
-import numpy as np
 
 try:
     import h5py
@@ -291,10 +290,10 @@ class DataCollectorSimulator(mosaik_api.Simulator):
                     )
 
             # データセット一覧を表示（ノードごと）
-            print(f"[DataCollector] ✅ Saved datasets by node:")
+            print("[DataCollector] ✅ Saved datasets by node:")
 
             # 時刻データ
-            print(f"\n  [time/]")
+            print("\n  [time/]")
             for key in sorted(time_group.keys()):
                 dataset = time_group[key]
                 print(f"    - {key}: {dataset.shape} {dataset.dtype}")

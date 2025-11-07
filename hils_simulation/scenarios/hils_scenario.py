@@ -7,9 +7,9 @@ and bridges in both command and sensing paths.
 
 import mosaik
 import mosaik.util
-
 from config.parameters import SimulationParameters
 from config.sim_config import get_simulator_config
+
 from .base_scenario import BaseScenario
 
 

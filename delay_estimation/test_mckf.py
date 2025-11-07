@@ -16,13 +16,13 @@ MCKFの性能を検証します。
     - 非ガウスノイズ (外れ値を含む)
 """
 
-import numpy as np
-import matplotlib.pyplot as plt
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
-from estimators.mckf import MaximumCorrentropyKalmanFilter
+import matplotlib.pyplot as plt
+import numpy as np
 from estimators.kalman_filter import KalmanFilter
+from estimators.mckf import MaximumCorrentropyKalmanFilter
 
 
 def create_spacecraft_system(dt: float = 0.1, inertia: float = 1.0):
@@ -46,11 +46,8 @@ def create_spacecraft_system(dt: float = 0.1, inertia: float = 1.0):
     """
     # 連続時間システム:
     # dx/dt = [0, 1; 0, 0]*x + [0; 1/I]*u
-    Ac = np.array([
-        [0.0, 1.0],
-        [0.0, 0.0]
-    ])
-    Bc = np.array([[0.0], [1.0/inertia]])
+    Ac = np.array([[0.0, 1.0], [0.0, 0.0]])
+    Bc = np.array([[0.0], [1.0 / inertia]])
 
     # 離散化 (ゼロ次ホールド)
     # A = I + Ac*dt + (Ac*dt)^2/2 (2次まで)
@@ -86,10 +83,7 @@ def generate_control_input(t: float) -> float:
 
 
 def add_non_gaussian_noise(
-    measurement: np.ndarray,
-    std: float,
-    outlier_prob: float = 0.05,
-    outlier_scale: float = 10.0
+    measurement: np.ndarray, std: float, outlier_prob: float = 0.05, outlier_scale: float = 10.0
 ) -> np.ndarray:
     """
     非ガウスノイズの付加 (外れ値を含む)
@@ -121,12 +115,7 @@ class DelayedNetwork:
     通信遅延・パケット損失をシミュレートするネットワークモデル
     """
 
-    def __init__(
-        self,
-        max_delay: int = 5,
-        delay_probs: np.ndarray = None,
-        packet_loss_prob: float = 0.05
-    ):
+    def __init__(self, max_delay: int = 5, delay_probs: np.ndarray = None, packet_loss_prob: float = 0.05):
         """
         Args:
             max_delay: 最大遅延ステップ数
@@ -138,7 +127,7 @@ class DelayedNetwork:
 
         if delay_probs is None:
             # 均等分布 (0遅延が最も高確率)
-            self.delay_probs = np.array([0.5] + [0.5/(max_delay)] * max_delay)
+            self.delay_probs = np.array([0.5] + [0.5 / (max_delay)] * max_delay)
             self.delay_probs = self.delay_probs / self.delay_probs.sum()
         else:
             self.delay_probs = delay_probs
@@ -197,7 +186,7 @@ def run_comparison_simulation(
     max_delay: int = 5,
     measurement_noise_std: float = 0.1,
     outlier_prob: float = 0.1,
-    seed: int = 42
+    seed: int = 42,
 ):
     """
     MCKFと標準KFの比較シミュレーション
@@ -240,31 +229,34 @@ def run_comparison_simulation(
 
     # 2. MCKF
     mckf = MaximumCorrentropyKalmanFilter(
-        A, B, C, Q, R, x0_est, P0,
+        A,
+        B,
+        C,
+        Q,
+        R,
+        x0_est,
+        P0,
         max_delay=max_delay,
         kernel_bandwidth=2.0,  # η = 2.0 (外れ値抑制)
         max_iterations=10,
-        convergence_threshold=1e-4
+        convergence_threshold=1e-4,
     )
 
     # 遅延ネットワーク
-    network = DelayedNetwork(
-        max_delay=max_delay,
-        packet_loss_prob=0.05
-    )
+    network = DelayedNetwork(max_delay=max_delay, packet_loss_prob=0.05)
 
     # 結果格納
     results = {
-        'time': time,
-        'true_state': np.zeros((num_steps, 2)),
-        'measurement': np.zeros(num_steps),
-        'measurement_available': np.zeros(num_steps, dtype=bool),
-        'delay': np.zeros(num_steps, dtype=int),
-        'kf_estimate': np.zeros((num_steps, 2)),
-        'mckf_estimate': np.zeros((num_steps, 2)),
-        'kf_covariance': np.zeros((num_steps, 2, 2)),
-        'mckf_covariance': np.zeros((num_steps, 2, 2)),
-        'mckf_iterations': np.zeros(num_steps, dtype=int),
+        "time": time,
+        "true_state": np.zeros((num_steps, 2)),
+        "measurement": np.zeros(num_steps),
+        "measurement_available": np.zeros(num_steps, dtype=bool),
+        "delay": np.zeros(num_steps, dtype=int),
+        "kf_estimate": np.zeros((num_steps, 2)),
+        "mckf_estimate": np.zeros((num_steps, 2)),
+        "kf_covariance": np.zeros((num_steps, 2, 2)),
+        "mckf_covariance": np.zeros((num_steps, 2, 2)),
+        "mckf_iterations": np.zeros(num_steps, dtype=int),
     }
 
     print("=" * 60)
@@ -273,9 +265,9 @@ def run_comparison_simulation(
     print(f"Total time: {total_time} s")
     print(f"Time step: {dt} s")
     print(f"Number of steps: {num_steps}")
-    print(f"Max delay: {max_delay} steps ({max_delay*dt} s)")
+    print(f"Max delay: {max_delay} steps ({max_delay * dt} s)")
     print(f"Measurement noise std: {measurement_noise_std} rad")
-    print(f"Outlier probability: {outlier_prob*100}%")
+    print(f"Outlier probability: {outlier_prob * 100}%")
     print("=" * 60)
 
     # シミュレーションループ
@@ -293,12 +285,7 @@ def run_comparison_simulation(
         y_true = C @ x_true
 
         # ノイズを付加した観測
-        y_noisy = add_non_gaussian_noise(
-            y_true,
-            measurement_noise_std,
-            outlier_prob=outlier_prob,
-            outlier_scale=10.0
-        )
+        y_noisy = add_non_gaussian_noise(y_true, measurement_noise_std, outlier_prob=outlier_prob, outlier_scale=10.0)
 
         # ネットワーク送信
         network.transmit(y_noisy, k)
@@ -307,10 +294,10 @@ def run_comparison_simulation(
         y_received, actual_delay = network.receive(k)
 
         # 結果保存
-        results['true_state'][k] = x_true
-        results['measurement'][k] = y_noisy[0] if y_noisy is not None else np.nan
-        results['measurement_available'][k] = (y_received is not None)
-        results['delay'][k] = actual_delay if y_received is not None else -1
+        results["true_state"][k] = x_true
+        results["measurement"][k] = y_noisy[0] if y_noisy is not None else np.nan
+        results["measurement_available"][k] = y_received is not None
+        results["delay"][k] = actual_delay if y_received is not None else -1
 
         # フィルタ更新
         if y_received is not None:
@@ -321,37 +308,37 @@ def run_comparison_simulation(
             # MCKF
             x_mckf, P_mckf, info = mckf.step(y_received, k, u)
 
-            results['mckf_iterations'][k] = info['num_iterations']
+            results["mckf_iterations"][k] = info["num_iterations"]
         else:
             # 観測なし (予測のみ)
             x_kf, P_kf = kf.predict(u)
             x_mckf, P_mckf, info = mckf.step(None, k, u)
 
-        results['kf_estimate'][k] = x_kf
-        results['mckf_estimate'][k] = x_mckf
-        results['kf_covariance'][k] = P_kf
-        results['mckf_covariance'][k] = P_mckf
+        results["kf_estimate"][k] = x_kf
+        results["mckf_estimate"][k] = x_mckf
+        results["kf_covariance"][k] = P_kf
+        results["mckf_covariance"][k] = P_mckf
 
         # 進捗表示
         if (k + 1) % 50 == 0:
-            print(f"Step {k+1}/{num_steps} ({(k+1)/num_steps*100:.1f}%)")
+            print(f"Step {k + 1}/{num_steps} ({(k + 1) / num_steps * 100:.1f}%)")
 
     print("\nSimulation completed!")
 
     # 誤差統計
-    kf_error = results['true_state'] - results['kf_estimate']
-    mckf_error = results['true_state'] - results['mckf_estimate']
+    kf_error = results["true_state"] - results["kf_estimate"]
+    mckf_error = results["true_state"] - results["mckf_estimate"]
 
     print("\n" + "=" * 60)
     print("Estimation Performance:")
     print("=" * 60)
     print("\nStandard Kalman Filter:")
-    print(f"  Angle RMSE:    {np.sqrt(np.mean(kf_error[:, 0]**2)):.4f} rad")
-    print(f"  Velocity RMSE: {np.sqrt(np.mean(kf_error[:, 1]**2)):.4f} rad/s")
+    print(f"  Angle RMSE:    {np.sqrt(np.mean(kf_error[:, 0] ** 2)):.4f} rad")
+    print(f"  Velocity RMSE: {np.sqrt(np.mean(kf_error[:, 1] ** 2)):.4f} rad/s")
 
     print("\nMaximum Correntropy Kalman Filter:")
-    print(f"  Angle RMSE:    {np.sqrt(np.mean(mckf_error[:, 0]**2)):.4f} rad")
-    print(f"  Velocity RMSE: {np.sqrt(np.mean(mckf_error[:, 1]**2)):.4f} rad/s")
+    print(f"  Angle RMSE:    {np.sqrt(np.mean(mckf_error[:, 0] ** 2)):.4f} rad")
+    print(f"  Velocity RMSE: {np.sqrt(np.mean(mckf_error[:, 1] ** 2)):.4f} rad/s")
     print(f"  Avg iterations: {np.mean(results['mckf_iterations'][results['measurement_available']]):.2f}")
 
     return results
@@ -366,68 +353,67 @@ def plot_results(results: dict, save_path: Path = None):
         save_path: 保存先パス
     """
     fig, axes = plt.subplots(4, 1, figsize=(12, 10))
-    time = results['time']
+    time = results["time"]
 
     # 1. 姿勢角の推定
     ax = axes[0]
-    ax.plot(time, results['true_state'][:, 0], 'k-', linewidth=2, label='True', alpha=0.7)
-    ax.plot(time, results['kf_estimate'][:, 0], 'b--', linewidth=1.5, label='Standard KF')
-    ax.plot(time, results['mckf_estimate'][:, 0], 'r-', linewidth=1.5, label='MCKF')
+    ax.plot(time, results["true_state"][:, 0], "k-", linewidth=2, label="True", alpha=0.7)
+    ax.plot(time, results["kf_estimate"][:, 0], "b--", linewidth=1.5, label="Standard KF")
+    ax.plot(time, results["mckf_estimate"][:, 0], "r-", linewidth=1.5, label="MCKF")
 
     # 観測点をマーク
-    meas_idx = results['measurement_available']
-    ax.scatter(time[meas_idx], results['measurement'][meas_idx],
-               c='gray', s=10, alpha=0.3, label='Measurement (delayed)')
+    meas_idx = results["measurement_available"]
+    ax.scatter(
+        time[meas_idx], results["measurement"][meas_idx], c="gray", s=10, alpha=0.3, label="Measurement (delayed)"
+    )
 
-    ax.set_ylabel('Angle θ [rad]')
-    ax.legend(loc='upper right')
+    ax.set_ylabel("Angle θ [rad]")
+    ax.legend(loc="upper right")
     ax.grid(True, alpha=0.3)
-    ax.set_title('Spacecraft Attitude Estimation with MCKF')
+    ax.set_title("Spacecraft Attitude Estimation with MCKF")
 
     # 2. 角速度の推定
     ax = axes[1]
-    ax.plot(time, results['true_state'][:, 1], 'k-', linewidth=2, label='True', alpha=0.7)
-    ax.plot(time, results['kf_estimate'][:, 1], 'b--', linewidth=1.5, label='Standard KF')
-    ax.plot(time, results['mckf_estimate'][:, 1], 'r-', linewidth=1.5, label='MCKF')
-    ax.set_ylabel('Angular Velocity ω [rad/s]')
-    ax.legend(loc='upper right')
+    ax.plot(time, results["true_state"][:, 1], "k-", linewidth=2, label="True", alpha=0.7)
+    ax.plot(time, results["kf_estimate"][:, 1], "b--", linewidth=1.5, label="Standard KF")
+    ax.plot(time, results["mckf_estimate"][:, 1], "r-", linewidth=1.5, label="MCKF")
+    ax.set_ylabel("Angular Velocity ω [rad/s]")
+    ax.legend(loc="upper right")
     ax.grid(True, alpha=0.3)
 
     # 3. 推定誤差
     ax = axes[2]
-    kf_error = np.abs(results['true_state'][:, 0] - results['kf_estimate'][:, 0])
-    mckf_error = np.abs(results['true_state'][:, 0] - results['mckf_estimate'][:, 0])
-    ax.plot(time, kf_error, 'b--', linewidth=1.5, label='Standard KF', alpha=0.7)
-    ax.plot(time, mckf_error, 'r-', linewidth=1.5, label='MCKF')
-    ax.set_ylabel('|Angle Error| [rad]')
-    ax.legend(loc='upper right')
+    kf_error = np.abs(results["true_state"][:, 0] - results["kf_estimate"][:, 0])
+    mckf_error = np.abs(results["true_state"][:, 0] - results["mckf_estimate"][:, 0])
+    ax.plot(time, kf_error, "b--", linewidth=1.5, label="Standard KF", alpha=0.7)
+    ax.plot(time, mckf_error, "r-", linewidth=1.5, label="MCKF")
+    ax.set_ylabel("|Angle Error| [rad]")
+    ax.legend(loc="upper right")
     ax.grid(True, alpha=0.3)
-    ax.set_yscale('log')
+    ax.set_yscale("log")
 
     # 4. 通信遅延とMCKF反復回数
     ax = axes[3]
     ax2 = ax.twinx()
 
     # 遅延
-    ax.bar(time[meas_idx], results['delay'][meas_idx],
-           width=time[1]-time[0], alpha=0.3, color='gray', label='Delay')
-    ax.set_ylabel('Delay [steps]', color='gray')
-    ax.tick_params(axis='y', labelcolor='gray')
+    ax.bar(time[meas_idx], results["delay"][meas_idx], width=time[1] - time[0], alpha=0.3, color="gray", label="Delay")
+    ax.set_ylabel("Delay [steps]", color="gray")
+    ax.tick_params(axis="y", labelcolor="gray")
 
     # MCKF反復回数
-    iter_idx = results['mckf_iterations'] > 0
-    ax2.plot(time[iter_idx], results['mckf_iterations'][iter_idx],
-             'ro', markersize=3, label='MCKF Iterations')
-    ax2.set_ylabel('MCKF Iterations', color='r')
-    ax2.tick_params(axis='y', labelcolor='r')
+    iter_idx = results["mckf_iterations"] > 0
+    ax2.plot(time[iter_idx], results["mckf_iterations"][iter_idx], "ro", markersize=3, label="MCKF Iterations")
+    ax2.set_ylabel("MCKF Iterations", color="r")
+    ax2.tick_params(axis="y", labelcolor="r")
 
-    ax.set_xlabel('Time [s]')
+    ax.set_xlabel("Time [s]")
     ax.grid(True, alpha=0.3)
 
     fig.tight_layout()
 
     if save_path:
-        plt.savefig(save_path, dpi=150, bbox_inches='tight')
+        plt.savefig(save_path, dpi=150, bbox_inches="tight")
         print(f"\nPlot saved to: {save_path}")
 
     return fig
@@ -448,11 +434,11 @@ def main():
         max_delay=5,
         measurement_noise_std=0.1,
         outlier_prob=0.1,  # 10%の確率で外れ値
-        seed=42
+        seed=42,
     )
 
     # プロット
-    fig = plot_results(results, save_path=save_dir / "mckf_comparison.png")
+    plot_results(results, save_path=save_dir / "mckf_comparison.png")
     plt.show()
 
     print(f"\nResults saved to: {save_dir}")

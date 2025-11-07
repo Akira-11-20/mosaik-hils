@@ -258,7 +258,7 @@ def plot_results(
     ax2.plot(
         t,
         np.abs(cfg.target_position - pos_delayed),
-        label=f"With delay (no comp)",
+        label="With delay (no comp)",
         linewidth=2,
         color="red",
         alpha=0.7,
@@ -403,7 +403,7 @@ def main() -> None:
     rmse_ideal = rmse(pos_ideal, np.full_like(pos_ideal, cfg.target_position))
     rmse_delayed = rmse(pos_delayed, np.full_like(pos_delayed, cfg.target_position))
 
-    print(f"RMSE from target:")
+    print("RMSE from target:")
     print(f"  No delay:        {rmse_ideal:.4f} m")
     print(f"  With delay (no comp): {rmse_delayed:.4f} m")
 
@@ -413,7 +413,7 @@ def main() -> None:
         print(f"  Inverse comp (gain={gain:.0f}): {rmse_comp:.4f} m (improvement: {improvement:.1f}%)")
 
     # Settling time
-    print(f"\nSettling time (±2% of target):")
+    print("\nSettling time (±2% of target):")
     settle_ideal = settling_time(t, pos_ideal, cfg.target_position)
     settle_delayed = settling_time(t, pos_delayed, cfg.target_position)
 

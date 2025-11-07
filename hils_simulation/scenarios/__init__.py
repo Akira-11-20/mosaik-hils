@@ -10,14 +10,14 @@ This module provides different simulation scenarios:
 
 from .base_scenario import BaseScenario
 from .hils_scenario import HILSScenario
-from .rt_scenario import RTScenario
 from .inverse_comp_scenario import InverseCompScenario
 from .pure_python_scenario import PurePythonScenario
+from .rt_scenario import RTScenario
 
 __all__ = [
     "BaseScenario",
     "HILSScenario",
-    "RTScenario",
     "InverseCompScenario",
     "PurePythonScenario",
+    "RTScenario",
 ]

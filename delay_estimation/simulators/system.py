@@ -1,7 +1,8 @@
 """System dynamics simulator"""
 
-import numpy as np
 from typing import Tuple
+
+import numpy as np
 
 
 class LinearSystem:

@@ -7,8 +7,9 @@ Reference:
     "Kalman filtering based on maximum correntropy criterion in presence of non-Gaussian noise"
 """
 
+from typing import List, Optional, Tuple
+
 import numpy as np
-from typing import Tuple, Optional, List
 
 
 class MaximumCorrentropyKalmanFilter:
@@ -35,16 +36,16 @@ class MaximumCorrentropyKalmanFilter:
 
     def __init__(
         self,
-        A: np.ndarray,           # 状態遷移行列 (n x n)
-        B: np.ndarray,           # 制御入力行列 (n x m)
-        C: np.ndarray,           # 観測行列 (p x n)
-        Q: np.ndarray,           # プロセスノイズ共分散 (n x n)
-        R: np.ndarray,           # 観測ノイズ共分散 (p x p)
-        x0: np.ndarray,          # 初期状態 (n,)
-        P0: np.ndarray,          # 初期共分散 (n x n)
-        max_delay: int = 5,      # 最大遅延ステップ数
+        A: np.ndarray,  # 状態遷移行列 (n x n)
+        B: np.ndarray,  # 制御入力行列 (n x m)
+        C: np.ndarray,  # 観測行列 (p x n)
+        Q: np.ndarray,  # プロセスノイズ共分散 (n x n)
+        R: np.ndarray,  # 観測ノイズ共分散 (p x p)
+        x0: np.ndarray,  # 初期状態 (n,)
+        P0: np.ndarray,  # 初期共分散 (n x n)
+        max_delay: int = 5,  # 最大遅延ステップ数
         kernel_bandwidth: float = 3.0,  # コレンロピーカーネル帯域幅 η
-        max_iterations: int = 10,       # 不動点反復の最大回数
+        max_iterations: int = 10,  # 不動点反復の最大回数
         convergence_threshold: float = 1e-4,  # 収束判定閾値
     ):
         """
@@ -95,9 +96,9 @@ class MaximumCorrentropyKalmanFilter:
 
         # 統計情報 (デバッグ・解析用)
         self.stats = {
-            'iterations': [],        # 各ステップの反復回数
-            'correntropy_weights': [],  # コレンロピー重み
-            'estimated_delays': [],  # 推定された遅延
+            "iterations": [],  # 各ステップの反復回数
+            "correntropy_weights": [],  # コレンロピー重み
+            "estimated_delays": [],  # 推定された遅延
         }
 
     def _initialize_delay_probs(self) -> np.ndarray:
@@ -120,21 +121,25 @@ class MaximumCorrentropyKalmanFilter:
 
         if K == 2:
             # 論文の2-step遅延の条件
-            probs = np.array([
-                0.7,    # Λ̄_0,n = P(遅延なし) = 1 - 0.3 = 0.7
-                0.12,   # Λ̄_1,n = P(1-step遅延) = 0.3 × 0.8 × 0.5 = 0.12
-                0.12,   # Λ̄_2,n = P(2-step遅延) = 0.3 × 0.8 × 0.5 = 0.12
-                0.06    # P(損失) = 0.3 × 0.2 = 0.06 (論文では Λ̄_{K+1,n})
-            ])
+            probs = np.array(
+                [
+                    0.7,  # Λ̄_0,n = P(遅延なし) = 1 - 0.3 = 0.7
+                    0.12,  # Λ̄_1,n = P(1-step遅延) = 0.3 × 0.8 × 0.5 = 0.12
+                    0.12,  # Λ̄_2,n = P(2-step遅延) = 0.3 × 0.8 × 0.5 = 0.12
+                    0.06,  # P(損失) = 0.3 × 0.2 = 0.06 (論文では Λ̄_{K+1,n})
+                ]
+            )
         elif K == 3:
             # 論文の3-step遅延の条件
-            probs = np.array([
-                0.7,     # Λ̄_0,n = P(遅延なし) = 1 - 0.3 = 0.7
-                0.24,    # Λ̄_1,n = P(1-step遅延) = 0.3 × 0.8 = 0.24
-                0.12,    # Λ̄_2,n = P(2-step遅延) = 0.3 × 0.8 × 0.5 = 0.12
-                0.06,    # Λ̄_3,n = P(3-step遅延) = 0.3 × 0.8 × 0.5 × 0.5 = 0.06
-                0.02     # P(損失) = 残り (論文では Λ̄_{K+1,n})
-            ])
+            probs = np.array(
+                [
+                    0.7,  # Λ̄_0,n = P(遅延なし) = 1 - 0.3 = 0.7
+                    0.24,  # Λ̄_1,n = P(1-step遅延) = 0.3 × 0.8 = 0.24
+                    0.12,  # Λ̄_2,n = P(2-step遅延) = 0.3 × 0.8 × 0.5 = 0.12
+                    0.06,  # Λ̄_3,n = P(3-step遅延) = 0.3 × 0.8 × 0.5 × 0.5 = 0.06
+                    0.02,  # P(損失) = 残り (論文では Λ̄_{K+1,n})
+                ]
+            )
         else:
             # 一般的な初期化（均等分布 + 損失確率）
             probs = np.ones(K + 2) / (K + 2)
@@ -265,9 +270,7 @@ class MaximumCorrentropyKalmanFilter:
         return self.x.copy(), self.P.copy()
 
     def _construct_delayed_observation(
-        self,
-        current_measurement: Optional[np.ndarray],
-        current_time: int
+        self, current_measurement: Optional[np.ndarray], current_time: int
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         遅延を含む観測の構築 (MCKF Stage 1)
@@ -290,10 +293,7 @@ class MaximumCorrentropyKalmanFilter:
             self.measurement_buffer.append((current_measurement.copy(), current_time))
 
         # 古い観測を削除 (max_delay より古いもの)
-        self.measurement_buffer = [
-            (y, t) for y, t in self.measurement_buffer
-            if current_time - t <= self.max_delay
-        ]
+        self.measurement_buffer = [(y, t) for y, t in self.measurement_buffer if current_time - t <= self.max_delay]
 
         # 遅延観測の統合
         K = self.max_delay
@@ -361,9 +361,7 @@ class MaximumCorrentropyKalmanFilter:
                         if exponent >= 0:
                             B_power = np.linalg.matrix_power(self.A, exponent)
                         else:
-                            B_power = np.linalg.inv(
-                                np.linalg.matrix_power(self.A, -exponent)
-                            )
+                            B_power = np.linalg.inv(np.linalg.matrix_power(self.A, -exponent))
 
                         term = A_bar_j * (self.C @ B_power @ self.Q @ B_power.T @ self.C.T)
                         R_bar += term
@@ -380,9 +378,7 @@ class MaximumCorrentropyKalmanFilter:
                         if exponent >= 0:
                             B_power = np.linalg.matrix_power(self.A, exponent)
                         else:
-                            B_power = np.linalg.inv(
-                                np.linalg.matrix_power(self.A, -exponent)
-                            )
+                            B_power = np.linalg.inv(np.linalg.matrix_power(self.A, -exponent))
 
                         term = A_bar_j * (self.C @ B_power @ self.Q @ B_power.T @ self.C.T)
                         R_bar += term
@@ -422,10 +418,7 @@ class MaximumCorrentropyKalmanFilter:
         return Y, C_bar, R_bar, O
 
     def _decorrelate_noise(
-        self,
-        C_bar: np.ndarray,
-        R_bar: np.ndarray,
-        O: np.ndarray
+        self, C_bar: np.ndarray, R_bar: np.ndarray, O: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """
         ノイズの無相関化 (MCKF Stage 2: Decorrelation)
@@ -474,10 +467,10 @@ class MaximumCorrentropyKalmanFilter:
         # ζ_n = (I - λ_n*C̄_n)*ω_n - λ_n*ν̄_n の共分散
         I_lambda_C = np.eye(self.n) - lambda_n @ C_bar
         Q_zeta = (
-            I_lambda_C @ self.Q @ I_lambda_C.T +      # プロセスノイズ項
-            lambda_n @ R_bar @ lambda_n.T -           # 観測ノイズ項
-            I_lambda_C @ O @ lambda_n.T -             # 交差相関項1
-            lambda_n @ O.T @ I_lambda_C.T             # 交差相関項2
+            I_lambda_C @ self.Q @ I_lambda_C.T  # プロセスノイズ項
+            + lambda_n @ R_bar @ lambda_n.T  # 観測ノイズ項
+            - I_lambda_C @ O @ lambda_n.T  # 交差相関項1
+            - lambda_n @ O.T @ I_lambda_C.T  # 交差相関項2
         )
 
         return D, U, Q_zeta, lambda_n
@@ -497,7 +490,7 @@ class MaximumCorrentropyKalmanFilter:
         Returns:
             weights: 要素ごとの重み (同じshape)
         """
-        return np.exp(-residual**2 / (2 * self.eta**2))
+        return np.exp(-(residual**2) / (2 * self.eta**2))
 
     def update_mckf(
         self,
@@ -547,10 +540,7 @@ class MaximumCorrentropyKalmanFilter:
 
         # ブロック対角行列: L = diag(L_p, L_r)
         n, p = self.n, self.p
-        L = np.block([
-            [L_p, np.zeros((n, p))],
-            [np.zeros((p, n)), L_r]
-        ])
+        L = np.block([[L_p, np.zeros((n, p))], [np.zeros((p, n)), L_r]])
 
         # 白色化された観測・予測
         # d = L^{-1} * [x_pred; Y]
@@ -578,7 +568,7 @@ class MaximumCorrentropyKalmanFilter:
             # ③ 重み行列を予測部と観測部に分割
             # T = diag(G), T_x = T[0:n], T_y = T[n:n+p]
             T_x = np.diag(weights[:n])
-            T_y = np.diag(weights[n:n+p])
+            T_y = np.diag(weights[n : n + p])
 
             # ④ 重み付き逆共分散 (Information Form)
             # SimpleMCKFと同じ修正を適用
@@ -602,9 +592,7 @@ class MaximumCorrentropyKalmanFilter:
             # MATLABコード: Gk = inv(H'*R_hat_inv*H + Pke_hat_inv) * H' * R_hat_inv
             try:
                 # Information formのゲイン計算
-                K_tilde = np.linalg.inv(
-                    C_bar.T @ R_tilde_inv @ C_bar + P_tilde_inv
-                ) @ C_bar.T @ R_tilde_inv
+                K_tilde = np.linalg.inv(C_bar.T @ R_tilde_inv @ C_bar + P_tilde_inv) @ C_bar.T @ R_tilde_inv
             except np.linalg.LinAlgError:
                 break
 
@@ -620,8 +608,8 @@ class MaximumCorrentropyKalmanFilter:
                 P_updated = I_KC @ P_pred @ I_KC.T + K_tilde @ R_bar @ K_tilde.T
 
                 # 統計情報を保存
-                self.stats['iterations'].append(iteration + 1)
-                self.stats['correntropy_weights'].append(weights.copy())
+                self.stats["iterations"].append(iteration + 1)
+                self.stats["correntropy_weights"].append(weights.copy())
 
                 return x_est, P_updated, iteration + 1
 
@@ -629,16 +617,13 @@ class MaximumCorrentropyKalmanFilter:
         I_KC = np.eye(n) - K_tilde @ C_bar
         P_updated = I_KC @ P_pred @ I_KC.T + K_tilde @ R_bar @ K_tilde.T
 
-        self.stats['iterations'].append(self.max_iter)
-        self.stats['correntropy_weights'].append(weights.copy())
+        self.stats["iterations"].append(self.max_iter)
+        self.stats["correntropy_weights"].append(weights.copy())
 
         return x_est, P_updated, self.max_iter
 
     def _standard_kf_update(
-        self,
-        Y: np.ndarray,
-        C_bar: np.ndarray,
-        R_bar: np.ndarray
+        self, Y: np.ndarray, C_bar: np.ndarray, R_bar: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray, int]:
         """
         標準カルマンフィルタ更新 (フォールバック用)
@@ -662,10 +647,7 @@ class MaximumCorrentropyKalmanFilter:
         return x_updated, P_updated, 0
 
     def step(
-        self,
-        measurement: Optional[np.ndarray],
-        current_time: int,
-        u: Optional[np.ndarray] = None
+        self, measurement: Optional[np.ndarray], current_time: int, u: Optional[np.ndarray] = None
     ) -> Tuple[np.ndarray, np.ndarray, dict]:
         """
         完全なMCKFステップ (予測 + 更新)
@@ -684,9 +666,7 @@ class MaximumCorrentropyKalmanFilter:
         self.predict(u)
 
         # ② 遅延観測の構築
-        Y, C_bar, R_bar, O = self._construct_delayed_observation(
-            measurement, current_time
-        )
+        Y, C_bar, R_bar, O = self._construct_delayed_observation(measurement, current_time)
 
         # ③ ノイズの無相関化
         D, U, Q_zeta, lambda_n = self._decorrelate_noise(C_bar, R_bar, O)
@@ -696,9 +676,9 @@ class MaximumCorrentropyKalmanFilter:
 
         # 診断情報
         info = {
-            'num_iterations': num_iter,
-            'innovation': Y - C_bar @ self.x,
-            'buffer_size': len(self.measurement_buffer),
+            "num_iterations": num_iter,
+            "innovation": Y - C_bar @ self.x,
+            "buffer_size": len(self.measurement_buffer),
         }
 
         return self.x.copy(), self.P.copy(), info

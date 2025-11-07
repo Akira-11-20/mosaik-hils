@@ -6,13 +6,13 @@
 """
 
 from dataclasses import dataclass
-from typing import List
-import numpy as np
 
+import numpy as np
 
 # ========================================
 # 物理定数
 # ========================================
+
 
 @dataclass
 class CelestialBodyConstants:
@@ -31,6 +31,7 @@ class CelestialBodyConstants:
 # ========================================
 # 軌道パラメータ
 # ========================================
+
 
 @dataclass
 class OrbitalParameters:
@@ -85,9 +86,7 @@ class OrbitalParameters:
         r_pqw = np.array([r_orbit * np.cos(nu), r_orbit * np.sin(nu), 0.0])
 
         # 速度ベクトル（軌道面）
-        v_pqw = np.sqrt(self.mu / p) * np.array(
-            [-np.sin(nu), self.eccentricity + np.cos(nu), 0.0]
-        )
+        v_pqw = np.sqrt(self.mu / p) * np.array([-np.sin(nu), self.eccentricity + np.cos(nu), 0.0])
 
         # 回転行列（PQW座標系 → ECI座標系）
         R = self._rotation_matrix_pqw_to_eci(omega, i, w)
@@ -130,6 +129,7 @@ class OrbitalParameters:
 # 衛星パラメータ
 # ========================================
 
+
 @dataclass
 class SpacecraftParameters:
     """衛星物理パラメータ"""
@@ -147,6 +147,7 @@ class SpacecraftParameters:
 # ========================================
 # シミュレーション設定
 # ========================================
+
 
 @dataclass
 class OrbitalSimulationConfig:
@@ -300,13 +301,13 @@ if __name__ == "__main__":
     print(f"Inclination: {orbit.inclination} deg")
 
     position, velocity = orbit.to_cartesian()
-    print(f"\nInitial State (ECI frame):")
+    print("\nInitial State (ECI frame):")
     print(f"  Position: {position / 1e3} km")
     print(f"  Velocity: {velocity} m/s")
     print(f"  |r|: {np.linalg.norm(position) / 1e3:.2f} km")
     print(f"  |v|: {np.linalg.norm(velocity):.2f} m/s")
 
-    print(f"\nSpacecraft:")
+    print("\nSpacecraft:")
     print(f"  Mass: {config.spacecraft.mass} kg")
     print(f"  Max Thrust: {config.spacecraft.max_thrust} N")
     print(f"  Max Accel: {config.spacecraft.max_acceleration * 1e3:.3f} mm/s²")
