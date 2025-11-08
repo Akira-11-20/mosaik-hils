@@ -3,9 +3,9 @@
 100ステップ目での actual_thrust の値が理論値と一致するか検証
 """
 
+
 import h5py
 import numpy as np
-import json
 
 # HDF5ファイルを読み込み
 h5_path = "/home/akira/mosaik-hils/hils_simulation/results/20251108-141007/hils_data.h5"
@@ -60,7 +60,7 @@ with h5py.File(h5_path, 'r') as f:
     dt = time_ms[step] - time_ms[step-1]
     tau = time_constant[step]
 
-    print(f"=== 一次遅延の理論計算 ===")
+    print("=== 一次遅延の理論計算 ===")
     print(f"dt = {dt:.6f} ms")
     print(f"τ = {tau:.6f} ms")
     print(f"dt/τ = {dt/tau:.6f}")
@@ -72,7 +72,7 @@ with h5py.File(h5_path, 'r') as f:
 
     # 期待される変化量
     expected_y_simple = y_prev + (dt / tau) * (u_current - y_prev)
-    print(f"単純計算 (1ステップ):")
+    print("単純計算 (1ステップ):")
     print(f"  y[{step}] = y[{step-1}] + (dt/τ) * (u[{step-1}] - y[{step-1}])")
     print(f"  y[{step}] = {y_prev:.6f} + ({dt:.6f}/{tau:.6f}) * ({u_current:.6f} - {y_prev:.6f})")
     print(f"  y[{step}] = {y_prev:.6f} + {dt/tau:.6f} * {u_current - y_prev:.6f}")
@@ -84,7 +84,7 @@ with h5py.File(h5_path, 'r') as f:
     sub_steps = max(1, int(dt / 0.1))
     dt_sub = dt / sub_steps
 
-    print(f"サブステップ計算 (実装準拠):")
+    print("サブステップ計算 (実装準拠):")
     print(f"  サブステップ数: {sub_steps}")
     print(f"  dt_sub = {dt_sub:.6f} ms")
 
@@ -99,7 +99,7 @@ with h5py.File(h5_path, 'r') as f:
     print()
 
     # 実際の値と比較
-    print(f"=== 比較 ===")
+    print("=== 比較 ===")
     print(f"実際の値:       {actual_thrust[step]:.6f} N")
     print(f"理論値 (単純):  {expected_y_simple:.6f} N")
     print(f"理論値 (サブ):  {y:.6f} N")

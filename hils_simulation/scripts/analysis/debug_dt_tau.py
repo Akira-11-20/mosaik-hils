@@ -3,7 +3,6 @@ dt/τ の計算を詳細に確認
 """
 
 import h5py
-import numpy as np
 
 # HDF5ファイルを読み込み
 h5_path = "/home/akira/mosaik-hils/hils_simulation/results/20251108-141007/hils_data.h5"
@@ -130,9 +129,9 @@ with h5py.File(h5_path, 'r') as f:
     # dt/τ = 7.171863 / 75.328480
 
     actual_ratio = y_100 / u_100
-    print(f"実際の dt/τ を逆算:")
+    print("実際の dt/τ を逆算:")
     print(f"dt/τ = y[100] / u[100] = {y_100:.10f} / {u_100:.10f} = {actual_ratio:.10f}")
-    print(f"期待値: dt/τ = 10/100 = 0.1000000000")
+    print("期待値: dt/τ = 10/100 = 0.1000000000")
     print(f"差分: {abs(actual_ratio - 0.1):.15f}")
     print()
 
@@ -141,7 +140,7 @@ with h5py.File(h5_path, 'r') as f:
     print("=== サブステップを考慮した理論値 ===")
     ratio_sub = dt_sub / tau
     y_theory = u_100 * (1 - (1 - ratio_sub)**sub_steps)
-    print(f"y = u * (1 - (1 - dt_sub/τ)^n)")
+    print("y = u * (1 - (1 - dt_sub/τ)^n)")
     print(f"  = {u_100:.10f} * (1 - (1 - {ratio_sub:.10f})^{sub_steps})")
     print(f"  = {u_100:.10f} * (1 - {(1 - ratio_sub)**sub_steps:.10f})")
     print(f"  = {y_theory:.10f} N")

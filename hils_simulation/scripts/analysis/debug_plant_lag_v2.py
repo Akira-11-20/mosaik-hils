@@ -4,7 +4,6 @@
 """
 
 import h5py
-import numpy as np
 
 # HDF5ファイルを読み込み
 h5_path = "/home/akira/mosaik-hils/hils_simulation/results/20251108-141007/hils_data.h5"
@@ -31,7 +30,7 @@ with h5py.File(h5_path, 'r') as f:
         if measured_thrust[i] != measured_thrust[i-1]:
             plant_steps.append(i)
 
-    print(f"=== PlantSimが動作するステップ（最初の10個）===")
+    print("=== PlantSimが動作するステップ（最初の10個）===")
     for step in plant_steps[:10]:
         print(f"Step {step:4d}: time={time_ms[step]:8.3f} ms, u={measured_thrust[step]:10.6f} N")
     print()
@@ -103,7 +102,7 @@ with h5py.File(h5_path, 'r') as f:
     u_100 = measured_thrust[100]
     y_100 = actual_thrust[100]
 
-    print(f"ステップ100:")
+    print("ステップ100:")
     print(f"  Time: {time_ms[100]:.3f} ms")
     print(f"  Measured thrust (u): {u_100:.6f} N")
     print(f"  Actual thrust (y): {y_100:.6f} N")
@@ -127,7 +126,7 @@ with h5py.File(h5_path, 'r') as f:
         sub_steps = max(1, int(dt / 0.1))
         dt_sub = dt / sub_steps
 
-        print(f"サブステップ計算:")
+        print("サブステップ計算:")
         print(f"  サブステップ数: {sub_steps}")
         print(f"  dt_sub = {dt_sub:.3f} ms")
 
@@ -146,7 +145,7 @@ with h5py.File(h5_path, 'r') as f:
 
         print("問題の診断:")
         print(f"  u[0] = {u_0:.6f} N （入力は0）")
-        print(f"  理論値: y(10ms) = 0 N （入力が0なので出力も0）")
+        print("  理論値: y(10ms) = 0 N （入力が0なので出力も0）")
         print(f"  実際の値: y[100] = {y_100:.6f} N （≠ 0!）")
         print()
         print("→ 入力u[0]=0なのに、出力y[100]≠0 となっている")
