@@ -3,6 +3,7 @@ Run inverse compensation simulation with different gain values
 """
 
 import sys
+from datetime import datetime
 from pathlib import Path
 
 # Add parent directory to path to enable imports from hils_simulation root
@@ -24,6 +25,14 @@ def main():
     print(f"Testing {len(gains)} gain values: {gains}")
     print()
 
+    # Create sweep directory to organize all simulation results
+    base_dir = Path(__file__).parent.parent.parent
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    sweep_dir = base_dir / "results" / f"{timestamp}_gain_sweep"
+    sweep_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"📁 Sweep results directory: {sweep_dir}\n")
+
     results = []
 
     for gain in gains:
@@ -39,9 +48,14 @@ def main():
             params.inverse_comp.gain = gain
             params.inverse_comp.enabled = True
 
-            # Create and run scenario
+            # Create scenario
             scenario = InverseCompScenario(params)
-            scenario.run()
+
+            # Create suffix for this configuration
+            suffix = f"_gain{gain:.1f}"
+
+            # Run scenario with custom suffix under sweep directory
+            scenario.run_with_custom_suffix(suffix=suffix, parent_dir=sweep_dir)
 
             results.append({"gain": gain, "status": "success", "output_dir": scenario.run_dir})
 

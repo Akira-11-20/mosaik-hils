@@ -23,16 +23,18 @@ class BaseScenario(ABC):
     for scenario setup, execution, and post-processing.
     """
 
-    def __init__(self, params: Optional[SimulationParameters] = None):
+    def __init__(self, params: Optional[SimulationParameters] = None, minimal_data_mode: bool = False):
         """
         Initialize scenario with parameters.
 
         Args:
             params: Simulation parameters. If None, loads from environment.
+            minimal_data_mode: If True, only collect minimal data (time, position, velocity) for faster simulation
         """
         self.params = params if params is not None else SimulationParameters.from_env()
         self.world: Optional[mosaik.World] = None
         self.run_dir: Optional[Path] = None
+        self.minimal_data_mode = minimal_data_mode
 
     @property
     @abstractmethod
@@ -51,19 +53,28 @@ class BaseScenario(ABC):
         """Return the base directory name for results (e.g., 'results', 'results_rt')."""
         return "results"
 
-    def setup_output_directory(self, suffix: str = "") -> Path:
+    def setup_output_directory(self, suffix: str = "", parent_dir: Optional[Path] = None) -> Path:
         """
         Create output directory for this simulation run.
 
         Args:
             suffix: Optional suffix to append to timestamp
+            parent_dir: Optional parent directory path. If provided, creates output directory under this parent.
+                       Useful for organizing multiple runs (e.g., parameter sweeps) under a common directory.
 
         Returns:
             Path to created output directory
         """
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         dir_name = f"{timestamp}{suffix}" if suffix else timestamp
-        self.run_dir = Path(self.results_base_dir) / dir_name
+
+        if parent_dir is not None:
+            # Create under specified parent directory
+            self.run_dir = parent_dir / dir_name
+        else:
+            # Create under default results base directory
+            self.run_dir = Path(self.results_base_dir) / dir_name
+
         self.run_dir.mkdir(parents=True, exist_ok=True)
         return self.run_dir
 
@@ -215,18 +226,19 @@ class BaseScenario(ABC):
         print(f"{self.scenario_name} Simulation Finished")
         print("=" * 70)
 
-    def run_with_custom_suffix(self, suffix: str):
+    def run_with_custom_suffix(self, suffix: str, parent_dir: Optional[Path] = None):
         """
         Run simulation with custom output directory suffix.
 
         Args:
             suffix: Suffix to append to timestamp in directory name
+            parent_dir: Optional parent directory path for organizing multiple runs
         """
         # Print header
         self.print_header()
 
         # Setup output directory with suffix
-        self.setup_output_directory(suffix=suffix)
+        self.setup_output_directory(suffix=suffix, parent_dir=parent_dir)
         print(f"📁 Log directory: {self.run_dir}")
 
         # Continue with normal run

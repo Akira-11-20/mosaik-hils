@@ -217,6 +217,9 @@ class PlantSimulator(mosaik_api.Simulator):
                 for _ in range(sub_steps):
                     y = y + (dt_sub / tau) * (u - y)
 
+                # サブステップを使用しない場合の単純更新式
+                # y = y + (dt / tau) * (u - y)
+
                 entity["actual_thrust"] = y
 
                 # 実際に使用された時定数を記録用変数に保存（ノイズ反映後）

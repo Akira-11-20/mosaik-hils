@@ -5,6 +5,9 @@ This scenario extends the basic HILS setup by adding an inverse compensator
 in the command path to pre-compensate for communication delays.
 """
 
+from pathlib import Path
+from typing import Optional
+
 import mosaik
 import mosaik.util
 from config.parameters import SimulationParameters
@@ -27,9 +30,9 @@ class InverseCompScenario(BaseScenario):
     - Can be disabled via parameters for comparison
     """
 
-    def __init__(self, params: SimulationParameters = None):
+    def __init__(self, params: SimulationParameters = None, minimal_data_mode: bool = False):
         """Initialize Inverse Compensation scenario."""
-        super().__init__(params)
+        super().__init__(params, minimal_data_mode)
         self.controller = None
         self.inverse_comp = None
         self.plant = None
@@ -51,11 +54,11 @@ class InverseCompScenario(BaseScenario):
     def results_base_dir(self) -> str:
         return "results"
 
-    def setup_output_directory(self, suffix: str = "") -> str:
+    def setup_output_directory(self, suffix: str = "", parent_dir: Optional[Path] = None) -> Path:
         """Setup output directory with _inverse_comp suffix."""
         if not suffix:
             suffix = "_inverse_comp"
-        return super().setup_output_directory(suffix)
+        return super().setup_output_directory(suffix, parent_dir=parent_dir)
 
     def create_world(self) -> mosaik.World:
         """Create Mosaik world with inverse compensator."""
@@ -226,7 +229,22 @@ class InverseCompScenario(BaseScenario):
     def setup_data_collection(self):
         """Setup data collection including inverse compensator data."""
         data_collector_sim = self.world.start("DataCollector", step_size=1)
-        self.collector = data_collector_sim.Collector(output_dir=str(self.run_dir))
+        self.collector = data_collector_sim.Collector(
+            output_dir=str(self.run_dir),
+            minimal_mode=self.minimal_data_mode
+        )
+
+        if self.minimal_data_mode:
+            # Minimal mode: only collect position and velocity from spacecraft
+            mosaik.util.connect_many_to_one(
+                self.world,
+                [self.spacecraft],
+                self.collector,
+                "position",
+                "velocity",
+            )
+            print("   ⚡ Minimal mode: Data collection (position, velocity only)")
+            return
 
         # Collect data from all entities
         mosaik.util.connect_many_to_one(

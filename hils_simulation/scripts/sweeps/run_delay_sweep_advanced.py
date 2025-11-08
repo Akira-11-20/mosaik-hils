@@ -160,12 +160,14 @@ def create_comparison_sweep(delays: List[float]) -> List[DelayConfig]:
     return configs
 
 
-def run_simulation(config: DelayConfig) -> Dict[str, Any]:
+def run_simulation(config: DelayConfig, sweep_dir: Optional[Path] = None) -> Dict[str, Any]:
     """
     Run a single simulation with given delay configuration
 
     Args:
         config: DelayConfig object
+        sweep_dir: Optional parent directory for sweep results. If provided, simulation results
+                   will be saved under this directory instead of the default results directory.
 
     Returns:
         Dictionary with simulation results
@@ -193,18 +195,20 @@ def run_simulation(config: DelayConfig) -> Dict[str, Any]:
             params.plant.enable_lag = config.plant_enable_lag
 
         # Select scenario based on inverse compensation flag
+        # Use minimal_data_mode=True for faster sweeps (only collect time, position, velocity)
         if config.use_inverse_comp:
             params.inverse_comp.enabled = True
             if config.comp_gain is not None:
                 params.inverse_comp.gain = config.comp_gain
-            scenario = InverseCompScenario(params)
+            scenario = InverseCompScenario(params, minimal_data_mode=True)
             scenario_type = "InverseComp"
         else:
-            scenario = HILSScenario(params)
+            scenario = HILSScenario(params, minimal_data_mode=True)
             scenario_type = "HILS"
 
-        # Run scenario
-        scenario.run()
+        # Run scenario with custom suffix and optional sweep directory
+        suffix = f"_{config.label}"
+        scenario.run_with_custom_suffix(suffix=suffix, parent_dir=sweep_dir)
 
         result = {"config": config, "scenario_type": scenario_type, "status": "success", "output_dir": scenario.run_dir}
 

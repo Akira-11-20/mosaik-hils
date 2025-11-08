@@ -27,9 +27,9 @@ class HILSScenario(BaseScenario):
     - Full packet loss simulation
     """
 
-    def __init__(self, params: SimulationParameters = None):
+    def __init__(self, params: SimulationParameters = None, minimal_data_mode: bool = False):
         """Initialize HILS scenario."""
-        super().__init__(params)
+        super().__init__(params, minimal_data_mode)
         self.controller = None
         self.plant = None
         self.spacecraft = None
@@ -181,7 +181,22 @@ class HILSScenario(BaseScenario):
     def setup_data_collection(self):
         """Setup data collection for all entities."""
         data_collector_sim = self.world.start("DataCollector", step_size=1)
-        self.collector = data_collector_sim.Collector(output_dir=str(self.run_dir))
+        self.collector = data_collector_sim.Collector(
+            output_dir=str(self.run_dir),
+            minimal_mode=self.minimal_data_mode
+        )
+
+        if self.minimal_data_mode:
+            # Minimal mode: only collect position and velocity from spacecraft
+            mosaik.util.connect_many_to_one(
+                self.world,
+                [self.spacecraft],
+                self.collector,
+                "position",
+                "velocity",
+            )
+            print("   ⚡ Minimal mode: Data collection (position, velocity only)")
+            return
 
         # Collect data from all entities
         mosaik.util.connect_many_to_one(

@@ -4,6 +4,7 @@ Supports both HILS and Inverse Compensation scenarios
 """
 
 import sys
+from datetime import datetime
 from pathlib import Path
 
 # Add parent directory to path to enable imports from hils_simulation root
@@ -39,6 +40,14 @@ def main():
     print(f"Inverse compensation: {use_inverse_compensation}")
     print()
 
+    # Create sweep directory to organize all simulation results
+    base_dir = Path(__file__).parent.parent.parent
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    sweep_dir = base_dir / "results" / f"{timestamp}_delay_sweep"
+    sweep_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"📁 Sweep results directory: {sweep_dir}\n")
+
     results = []
 
     for use_comp in use_inverse_compensation:
@@ -70,8 +79,12 @@ def main():
                     scenario = HILSScenario(params)
                     scenario_type = "HILS"
 
-                # Run scenario
-                scenario.run()
+                # Create suffix for this configuration
+                comp_suffix = "comp" if use_comp else "nocomp"
+                suffix = f"_delay{delay:.0f}ms_{comp_suffix}"
+
+                # Run scenario with custom suffix under sweep directory
+                scenario.run_with_custom_suffix(suffix=suffix, parent_dir=sweep_dir)
 
                 results.append(
                     {

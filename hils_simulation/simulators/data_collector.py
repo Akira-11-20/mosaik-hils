@@ -27,7 +27,7 @@ meta = {
     "models": {
         "Collector": {
             "public": True,
-            "params": ["output_dir"],
+            "params": ["output_dir", "minimal_mode"],
             "attrs": [],  # 任意の属性を受け入れる（動的収集）
             "any_inputs": True,  # 任意の入力を受け入れる
         },
@@ -71,7 +71,7 @@ class DataCollectorSimulator(mosaik_api.Simulator):
         self.step_ms = self.time_resolution * 1000 if self.time_resolution else 1.0
         return self.meta
 
-    def create(self, num, model, output_dir=None):
+    def create(self, num, model, output_dir=None, minimal_mode=False):
         """
         データコレクターエンティティの作成
 
@@ -79,6 +79,7 @@ class DataCollectorSimulator(mosaik_api.Simulator):
             num: 作成数
             model: モデル名
             output_dir: 出力ディレクトリ
+            minimal_mode: 最小限のデータのみ記録（time, position, velocity）
         """
         entities = []
 
@@ -90,10 +91,12 @@ class DataCollectorSimulator(mosaik_api.Simulator):
             self.entities[eid] = {
                 "current_time": 0,
                 "output_dir": target_dir,
+                "minimal_mode": minimal_mode,
             }
 
             entities.append({"eid": eid, "type": model})
-            print(f"[DataCollector] Created {eid} -> {target_dir}")
+            mode_str = " (minimal mode)" if minimal_mode else ""
+            print(f"[DataCollector] Created {eid} -> {target_dir}{mode_str}")
 
         return entities
 
@@ -116,6 +119,9 @@ class DataCollectorSimulator(mosaik_api.Simulator):
             entity["current_time"] = time
 
             if eid in inputs:
+                # Check if minimal mode is enabled
+                minimal_mode = entity.get("minimal_mode", False)
+
                 # データポイントの作成（生データのまま保存、JSON変換は最後に実行）
                 data_point = {
                     "time_ms": time_ms,  # シミュレーション時刻 [ms]
@@ -124,7 +130,16 @@ class DataCollectorSimulator(mosaik_api.Simulator):
 
                 # 全入力データを収集（最小限の処理）
                 for attr, values in inputs[eid].items():
+                    # Minimal mode: only collect position and velocity from Env
+                    if minimal_mode:
+                        if attr not in ["position", "velocity"]:
+                            continue
+
                     for source_eid, value in values.items():
+                        # Minimal mode: only Env data
+                        if minimal_mode and "Env" not in source_eid:
+                            continue
+
                         # 属性名とソースIDでキーを作成
                         key = f"{attr}_{source_eid}"
 
@@ -135,7 +150,8 @@ class DataCollectorSimulator(mosaik_api.Simulator):
                         data_point[key] = value
 
                         # 辞書型の場合、各要素も記録（プロット用）
-                        if isinstance(value, dict):
+                        # Minimal mode: skip dict expansion to save time
+                        if isinstance(value, dict) and not minimal_mode:
                             for k, v in value.items():
                                 subkey = f"{key}_{k}"
                                 data_point[subkey] = v
