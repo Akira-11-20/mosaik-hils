@@ -7,7 +7,7 @@ from environment variables and default values.
 
 import json
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -144,15 +144,27 @@ class PlantParams:
     time_constant_std: float = 0.0  # Standard deviation for time constant variability [ms]
     time_constant_noise: float = 0.0  # Time-varying noise std (white noise added at each step) [ms]
     enable_lag: bool = True  # Enable first-order lag dynamics
+    tau_model_type: str = "constant"  # Time constant model type
+    tau_model_params: dict = field(default_factory=dict)  # Additional model parameters
 
     @classmethod
     def from_env(cls) -> "PlantParams":
         """Load plant parameters from environment variables."""
+        tau_model_params_str = os.getenv("PLANT_TAU_MODEL_PARAMS", "{}")
+        try:
+            tau_model_params = json.loads(tau_model_params_str)
+            if not isinstance(tau_model_params, dict):
+                raise ValueError("tau_model_params must be a JSON object")
+        except (json.JSONDecodeError, ValueError):
+            tau_model_params = {}
+
         return cls(
             time_constant=get_env_float("PLANT_TIME_CONSTANT", 50.0),
             time_constant_std=get_env_float("PLANT_TIME_CONSTANT_STD", 0.0),
             time_constant_noise=get_env_float("PLANT_TIME_CONSTANT_NOISE", 0.0),
             enable_lag=get_env_bool("PLANT_ENABLE_LAG", True),
+            tau_model_type=os.getenv("PLANT_TAU_MODEL_TYPE", "constant"),
+            tau_model_params=tau_model_params,
         )
 
 
@@ -304,6 +316,8 @@ class SimulationParameters:
                 "time_constant_std_s": self.plant.time_constant_std / 1000.0,
                 "time_constant_noise_s": self.plant.time_constant_noise / 1000.0,
                 "enable_lag": self.plant.enable_lag,
+                "tau_model_type": self.plant.tau_model_type,
+                "tau_model_params": self.plant.tau_model_params,
             },
             "inverse_compensation": {
                 "enabled": self.inverse_comp.enabled,

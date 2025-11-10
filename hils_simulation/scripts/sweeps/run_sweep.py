@@ -23,43 +23,48 @@ from scripts.sweeps.run_delay_sweep_advanced import DelayConfig, print_summary, 
 # ============================================================================
 
 # Define time constant and compensation gain pairs
+# command_delay = [
+#     50.0,
+#     100.0,
+#     150.0,
+#     200.0,
+# ]
+
 # Format: (time_constant_ms, corresponding_compensation_gain)
 time_constants = [
-    (50, 6),
-    (100, 11),
-    (150, 16),
-    (200, 21),
-    (250, 26),
+    (50, 5),
+    (100, 10),
+    (150, 15),
+    (200, 20),
 ]
 
 # Define noise levels to test
-time_constant_noises = [
-    0,
-    20,
-    40,
-    60,
-    80
-]
+# time_constant_noises = [
+#     5,
+#     10,
+#     15,
+#     20,
+# ]
 
 # Define whether to test with/without inverse compensation
-test_inverse_comp = [True] *10
+test_inverse_comp = [False]
 
 # Generate all combinations using itertools.product
 configs = []
-for (tau, gain), noise, use_inv in product(
-    time_constants,
-    time_constant_noises,
-    test_inverse_comp,
-):
+for time_constant, use_inverse in product(time_constants, test_inverse_comp): #product( #, (tau, gain), noise, use_inv
+    # command_delay,
+    # time_constants,
+    # time_constant_noises,
+    # test_inverse_comp,
     configs.append(
         DelayConfig(
             cmd_delay=0.0,
             sense_delay=0.0,
-            plant_time_constant=tau,
-            plant_time_constant_noise=noise,
-            comp_gain=gain,
+            plant_time_constant=time_constant[0],
+            plant_time_constant_noise=0,
+            comp_gain=time_constant[1],
             plant_enable_lag=True,
-            use_inverse_comp=use_inv,
+            use_inverse_comp=use_inverse,
         )
     )
 

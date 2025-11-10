@@ -22,7 +22,7 @@ def get_simulator_config(include_bridge: bool = True, include_inverse_comp: bool
             "python": "simulators.controller_simulator:ControllerSimulator",
         },
         "PlantSim": {
-            "python": "simulators.plant_simulator:PlantSimulator",
+            "python": "simulators.plant_simulator_with_model:PlantSimulator",
         },
         "EnvSim": {
             "python": "simulators.env_simulator:EnvSimulator",

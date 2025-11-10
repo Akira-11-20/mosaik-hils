@@ -211,14 +211,14 @@ class PlantSimulator(mosaik_api.Simulator):
 
                 # 1次遅延の更新式（dtが大きい場合は複数の小ステップで計算）
                 # より正確にするため、dtをサブステップに分割
-                sub_steps = max(1, int(dt / 0.1))  # 0.1ms刻みでサブステップ
-                dt_sub = dt / sub_steps
+                # sub_steps = max(1, int(dt / 0.1))  # 0.1ms刻みでサブステップ
+                # dt_sub = dt / sub_steps
 
-                for _ in range(sub_steps):
-                    y = y + (dt_sub / tau) * (u - y)
+                # for _ in range(sub_steps):
+                #     y = y + (dt_sub / tau) * (u - y)
 
                 # サブステップを使用しない場合の単純更新式
-                # y = y + (dt / tau) * (u - y)
+                y = y + (dt / tau) * (u - y)
 
                 entity["actual_thrust"] = y
 

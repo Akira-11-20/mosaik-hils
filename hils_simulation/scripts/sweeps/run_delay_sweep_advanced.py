@@ -200,10 +200,10 @@ def run_simulation(config: DelayConfig, sweep_dir: Optional[Path] = None) -> Dic
             params.inverse_comp.enabled = True
             if config.comp_gain is not None:
                 params.inverse_comp.gain = config.comp_gain
-            scenario = InverseCompScenario(params, minimal_data_mode=True)
+            scenario = InverseCompScenario(params, minimal_data_mode=False)
             scenario_type = "InverseComp"
         else:
-            scenario = HILSScenario(params, minimal_data_mode=True)
+            scenario = HILSScenario(params, minimal_data_mode=False)
             scenario_type = "HILS"
 
         # Run scenario with custom suffix and optional sweep directory

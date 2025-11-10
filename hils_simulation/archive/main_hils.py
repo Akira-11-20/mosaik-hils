@@ -149,7 +149,7 @@ def main():
             "python": "simulators.controller_simulator:ControllerSimulator",
         },
         "PlantSim": {
-            "python": "simulators.plant_simulator:PlantSimulator",
+            "python": "simulators.plant_simulator_with_model:PlantSimulator",
         },
         "EnvSim": {
             "python": "simulators.env_simulator:EnvSimulator",
@@ -198,7 +198,10 @@ def main():
     )
 
     # 推力測定器
-    plant = plant_sim.ThrustStand(stand_id="stand_01")
+    plant = plant_sim.ThrustStand(
+        stand_id="stand_01",
+        tau_model_type="linear",
+    )
 
     # 宇宙機環境
     spacecraft = env_sim.Spacecraft1DOF(

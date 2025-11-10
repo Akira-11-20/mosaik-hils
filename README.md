@@ -131,6 +131,30 @@ cd hils_simulation
 uv run python analyze_data.py results/YYYYMMDD-HHMMSS/hils_data.h5 --save-plots
 ```
 
+## ⚙️ `.env` 設定とプラントモデルの切り替え
+
+`hils_simulation/config/parameters.py` は `.env` を自動ロードし、環境変数で各種パラメータを上書きできます。  
+時間定数モデルを利用する場合は以下のキーを設定してください。
+
+| 変数名 | デフォルト | 説明 |
+| --- | --- | --- |
+| `PLANT_TAU_MODEL_TYPE` | `constant` | 使用する時定数モデルタイプ。`constant`, `linear`, `saturation`, `thermal`, `hybrid`, `stochastic` を指定可能。 |
+| `PLANT_TAU_MODEL_PARAMS` | `{}` | モデル固有パラメータを JSON 文字列で指定。未設定または解析不可の場合は空辞書として扱います。 |
+
+`.env` 例:
+
+```env
+# Plant base dynamics
+PLANT_TIME_CONSTANT=80.0
+PLANT_TIME_CONSTANT_STD=5.0
+
+# Dynamic tau model (hybrid = thrust-rate + thermal)
+PLANT_TAU_MODEL_TYPE=hybrid
+PLANT_TAU_MODEL_PARAMS={"thrust_sensitivity":0.25,"heating_rate":0.001,"cooling_rate":0.01,"thermal_sensitivity":0.04}
+```
+
+`.env` を編集した後は通常通り `uv run python main.py <scenario>` を実行するだけで、全シナリオ (HILS / RT / InverseComp) で新しいプラントモデル設定が反映されます。
+
 ## 🔧 システム構成 (System Architecture)
 
 ### v2 シナリオベースアーキテクチャ

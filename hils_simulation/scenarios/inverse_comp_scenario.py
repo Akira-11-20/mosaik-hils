@@ -119,6 +119,8 @@ class InverseCompScenario(BaseScenario):
             time_constant_std=self.params.plant.time_constant_std,
             time_constant_noise=self.params.plant.time_constant_noise,
             enable_lag=self.params.plant.enable_lag,
+            tau_model_type=self.params.plant.tau_model_type,
+            tau_model_params=self.params.plant.tau_model_params,
         )
 
         self.spacecraft = env_sim.Spacecraft1DOF(
