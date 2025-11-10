@@ -51,7 +51,7 @@ test_inverse_comp = [False]
 
 # Generate all combinations using itertools.product
 configs = []
-for time_constant, use_inverse in product(time_constants, test_inverse_comp): #product( #, (tau, gain), noise, use_inv
+for time_constant, use_inverse in product(time_constants, test_inverse_comp):  # product( #, (tau, gain), noise, use_inv
     # command_delay,
     # time_constants,
     # time_constant_noises,
@@ -224,9 +224,7 @@ if result_dirs:
             # Filter out RT baseline from result_dirs if it's in the list
             # Also filter out any directory with "baseline" in the name
             filtered_result_dirs = [
-                d
-                for d in result_dirs
-                if str(rt_dir) not in str(d) and "baseline" not in str(d).lower()
+                d for d in result_dirs if str(rt_dir) not in str(d) and "baseline" not in str(d).lower()
             ]
 
             if not filtered_result_dirs:

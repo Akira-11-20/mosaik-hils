@@ -145,10 +145,7 @@ class RTScenario(BaseScenario):
     def setup_data_collection(self):
         """Setup data collection for all entities."""
         data_collector_sim = self.world.start("DataCollector", step_size=1)
-        self.collector = data_collector_sim.Collector(
-            output_dir=str(self.run_dir),
-            minimal_mode=self.minimal_data_mode
-        )
+        self.collector = data_collector_sim.Collector(output_dir=str(self.run_dir), minimal_mode=self.minimal_data_mode)
 
         if self.minimal_data_mode:
             # Minimal mode: only collect position and velocity from spacecraft

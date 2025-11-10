@@ -7,19 +7,19 @@ import h5py
 # HDF5ファイルを読み込み
 h5_path = "/home/akira/mosaik-hils/hils_simulation/results/20251108-141007/hils_data.h5"
 
-with h5py.File(h5_path, 'r') as f:
+with h5py.File(h5_path, "r") as f:
     # 時間データ
-    time_ms = f['time']['time_ms'][:]
-    time_s = f['time']['time_s'][:]
+    time_ms = f["time"]["time_ms"][:]
+    time_s = f["time"]["time_s"][:]
 
     # PlantSimのデータ
-    plant_group = 'PlantSim-0_ThrustStand_0'
-    measured_thrust = f[plant_group]['measured_thrust'][:]
-    actual_thrust = f[plant_group]['actual_thrust'][:]
-    time_constant = f[plant_group]['time_constant'][:]
+    plant_group = "PlantSim-0_ThrustStand_0"
+    measured_thrust = f[plant_group]["measured_thrust"][:]
+    actual_thrust = f[plant_group]["actual_thrust"][:]
+    time_constant = f[plant_group]["time_constant"][:]
 
     print("=== パラメータ確認 ===")
-    print(f"Time resolution: {time_s[1] - time_s[0]:.10f} s = {(time_s[1] - time_s[0])*1000:.10f} ms")
+    print(f"Time resolution: {time_s[1] - time_s[0]:.10f} s = {(time_s[1] - time_s[0]) * 1000:.10f} ms")
     print(f"Time constant τ: {time_constant[100]:.10f} ms")
     print()
 
@@ -75,7 +75,7 @@ with h5py.File(h5_path, 'r') as f:
     # alpha = τ / dt_sub の計算
     alpha = tau / dt_sub
     print(f"α = τ / dt_sub = {tau:.10f} / {dt_sub:.10f} = {alpha:.10f}")
-    print(f"1/α = dt_sub / τ = {1/alpha:.10f}")
+    print(f"1/α = dt_sub / τ = {1 / alpha:.10f}")
     print()
 
     # 一次遅延の計算を手動で実行
@@ -92,7 +92,7 @@ with h5py.File(h5_path, 'r') as f:
         delta = (dt_sub / tau) * (u - y)
         y = y + delta
         print(f"サブステップ {i}: y = {y_old:.10f} + ({dt_sub:.10f}/{tau:.10f}) * ({u:.10f} - {y_old:.10f})")
-        print(f"             = {y_old:.10f} + {dt_sub/tau:.10f} * {u - y_old:.10f}")
+        print(f"             = {y_old:.10f} + {dt_sub / tau:.10f} * {u - y_old:.10f}")
         print(f"             = {y_old:.10f} + {delta:.10f}")
         print(f"             = {y:.10f}")
         print()
@@ -139,10 +139,10 @@ with h5py.File(h5_path, 'r') as f:
     # y = u * (1 - (1 - dt_sub/τ)^n) where n = sub_steps
     print("=== サブステップを考慮した理論値 ===")
     ratio_sub = dt_sub / tau
-    y_theory = u_100 * (1 - (1 - ratio_sub)**sub_steps)
+    y_theory = u_100 * (1 - (1 - ratio_sub) ** sub_steps)
     print("y = u * (1 - (1 - dt_sub/τ)^n)")
     print(f"  = {u_100:.10f} * (1 - (1 - {ratio_sub:.10f})^{sub_steps})")
-    print(f"  = {u_100:.10f} * (1 - {(1 - ratio_sub)**sub_steps:.10f})")
+    print(f"  = {u_100:.10f} * (1 - {(1 - ratio_sub) ** sub_steps:.10f})")
     print(f"  = {y_theory:.10f} N")
     print(f"実測値: {y_100:.10f} N")
     print(f"差分: {abs(y_theory - y_100):.15f} N")

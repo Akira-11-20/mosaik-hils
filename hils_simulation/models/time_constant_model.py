@@ -437,10 +437,7 @@ def create_time_constant_model(
     }
 
     if model_type not in models:
-        raise ValueError(
-            f"Unknown model type: {model_type}. "
-            f"Available types: {list(models.keys())}"
-        )
+        raise ValueError(f"Unknown model type: {model_type}. Available types: {list(models.keys())}")
 
     model_class = models[model_type]
     return model_class(**params)
@@ -537,10 +534,7 @@ if __name__ == "__main__":
     # 固定推力でのサンプリング
     samples = 1000
     test_thrust = 50.0
-    tau_samples = [
-        stochastic_model.get_time_constant(test_thrust, base_tau)
-        for _ in range(samples)
-    ]
+    tau_samples = [stochastic_model.get_time_constant(test_thrust, base_tau) for _ in range(samples)]
 
     plt.hist(tau_samples, bins=50, alpha=0.7, edgecolor="black")
     plt.xlabel("Time Constant [ms]")

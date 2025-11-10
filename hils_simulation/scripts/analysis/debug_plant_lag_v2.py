@@ -8,16 +8,16 @@ import h5py
 # HDF5ファイルを読み込み
 h5_path = "/home/akira/mosaik-hils/hils_simulation/results/20251108-141007/hils_data.h5"
 
-with h5py.File(h5_path, 'r') as f:
+with h5py.File(h5_path, "r") as f:
     # 時間データ
-    time_ms = f['time']['time_ms'][:]
-    time_s = f['time']['time_s'][:]
+    time_ms = f["time"]["time_ms"][:]
+    time_s = f["time"]["time_s"][:]
 
     # PlantSimのデータ
-    plant_group = 'PlantSim-0_ThrustStand_0'
-    measured_thrust = f[plant_group]['measured_thrust'][:]
-    actual_thrust = f[plant_group]['actual_thrust'][:]
-    time_constant = f[plant_group]['time_constant'][:]
+    plant_group = "PlantSim-0_ThrustStand_0"
+    measured_thrust = f[plant_group]["measured_thrust"][:]
+    actual_thrust = f[plant_group]["actual_thrust"][:]
+    time_constant = f[plant_group]["time_constant"][:]
 
     print("=== シミュレーション設定 ===")
     print(f"Time resolution: {time_s[1] - time_s[0]:.6f} s = {time_ms[1] - time_ms[0]:.3f} ms")
@@ -27,7 +27,7 @@ with h5py.File(h5_path, 'r') as f:
     # PlantSimが動作するステップを特定（measured_thrustが変化するステップ）
     plant_steps = []
     for i in range(1, len(measured_thrust)):
-        if measured_thrust[i] != measured_thrust[i-1]:
+        if measured_thrust[i] != measured_thrust[i - 1]:
             plant_steps.append(i)
 
     print("=== PlantSimが動作するステップ（最初の10個）===")
@@ -65,7 +65,7 @@ with h5py.File(h5_path, 'r') as f:
             prev_y = 0
             prev_u = 0
         else:
-            prev_step = plant_steps[i-1]
+            prev_step = plant_steps[i - 1]
             dt = time_ms[step] - time_ms[prev_step]
             prev_y = actual_thrust[prev_step]
             prev_u = measured_thrust[prev_step]
@@ -88,9 +88,13 @@ with h5py.File(h5_path, 'r') as f:
             for _ in range(sub_steps):
                 y_sub = y_sub + (dt_sub / tau) * (prev_u - y_sub)
 
-            print(f"{step:4d} | {time_ms[step]:8.3f} | {dt:6.2f} | {current_u:12.6f} | {current_y:10.6f} | {delta_y:7.4f} | {theory_delta_y:7.4f} (単純) {y_sub - prev_y:7.4f} (サブ)")
+            print(
+                f"{step:4d} | {time_ms[step]:8.3f} | {dt:6.2f} | {current_u:12.6f} | {current_y:10.6f} | {delta_y:7.4f} | {theory_delta_y:7.4f} (単純) {y_sub - prev_y:7.4f} (サブ)"
+            )
         else:
-            print(f"{step:4d} | {time_ms[step]:8.3f} | {dt:6.2f} | {current_u:12.6f} | {current_y:10.6f} | {delta_y:7.4f} | -")
+            print(
+                f"{step:4d} | {time_ms[step]:8.3f} | {dt:6.2f} | {current_u:12.6f} | {current_y:10.6f} | {delta_y:7.4f} | -"
+            )
 
     print()
 

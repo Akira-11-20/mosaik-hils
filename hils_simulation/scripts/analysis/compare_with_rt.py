@@ -220,12 +220,14 @@ def create_heatmap(sim_configs, metrics_list, sim_labels, output_dir: Path):
 
         if tau is not None and noise is not None and "position" in metrics:
             rmse = metrics["position"]["rmse"]
-            data_points.append({
-                "tau": tau,
-                "noise": noise,
-                "rmse": rmse,
-                "label": label,
-            })
+            data_points.append(
+                {
+                    "tau": tau,
+                    "noise": noise,
+                    "rmse": rmse,
+                    "label": label,
+                }
+            )
 
             # Collect all metrics for averaging
             param_key = (tau, noise)
@@ -258,9 +260,10 @@ def create_heatmap(sim_configs, metrics_list, sim_labels, output_dir: Path):
 
         # Print info about averaging if multiple values exist
         if len(metric_values["rmse"]) > 1:
-            print(f"  τ={tau:.0f}ms, noise={noise:.0f}ms: Averaging {len(metric_values['rmse'])} RMSE values ({metric_values['rmse']})")
+            print(
+                f"  τ={tau:.0f}ms, noise={noise:.0f}ms: Averaging {len(metric_values['rmse'])} RMSE values ({metric_values['rmse']})"
+            )
             print(f"    Average RMSE: {np.mean(metric_values['rmse']):.6f}")
-
 
     # Create heatmap
     fig, ax = plt.subplots(figsize=(10, 8))
@@ -286,8 +289,16 @@ def create_heatmap(sim_configs, metrics_list, sim_labels, output_dir: Path):
         for j in range(len(tau_values)):
             if not np.isnan(rmse_grid[i, j]):
                 text_color = "white" if rmse_grid[i, j] > (np.nanmax(rmse_grid) / 2) else "black"
-                ax.text(j, i, f"{rmse_grid[i, j]:.4f}",
-                       ha="center", va="center", color=text_color, fontsize=10, fontweight="bold")
+                ax.text(
+                    j,
+                    i,
+                    f"{rmse_grid[i, j]:.4f}",
+                    ha="center",
+                    va="center",
+                    color=text_color,
+                    fontsize=10,
+                    fontweight="bold",
+                )
 
     plt.tight_layout()
     plt.savefig(output_dir / "rmse_heatmap.png", dpi=300, bbox_inches="tight")
@@ -309,7 +320,9 @@ def create_heatmap(sim_configs, metrics_list, sim_labels, output_dir: Path):
 
                 # Print info about averaging if multiple values exist
                 if len(metric_values[metric_name]) > 1:
-                    print(f"  τ={tau:.0f}ms, noise={noise:.0f}ms: Averaging {len(metric_values[metric_name])} {metric_name} values")
+                    print(
+                        f"  τ={tau:.0f}ms, noise={noise:.0f}ms: Averaging {len(metric_values[metric_name])} {metric_name} values"
+                    )
                     print(f"    Average {metric_name}: {np.mean(metric_values[metric_name]):.6f}")
 
         # Skip if no valid data
@@ -328,8 +341,11 @@ def create_heatmap(sim_configs, metrics_list, sim_labels, output_dir: Path):
         ax.set_ylabel("Plant Time Constant Noise [ms]", fontsize=13, fontweight="bold")
 
         title_map = {"mae": "Mean Absolute Error (MAE)", "max_error": "Maximum Error"}
-        ax.set_title(f"Position {title_map.get(metric_name, metric_name.upper())} Heatmap\n(vs RT Baseline)",
-                    fontsize=15, fontweight="bold")
+        ax.set_title(
+            f"Position {title_map.get(metric_name, metric_name.upper())} Heatmap\n(vs RT Baseline)",
+            fontsize=15,
+            fontweight="bold",
+        )
 
         cbar = plt.colorbar(im, ax=ax)
         cbar.set_label(f"{title_map.get(metric_name, metric_name.upper())} [m]", fontsize=12, fontweight="bold")
@@ -338,8 +354,16 @@ def create_heatmap(sim_configs, metrics_list, sim_labels, output_dir: Path):
             for j in range(len(tau_values)):
                 if not np.isnan(metric_grid[i, j]):
                     text_color = "white" if metric_grid[i, j] > (np.nanmax(metric_grid) / 2) else "black"
-                    ax.text(j, i, f"{metric_grid[i, j]:.4f}",
-                           ha="center", va="center", color=text_color, fontsize=10, fontweight="bold")
+                    ax.text(
+                        j,
+                        i,
+                        f"{metric_grid[i, j]:.4f}",
+                        ha="center",
+                        va="center",
+                        color=text_color,
+                        fontsize=10,
+                        fontweight="bold",
+                    )
 
         plt.tight_layout()
         filename = f"{metric_name}_heatmap.png"
@@ -363,8 +387,7 @@ def create_comparison_plots(rt_data, sim_data_list, sim_labels, metrics_list, si
     colors = plt.cm.viridis(np.linspace(0, 1, len(sim_data_list)))
     for i, (data, label, color) in enumerate(zip(sim_data_list, sim_labels, colors)):
         min_len = min(len(rt_data["time"]), len(data["time"]))
-        ax.plot(data["time"][:min_len], data["position"][:min_len],
-                color=color, linewidth=1.5, label=label, alpha=0.7)
+        ax.plot(data["time"][:min_len], data["position"][:min_len], color=color, linewidth=1.5, label=label, alpha=0.7)
 
     ax.set_xlabel("Time [s]", fontsize=12)
     ax.set_ylabel("Position [m]", fontsize=12)
@@ -376,8 +399,14 @@ def create_comparison_plots(rt_data, sim_data_list, sim_labels, metrics_list, si
     ax = axes[1]
     for i, (metrics, label, color) in enumerate(zip(metrics_list, sim_labels, colors)):
         min_len = min(len(rt_data["time"]), len(metrics["position"]["error_signal"]))
-        ax.plot(rt_data["time"][:min_len], metrics["position"]["error_signal"][:min_len],
-                color=color, linewidth=1.5, label=label, alpha=0.7)
+        ax.plot(
+            rt_data["time"][:min_len],
+            metrics["position"]["error_signal"][:min_len],
+            color=color,
+            linewidth=1.5,
+            label=label,
+            alpha=0.7,
+        )
 
     ax.axhline(y=0, color="k", linestyle="--", linewidth=1, alpha=0.5)
     ax.set_xlabel("Time [s]", fontsize=12)
@@ -403,7 +432,7 @@ def create_comparison_plots(rt_data, sim_data_list, sim_labels, metrics_list, si
     axes[0].set_ylabel("RMSE [m]", fontsize=11)
     axes[0].set_title("Root Mean Square Error", fontsize=12, fontweight="bold")
     axes[0].set_xticks(x)
-    axes[0].set_xticklabels([f"Sim {i+1}" for i in range(len(sim_labels))], rotation=45, ha="right")
+    axes[0].set_xticklabels([f"Sim {i + 1}" for i in range(len(sim_labels))], rotation=45, ha="right")
     axes[0].grid(True, alpha=0.3, axis="y")
 
     # Add values on bars
@@ -417,7 +446,7 @@ def create_comparison_plots(rt_data, sim_data_list, sim_labels, metrics_list, si
     axes[1].set_ylabel("MAE [m]", fontsize=11)
     axes[1].set_title("Mean Absolute Error", fontsize=12, fontweight="bold")
     axes[1].set_xticks(x)
-    axes[1].set_xticklabels([f"Sim {i+1}" for i in range(len(sim_labels))], rotation=45, ha="right")
+    axes[1].set_xticklabels([f"Sim {i + 1}" for i in range(len(sim_labels))], rotation=45, ha="right")
     axes[1].grid(True, alpha=0.3, axis="y")
 
     for i, v in enumerate(mae_values):
@@ -430,7 +459,7 @@ def create_comparison_plots(rt_data, sim_data_list, sim_labels, metrics_list, si
     axes[2].set_ylabel("Max Error [m]", fontsize=11)
     axes[2].set_title("Maximum Error", fontsize=12, fontweight="bold")
     axes[2].set_xticks(x)
-    axes[2].set_xticklabels([f"Sim {i+1}" for i in range(len(sim_labels))], rotation=45, ha="right")
+    axes[2].set_xticklabels([f"Sim {i + 1}" for i in range(len(sim_labels))], rotation=45, ha="right")
     axes[2].grid(True, alpha=0.3, axis="y")
 
     for i, v in enumerate(max_err_values):
@@ -447,8 +476,7 @@ def create_comparison_plots(rt_data, sim_data_list, sim_labels, metrics_list, si
 
     for i, (data, label, color) in enumerate(zip(sim_data_list, sim_labels, colors)):
         min_len = min(len(rt_data["time"]), len(data["time"]))
-        ax.plot(data["time"][:min_len], data["velocity"][:min_len],
-                color=color, linewidth=1.5, label=label, alpha=0.7)
+        ax.plot(data["time"][:min_len], data["velocity"][:min_len], color=color, linewidth=1.5, label=label, alpha=0.7)
 
     ax.set_xlabel("Time [s]", fontsize=12)
     ax.set_ylabel("Velocity [m/s]", fontsize=12)
@@ -516,7 +544,7 @@ def main():
 
     print(f"RT baseline: {rt_dir.name}")
     print(f"  Data points: {len(rt_data.get('time', []))}")
-    print(f"  Duration: {rt_data['time'][-1]:.3f} s" if 'time' in rt_data else "N/A")
+    print(f"  Duration: {rt_data['time'][-1]:.3f} s" if "time" in rt_data else "N/A")
 
     # Find simulations to compare
     print("\n" + "=" * 70)

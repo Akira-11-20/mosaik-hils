@@ -31,7 +31,7 @@ def test_thrust_rate_dependency():
         taus.append(tau)
 
         if i > 0:
-            dF = F - thrusts[i-1]
+            dF = F - thrusts[i - 1]
             dF_dt = dF / dt
             print(f"   Step {i}: F={F:5.1f}N, dF/dt={dF_dt:6.3f}N/ms, τ={tau:.2f}ms")
 
@@ -47,7 +47,7 @@ def test_thrust_rate_dependency():
         taus.append(tau)
 
         if i > 0:
-            dF = F - thrusts[i-1]
+            dF = F - thrusts[i - 1]
             dF_dt = dF / dt
             print(f"   Step {i}: F={F:5.1f}N, dF/dt={dF_dt:6.3f}N/ms, τ={tau:.2f}ms")
 
@@ -63,7 +63,7 @@ def test_thrust_rate_dependency():
         taus.append(tau)
 
         if i > 0:
-            dF = F - thrusts[i-1]
+            dF = F - thrusts[i - 1]
             dF_dt = dF / dt
             print(f"   Step {i}: F={F:5.1f}N, dF/dt={dF_dt:6.3f}N/ms, τ={tau:.2f}ms")
 
@@ -88,11 +88,7 @@ def visualize_models():
         "Linear (k=0.5)": create_time_constant_model("linear", sensitivity=0.5),
         "Saturation": create_time_constant_model("saturation", max_delta_tau=30.0, saturation_rate=0.5),
         "Hybrid": create_time_constant_model(
-            "hybrid",
-            thrust_sensitivity=0.3,
-            heating_rate=0.001,
-            cooling_rate=0.01,
-            thermal_sensitivity=0.05
+            "hybrid", thrust_sensitivity=0.3, heating_rate=0.001, cooling_rate=0.01, thermal_sensitivity=0.05
         ),
     }
 
@@ -102,12 +98,12 @@ def visualize_models():
     # 1. 推力プロファイル
     ax = axes[0, 0]
     time_axis = np.arange(time_steps) * dt
-    ax.plot(time_axis, thrust_profile, linewidth=2, color='black')
+    ax.plot(time_axis, thrust_profile, linewidth=2, color="black")
     ax.set_xlabel("Time [ms]")
     ax.set_ylabel("Thrust [N]")
     ax.set_title("Thrust Profile (Step Input)")
     ax.grid(True, alpha=0.3)
-    ax.axvline(x=100, color='red', linestyle='--', alpha=0.5, label='Step change')
+    ax.axvline(x=100, color="red", linestyle="--", alpha=0.5, label="Step change")
     ax.legend()
 
     # 2. 時定数の時間応答
@@ -122,7 +118,7 @@ def visualize_models():
         ax.plot(time_axis, taus, linewidth=2, label=name)
 
         # リセット
-        if hasattr(model, 'reset'):
+        if hasattr(model, "reset"):
             model.reset()
 
     ax.set_xlabel("Time [ms]")
@@ -130,7 +126,7 @@ def visualize_models():
     ax.set_title("Time Constant Response to Step Input")
     ax.legend()
     ax.grid(True, alpha=0.3)
-    ax.axvline(x=100, color='red', linestyle='--', alpha=0.5)
+    ax.axvline(x=100, color="red", linestyle="--", alpha=0.5)
 
     # 3. 推力変化率 vs 時定数
     ax = axes[1, 0]
@@ -139,7 +135,7 @@ def visualize_models():
 
     # 各モデルでの時定数を計算（変化率に対する応答）
     for name, model in models.items():
-        if hasattr(model, 'reset'):
+        if hasattr(model, "reset"):
             model.reset()
 
         taus = []
@@ -150,7 +146,7 @@ def visualize_models():
             F_current = rate * dt
 
             # まず前の推力で初期化
-            if hasattr(model, 'previous_thrust'):
+            if hasattr(model, "previous_thrust"):
                 model.previous_thrust = F_prev
 
             # 現在の推力で時定数を計算
@@ -176,11 +172,7 @@ def visualize_models():
 
     # Hybridモデルでの応答
     hybrid_model = create_time_constant_model(
-        "hybrid",
-        thrust_sensitivity=0.5,
-        heating_rate=0.002,
-        cooling_rate=0.01,
-        thermal_sensitivity=0.08
+        "hybrid", thrust_sensitivity=0.5, heating_rate=0.002, cooling_rate=0.01, thermal_sensitivity=0.08
     )
 
     taus_hybrid = []
@@ -189,16 +181,16 @@ def visualize_models():
         taus_hybrid.append(tau)
 
     ax2 = ax.twinx()
-    ax.plot(time_axis, pulse_profile, linewidth=2, color='black', alpha=0.5, label='Thrust')
-    ax2.plot(time_axis, taus_hybrid, linewidth=2, color='purple', label='τ (Hybrid)')
+    ax.plot(time_axis, pulse_profile, linewidth=2, color="black", alpha=0.5, label="Thrust")
+    ax2.plot(time_axis, taus_hybrid, linewidth=2, color="purple", label="τ (Hybrid)")
 
     ax.set_xlabel("Time [ms]")
-    ax.set_ylabel("Thrust [N]", color='black')
-    ax2.set_ylabel("Time Constant [ms]", color='purple')
+    ax.set_ylabel("Thrust [N]", color="black")
+    ax2.set_ylabel("Time Constant [ms]", color="purple")
     ax.set_title("Hybrid Model: Pulse Response with Thermal Memory")
     ax.grid(True, alpha=0.3)
-    ax.legend(loc='upper left')
-    ax2.legend(loc='upper right')
+    ax.legend(loc="upper left")
+    ax2.legend(loc="upper right")
 
     plt.tight_layout()
     plt.savefig("/tmp/thrust_rate_models.png", dpi=150)

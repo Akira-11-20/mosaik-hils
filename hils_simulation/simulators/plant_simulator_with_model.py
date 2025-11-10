@@ -244,12 +244,10 @@ if __name__ == "__main__":
     models_to_test = [
         ("constant", {}),
         ("linear", {"sensitivity": 0.5}),
-        ("hybrid", {
-            "thrust_sensitivity": 0.3,
-            "heating_rate": 0.001,
-            "cooling_rate": 0.01,
-            "thermal_sensitivity": 0.05
-        }),
+        (
+            "hybrid",
+            {"thrust_sensitivity": 0.3, "heating_rate": 0.001, "cooling_rate": 0.01, "thermal_sensitivity": 0.05},
+        ),
     ]
 
     time_steps = 200
@@ -289,11 +287,11 @@ if __name__ == "__main__":
         axes[1].plot(time_axis, y_history, linewidth=2, label=f"{model_type}")
 
         # モデルリセット
-        if hasattr(tau_model, 'reset'):
+        if hasattr(tau_model, "reset"):
             tau_model.reset()
 
     # 推力プロファイルも表示
-    axes[1].plot(time_axis, thrust_profile, 'k--', linewidth=1, alpha=0.5, label='Commanded')
+    axes[1].plot(time_axis, thrust_profile, "k--", linewidth=1, alpha=0.5, label="Commanded")
 
     axes[0].set_xlabel("Time [ms]")
     axes[0].set_ylabel("Time Constant [ms]")
