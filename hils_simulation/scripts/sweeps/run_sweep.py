@@ -32,10 +32,13 @@ from scripts.sweeps.run_delay_sweep_advanced import DelayConfig, print_summary, 
 
 # Format: (time_constant_ms, corresponding_compensation_gain)
 time_constants = [
-    (50, 5),
+    (100,7),
+    (100,8),
+    (100,9),
     (100, 10),
-    (150, 15),
-    (200, 20),
+    (100, 11),
+    (100,12),
+    (100,13),
 ]
 
 # Define noise levels to test
@@ -47,7 +50,7 @@ time_constants = [
 # ]
 
 # Define whether to test with/without inverse compensation
-test_inverse_comp = [False]
+test_inverse_comp = [True]
 
 # Generate all combinations using itertools.product
 configs = []
