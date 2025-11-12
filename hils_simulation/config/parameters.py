@@ -178,6 +178,7 @@ class InverseCompParams:
     base_tau: float = 100.0  # Base time constant for tau_model [ms]
     tau_model_type: str = "constant"  # "constant" (use direct gain) or "linear", "hybrid", etc.
     tau_model_params: dict = field(default_factory=dict)  # Time constant model parameters
+    position: str = "pre"  # Compensation position: "pre" (before plant) or "post" (after plant)
 
     @classmethod
     def from_env(cls) -> "InverseCompParams":
@@ -197,6 +198,7 @@ class InverseCompParams:
             base_tau=get_env_float("INVERSE_COMP_BASE_TAU", 100.0),
             tau_model_type=os.getenv("INVERSE_COMP_TAU_MODEL_TYPE", "constant"),
             tau_model_params=tau_model_params,
+            position=os.getenv("INVERSE_COMP_POSITION", "pre"),
         )
 
 
@@ -342,6 +344,7 @@ class SimulationParameters:
                 "base_tau_ms": self.inverse_comp.base_tau,
                 "tau_model_type": self.inverse_comp.tau_model_type,
                 "tau_model_params": self.inverse_comp.tau_model_params,
+                "position": self.inverse_comp.position,
             },
             "metadata": {
                 "timestamp": datetime.now().isoformat(),

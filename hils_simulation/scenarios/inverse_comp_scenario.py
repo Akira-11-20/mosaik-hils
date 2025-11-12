@@ -48,16 +48,18 @@ class InverseCompScenario(BaseScenario):
     @property
     def scenario_description(self) -> str:
         comp_status = "Enabled" if self.params.inverse_comp.enabled else "Disabled"
-        return f"HILS with Command Inverse Compensation ({comp_status})"
+        comp_position = "Pre" if self.params.inverse_comp.position == "pre" else "Post"
+        return f"HILS with {comp_position}-Compensation Inverse Compensation ({comp_status})"
 
     @property
     def results_base_dir(self) -> str:
         return "results"
 
     def setup_output_directory(self, suffix: str = "", parent_dir: Optional[Path] = None) -> Path:
-        """Setup output directory with _inverse_comp suffix."""
+        """Setup output directory with _inverse_comp_pre or _inverse_comp_post suffix."""
         if not suffix:
-            suffix = "_inverse_comp"
+            comp_position = self.params.inverse_comp.position
+            suffix = f"_inverse_comp_{comp_position}"
         return super().setup_output_directory(suffix, parent_dir=parent_dir)
 
     def create_world(self) -> mosaik.World:
@@ -161,9 +163,12 @@ class InverseCompScenario(BaseScenario):
         )
 
     def connect_entities(self):
-        """Connect entities with inverse compensator in command path."""
-        # Command path: Controller → [Inverse Comp] → Bridge(cmd) → Plant
-        if self.params.inverse_comp.enabled:
+        """Connect entities with inverse compensator in command or sensing path."""
+        comp_enabled = self.params.inverse_comp.enabled
+        comp_position = self.params.inverse_comp.position
+
+        if comp_enabled and comp_position == "pre":
+            # PRE-COMPENSATION: Controller → [Inverse Comp] → Bridge(cmd) → Plant
             print("   Controller → Inverse Compensator: same-step connection")
             self.world.connect(
                 self.controller,
@@ -184,7 +189,53 @@ class InverseCompScenario(BaseScenario):
                     }
                 },
             )
+
+            print("   Bridge(cmd) → Plant: delayed command")
+            self.world.connect(
+                self.bridge_cmd,
+                self.plant,
+                ("delayed_output", "command"),
+            )
+
+        elif comp_enabled and comp_position == "post":
+            # POST-COMPENSATION: Controller → Bridge(cmd) → Plant → [Inverse Comp] → Bridge(sense) → Env
+            print("   ⏱️  Controller → Bridge(cmd): time-shifted connection")
+            self.world.connect(
+                self.controller,
+                self.bridge_cmd,
+                ("command", "input"),
+                time_shifted=True,
+                initial_data={
+                    "command": {
+                        "thrust": 0.0,
+                        "duration": self.params.control.control_period,
+                    }
+                },
+            )
+
+            print("   Bridge(cmd) → Plant: delayed command")
+            self.world.connect(
+                self.bridge_cmd,
+                self.plant,
+                ("delayed_output", "command"),
+            )
+
+            print("   Plant → Inverse Compensator: actual_thrust connection")
+            self.world.connect(
+                self.plant,
+                self.inverse_comp,
+                ("actual_thrust", "input"),
+            )
+
+            print("   Inverse Compensator → Bridge(sense): compensated output")
+            self.world.connect(
+                self.inverse_comp,
+                self.bridge_sense,
+                ("compensated_output", "input"),
+            )
+
         else:
+            # NO COMPENSATION: Controller → Bridge(cmd) → Plant
             print("   ⏱️  Controller → Bridge(cmd): time-shifted connection (no compensation)")
             self.world.connect(
                 self.controller,
@@ -199,27 +250,37 @@ class InverseCompScenario(BaseScenario):
                 },
             )
 
-        print("   Bridge(cmd) → Plant: delayed command")
-        self.world.connect(
-            self.bridge_cmd,
-            self.plant,
-            ("delayed_output", "command"),
-        )
+            print("   Bridge(cmd) → Plant: delayed command")
+            self.world.connect(
+                self.bridge_cmd,
+                self.plant,
+                ("delayed_output", "command"),
+            )
 
-        # Sensing path: Plant → Bridge(sense) → Env
-        print("   Plant → Bridge(sense): actual_thrust connection")
-        self.world.connect(
-            self.plant,
-            self.bridge_sense,
-            ("actual_thrust", "input"),
-        )
+        # Sensing path (different depending on post-compensation)
+        if comp_enabled and comp_position == "post":
+            # Already connected above: Plant → InverseComp → Bridge(sense) → Env
+            print("   Bridge(sense) → Env: compensated force connection")
+            self.world.connect(
+                self.bridge_sense,
+                self.spacecraft,
+                ("delayed_output", "force"),
+            )
+        else:
+            # Standard sensing path: Plant → Bridge(sense) → Env
+            print("   Plant → Bridge(sense): actual_thrust connection")
+            self.world.connect(
+                self.plant,
+                self.bridge_sense,
+                ("actual_thrust", "input"),
+            )
 
-        print("   Bridge(sense) → Env: delayed force connection")
-        self.world.connect(
-            self.bridge_sense,
-            self.spacecraft,
-            ("delayed_output", "force"),
-        )
+            print("   Bridge(sense) → Env: delayed force connection")
+            self.world.connect(
+                self.bridge_sense,
+                self.spacecraft,
+                ("delayed_output", "force"),
+            )
 
         print("   📡 Env → Controller: same-step connection (state feedback)")
         self.world.connect(
@@ -231,11 +292,16 @@ class InverseCompScenario(BaseScenario):
 
         print("\n✅ Data flow configured:")
         print("   Env → Controller (same step)")
-        if self.params.inverse_comp.enabled:
-            print("   Controller → [Inverse Comp] → Bridge(cmd) → Plant (time-shifted)")
+        if comp_enabled:
+            if comp_position == "pre":
+                print("   Controller → [Inverse Comp] → Bridge(cmd) → Plant (time-shifted)")
+                print("   Plant → Bridge(sense) → Env")
+            else:  # post
+                print("   Controller → Bridge(cmd) → Plant (time-shifted)")
+                print("   Plant → [Inverse Comp] → Bridge(sense) → Env")
         else:
             print("   Controller → Bridge(cmd) → Plant (time-shifted)")
-        print("   Plant → Bridge(sense) → Env")
+            print("   Plant → Bridge(sense) → Env")
 
     def setup_data_collection(self):
         """Setup data collection including inverse compensator data."""
