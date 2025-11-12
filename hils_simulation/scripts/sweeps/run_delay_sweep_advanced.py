@@ -30,6 +30,15 @@ class DelayConfig:
         plant_time_constant_std: Optional[float] = None,
         plant_time_constant_noise: Optional[float] = None,
         plant_enable_lag: Optional[bool] = None,
+        # NEW: Time constant model parameters
+        use_plant_model: bool = False,
+        plant_tau_model_type: Optional[str] = None,
+        plant_tau_model_params: Optional[Dict[str, Any]] = None,
+        # NEW: Adaptive inverse compensation parameters
+        use_adaptive_comp: bool = False,
+        comp_tau_to_gain_ratio: Optional[float] = None,
+        comp_tau_model_type: Optional[str] = None,
+        comp_tau_model_params: Optional[Dict[str, Any]] = None,
         label: Optional[str] = None,
     ):
         """
@@ -42,6 +51,13 @@ class DelayConfig:
             plant_time_constant_std: Standard deviation for time constant variability in milliseconds (if None, uses default from .env)
             plant_time_constant_noise: Time-varying noise for time constant in milliseconds (if None, uses default from .env)
             plant_enable_lag: Enable plant lag (if None, uses default from .env)
+            use_plant_model: Use plant_simulator_with_model.py instead of plant_simulator.py
+            plant_tau_model_type: Time constant model type for plant ("constant", "linear", "hybrid", etc.)
+            plant_tau_model_params: Time constant model parameters for plant (dict)
+            use_adaptive_comp: Enable adaptive inverse compensation (automatically calculates gain from tau)
+            comp_tau_to_gain_ratio: Ratio to convert tau to gain for adaptive compensation
+            comp_tau_model_type: Time constant model type for compensator (should match plant)
+            comp_tau_model_params: Time constant model parameters for compensator (should match plant)
             label: Custom label for this configuration
         """
         self.cmd_delay = cmd_delay
@@ -52,11 +68,24 @@ class DelayConfig:
         self.plant_time_constant_std = plant_time_constant_std
         self.plant_time_constant_noise = plant_time_constant_noise
         self.plant_enable_lag = plant_enable_lag
+        # Time constant model parameters
+        self.use_plant_model = use_plant_model
+        self.plant_tau_model_type = plant_tau_model_type
+        self.plant_tau_model_params = plant_tau_model_params or {}
+        # Adaptive compensation parameters
+        self.use_adaptive_comp = use_adaptive_comp
+        self.comp_tau_to_gain_ratio = comp_tau_to_gain_ratio
+        self.comp_tau_model_type = comp_tau_model_type
+        self.comp_tau_model_params = comp_tau_model_params or {}
         self.label = label or self._generate_label()
 
     def _generate_label(self) -> str:
         """Generate a descriptive label"""
         comp_str = "comp" if self.use_inverse_comp else "nocomp"
+
+        # Add adaptive flag if enabled
+        if self.use_adaptive_comp:
+            comp_str = "adaptive_" + comp_str
 
         # Base label with delays
         if self.cmd_delay == self.sense_delay:
@@ -67,6 +96,10 @@ class DelayConfig:
         # Add plant time constant if specified
         if self.plant_time_constant is not None:
             label += f"_tau{self.plant_time_constant:.0f}ms"
+
+        # Add plant tau model type if specified
+        if self.plant_tau_model_type is not None and self.plant_tau_model_type != "constant":
+            label += f"_{self.plant_tau_model_type}"
 
         # Add plant time constant std if specified
         if self.plant_time_constant_std is not None and self.plant_time_constant_std > 0:
@@ -194,12 +227,45 @@ def run_simulation(config: DelayConfig, sweep_dir: Optional[Path] = None) -> Dic
         if config.plant_enable_lag is not None:
             params.plant.enable_lag = config.plant_enable_lag
 
+        # Set plant model parameters (NEW)
+        if config.use_plant_model:
+            params.plant.use_model = True
+            if config.plant_tau_model_type is not None:
+                params.plant.tau_model_type = config.plant_tau_model_type
+            if config.plant_tau_model_params:
+                params.plant.tau_model_params = config.plant_tau_model_params
+
+        # Set inverse compensation parameters
+        if config.use_inverse_comp:
+            params.inverse_comp.enabled = True
+
+            # Adaptive compensation (NEW)
+            if config.use_adaptive_comp:
+                params.inverse_comp.adaptive_mode = True
+                if config.comp_tau_to_gain_ratio is not None:
+                    params.inverse_comp.tau_to_gain_ratio = config.comp_tau_to_gain_ratio
+                # Set compensator's tau model to match plant
+                if config.comp_tau_model_type is not None:
+                    params.inverse_comp.tau_model_type = config.comp_tau_model_type
+                else:
+                    params.inverse_comp.tau_model_type = config.plant_tau_model_type
+                if config.comp_tau_model_params:
+                    params.inverse_comp.tau_model_params = config.comp_tau_model_params
+                else:
+                    params.inverse_comp.tau_model_params = config.plant_tau_model_params
+                # Set base_tau to match plant
+                params.inverse_comp.base_tau = params.plant.time_constant
+            else:
+                # Fixed gain mode (traditional)
+                if config.comp_gain is not None:
+                    params.inverse_comp.gain = config.comp_gain
+        else:
+            # Explicitly disable inverse compensation when use_inverse_comp=False
+            params.inverse_comp.enabled = False
+
         # Select scenario based on inverse compensation flag
         # Use minimal_data_mode=True for faster sweeps (only collect time, position, velocity)
         if config.use_inverse_comp:
-            params.inverse_comp.enabled = True
-            if config.comp_gain is not None:
-                params.inverse_comp.gain = config.comp_gain
             scenario = InverseCompScenario(params, minimal_data_mode=False)
             scenario_type = "InverseComp"
         else:

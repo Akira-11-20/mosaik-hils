@@ -87,7 +87,12 @@ class InverseCompScenario(BaseScenario):
                 "InverseCompSim",
                 step_size=self.params.control_period_steps,
             )
-            print(f" ✨ Inverse Compensator enabled (gain={self.params.inverse_comp.gain})")
+            mode_info = f"mode={self.params.inverse_comp.tau_model_type}"
+            if self.params.inverse_comp.tau_model_type == "constant":
+                mode_info += f", gain={self.params.inverse_comp.gain}"
+            else:
+                mode_info += f", base_tau={self.params.inverse_comp.base_tau}ms, ratio={self.params.inverse_comp.tau_to_gain_ratio}"
+            print(f" ✨ Inverse Compensator enabled ({mode_info})")
 
         plant_sim = self.world.start("PlantSim", step_size=self.params.plant_sim_period_steps)
         env_sim = self.world.start("EnvSim", step_size=self.params.env_sim_period_steps)
@@ -111,6 +116,10 @@ class InverseCompScenario(BaseScenario):
                 comp_id="cmd_compensator",
                 gain=self.params.inverse_comp.gain,
                 comp_type="command",
+                tau_to_gain_ratio=self.params.inverse_comp.tau_to_gain_ratio,
+                base_tau=self.params.inverse_comp.base_tau,
+                tau_model_type=self.params.inverse_comp.tau_model_type,
+                tau_model_params=self.params.inverse_comp.tau_model_params,
             )
 
         self.plant = plant_sim.ThrustStand(
@@ -153,8 +162,8 @@ class InverseCompScenario(BaseScenario):
 
     def connect_entities(self):
         """Connect entities with inverse compensator in command path."""
+        # Command path: Controller → [Inverse Comp] → Bridge(cmd) → Plant
         if self.params.inverse_comp.enabled:
-            # With inverse compensation
             print("   Controller → Inverse Compensator: same-step connection")
             self.world.connect(
                 self.controller,
@@ -176,7 +185,6 @@ class InverseCompScenario(BaseScenario):
                 },
             )
         else:
-            # Without inverse compensation (fallback to standard HILS)
             print("   ⏱️  Controller → Bridge(cmd): time-shifted connection (no compensation)")
             self.world.connect(
                 self.controller,
@@ -191,21 +199,22 @@ class InverseCompScenario(BaseScenario):
                 },
             )
 
-        # Rest of the connections are same as HILS
+        print("   Bridge(cmd) → Plant: delayed command")
         self.world.connect(
             self.bridge_cmd,
             self.plant,
             ("delayed_output", "command"),
         )
 
-        # Plant → Bridge(sense) - measurement path
-        # Uses actual_thrust (with first-order lag) instead of measured_thrust (ideal)
+        # Sensing path: Plant → Bridge(sense) → Env
+        print("   Plant → Bridge(sense): actual_thrust connection")
         self.world.connect(
             self.plant,
             self.bridge_sense,
             ("actual_thrust", "input"),
         )
 
+        print("   Bridge(sense) → Env: delayed force connection")
         self.world.connect(
             self.bridge_sense,
             self.spacecraft,
@@ -260,31 +269,32 @@ class InverseCompScenario(BaseScenario):
                 self.world,
                 [self.inverse_comp],
                 self.collector,
-                # "compensated_output",
-                # "stats",
-                # # Debug attributes
-                # "raw_input",
-                # "prev_input",
-                # "delta",
-                # "compensation_amount",
+                "compensated_output",
+                "stats",
+                # Debug attributes - actual numeric values for plotting
+                "raw_input",
                 "input_thrust",
                 "output_thrust",
+                "current_gain",
+                "current_tau",
+                "delta",
+                "compensation_amount",
             )
 
-        # mosaik.util.connect_many_to_one(
-        #     self.world,
-        #     [self.bridge_cmd],
-        #     self.collector,
-        #     "stats",
-        #     "packet_receive_time",
-        #     "packet_send_time",
-        #     "packet_actual_delay",
-        #     # Debug attributes
-        #     "buffer_size",
-        #     # "buffer_content",  # Commented out to reduce log size
-        #     "oldest_packet_time",
-        #     "newest_packet_time",
-        # )
+        mosaik.util.connect_many_to_one(
+            self.world,
+            [self.bridge_cmd],
+            self.collector,
+            "stats",
+            "packet_receive_time",
+            "packet_send_time",
+            "packet_actual_delay",
+            # Debug attributes
+            "buffer_size",
+            # "buffer_content",  # Commented out to reduce log size
+            "oldest_packet_time",
+            "newest_packet_time",
+        )
 
         mosaik.util.connect_many_to_one(
             self.world,
@@ -296,20 +306,20 @@ class InverseCompScenario(BaseScenario):
             "time_constant",  # Record actual sampled time constant
         )
 
-        # mosaik.util.connect_many_to_one(
-        #     self.world,
-        #     [self.bridge_sense],
-        #     self.collector,
-        #     "stats",
-        #     "packet_receive_time",
-        #     "packet_send_time",
-        #     "packet_actual_delay",
-        #     # Debug attributes
-        #     "buffer_size",
-        #     # "buffer_content",  # Commented out to reduce log size
-        #     "oldest_packet_time",
-        #     "newest_packet_time",
-        # )
+        mosaik.util.connect_many_to_one(
+            self.world,
+            [self.bridge_sense],
+            self.collector,
+            "stats",
+            "packet_receive_time",
+            "packet_send_time",
+            "packet_actual_delay",
+            # Debug attributes
+            "buffer_size",
+            # "buffer_content",  # Commented out to reduce log size
+            "oldest_packet_time",
+            "newest_packet_time",
+        )
 
         mosaik.util.connect_many_to_one(
             self.world,

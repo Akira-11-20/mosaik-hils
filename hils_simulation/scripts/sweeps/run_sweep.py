@@ -23,22 +23,19 @@ from scripts.sweeps.run_delay_sweep_advanced import DelayConfig, print_summary, 
 # ============================================================================
 
 # Define time constant and compensation gain pairs
-# command_delay = [
-#     50.0,
-#     100.0,
-#     150.0,
-#     200.0,
-# ]
+command_delay = [
+    (10.0, 1),
+    (20.0, 2),
+    (30.0, 3),
+    (40.0, 4),
+]
 
 # Format: (time_constant_ms, corresponding_compensation_gain)
 time_constants = [
-    (100,7),
-    (100,8),
-    (100,9),
+    (90, 9),
     (100, 10),
-    (100, 11),
-    (100,12),
-    (100,13),
+    (110, 11),
+    (120, 12),
 ]
 
 # Define noise levels to test
@@ -54,18 +51,18 @@ test_inverse_comp = [True]
 
 # Generate all combinations using itertools.product
 configs = []
-for time_constant, use_inverse in product(time_constants, test_inverse_comp):  # product( #, (tau, gain), noise, use_inv
+for cmd_delay, time_constant, use_inverse in product(command_delay, time_constants, test_inverse_comp):  # product( #, (tau, gain), noise, use_inv
     # command_delay,
     # time_constants,
     # time_constant_noises,
     # test_inverse_comp,
     configs.append(
         DelayConfig(
-            cmd_delay=0.0,
+            cmd_delay=cmd_delay[0],
             sense_delay=0.0,
             plant_time_constant=time_constant[0],
             plant_time_constant_noise=0,
-            comp_gain=time_constant[1],
+            comp_gain=cmd_delay[1]+time_constant[1],
             plant_enable_lag=True,
             use_inverse_comp=use_inverse,
         )
@@ -75,7 +72,7 @@ for time_constant, use_inverse in product(time_constants, test_inverse_comp):  #
 baseline_config = DelayConfig(
     cmd_delay=0.0,
     sense_delay=0.0,
-    plant_time_constant=None,  # Don't set time constant (use default but won't appear in heatmap)
+    plant_time_constant=0.0,  # Don't set time constant (use default but won't appear in heatmap)
     plant_time_constant_std=0.0,
     plant_time_constant_noise=0.0,  # Explicitly set to 0 to avoid default noise
     plant_enable_lag=False,

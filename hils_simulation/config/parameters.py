@@ -173,14 +173,30 @@ class InverseCompParams:
     """Inverse compensation parameters."""
 
     enabled: bool = True  # Enable inverse compensation
-    gain: float = 15.0  # Compensation gain
+    gain: float = 15.0  # Compensation gain (used when tau_model_type="constant")
+    tau_to_gain_ratio: float = 0.1  # Ratio for tau->gain conversion (for adaptive models)
+    base_tau: float = 100.0  # Base time constant for tau_model [ms]
+    tau_model_type: str = "constant"  # "constant" (use direct gain) or "linear", "hybrid", etc.
+    tau_model_params: dict = field(default_factory=dict)  # Time constant model parameters
 
     @classmethod
     def from_env(cls) -> "InverseCompParams":
         """Load inverse compensation parameters from environment variables."""
+        tau_model_params_str = os.getenv("INVERSE_COMP_TAU_MODEL_PARAMS", "{}")
+        try:
+            tau_model_params = json.loads(tau_model_params_str)
+            if not isinstance(tau_model_params, dict):
+                raise ValueError("tau_model_params must be a JSON object")
+        except (json.JSONDecodeError, ValueError):
+            tau_model_params = {}
+
         return cls(
             enabled=get_env_bool("ENABLE_INVERSE_COMP", True),
             gain=get_env_float("INVERSE_COMP_GAIN", 15.0),
+            tau_to_gain_ratio=get_env_float("INVERSE_COMP_TAU_TO_GAIN_RATIO", 0.1),
+            base_tau=get_env_float("INVERSE_COMP_BASE_TAU", 100.0),
+            tau_model_type=os.getenv("INVERSE_COMP_TAU_MODEL_TYPE", "constant"),
+            tau_model_params=tau_model_params,
         )
 
 
@@ -322,6 +338,10 @@ class SimulationParameters:
             "inverse_compensation": {
                 "enabled": self.inverse_comp.enabled,
                 "gain": self.inverse_comp.gain,
+                "tau_to_gain_ratio": self.inverse_comp.tau_to_gain_ratio,
+                "base_tau_ms": self.inverse_comp.base_tau,
+                "tau_model_type": self.inverse_comp.tau_model_type,
+                "tau_model_params": self.inverse_comp.tau_model_params,
             },
             "metadata": {
                 "timestamp": datetime.now().isoformat(),

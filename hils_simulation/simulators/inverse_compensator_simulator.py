@@ -25,16 +25,30 @@ This is a lead compensator that predicts future values based on current trends.
 """
 
 import json
+import sys
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 import mosaik_api
+
+# Import time constant models (same as plant_simulator_with_model.py)
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from models import create_time_constant_model
 
 meta = {
     "type": "time-based",
     "models": {
         "InverseCompensator": {
             "public": True,
-            "params": ["comp_id", "gain", "comp_type"],
+            "params": [
+                "comp_id",
+                "gain",  # Direct gain (used when tau_model_type="constant")
+                "comp_type",
+                "tau_to_gain_ratio",  # Ratio for tau->gain conversion (for non-constant models)
+                "base_tau",  # Base time constant for tau_model
+                "tau_model_type",  # "constant" (direct gain) or "linear", "hybrid", etc.
+                "tau_model_params",  # Time constant model parameters
+            ],
             "attrs": [
                 "input",
                 "compensated_output",
@@ -46,6 +60,8 @@ meta = {
                 "compensation_amount",
                 "input_thrust",
                 "output_thrust",
+                "current_gain",  # Current gain being used
+                "current_tau",  # Current tau (for non-constant models)
             ],
         }
     },
@@ -90,8 +106,12 @@ class InverseCompensatorSimulator(mosaik_api.Simulator):
             model: Model name (must be "InverseCompensator")
             **model_params: Model parameters
                 - comp_id: Compensator ID (str)
-                - gain: Compensation gain (float, default: delay_samples)
+                - gain: Direct compensation gain (float, default: 15.0)
                 - comp_type: "command" or "sensor" (str, default: "command")
+                - tau_to_gain_ratio: Ratio for tau->gain conversion (float, default: 0.1)
+                - base_tau: Base time constant (float, default: 100.0)
+                - tau_model_type: "constant" (use direct gain) or "linear", "hybrid", etc.
+                - tau_model_params: Time constant model parameters (dict)
 
         Returns:
             List of entity info dictionaries
@@ -101,11 +121,21 @@ class InverseCompensatorSimulator(mosaik_api.Simulator):
             comp_id = model_params.get("comp_id", f"comp_{len(self.compensators)}")
             gain = model_params.get("gain", 15.0)
             comp_type = model_params.get("comp_type", "command")
+            tau_to_gain_ratio = model_params.get("tau_to_gain_ratio", 0.1)
+            base_tau = model_params.get("base_tau", 100.0)
+            tau_model_type = model_params.get("tau_model_type", "constant")
+            tau_model_params = model_params.get("tau_model_params", {})
 
             comp = InverseCompensator(
                 comp_id=comp_id,
                 gain=gain,
                 comp_type=comp_type,
+                tau_to_gain_ratio=tau_to_gain_ratio,
+                base_tau=base_tau,
+                tau_model_type=tau_model_type,
+                tau_model_params=tau_model_params,
+                time_resolution=self.time_resolution,
+                step_size=self.step_size,
             )
             self.compensators[comp_id] = comp
 
@@ -185,6 +215,10 @@ class InverseCompensatorSimulator(mosaik_api.Simulator):
                     data[comp_id][attr] = comp.input_thrust_value
                 elif attr == "output_thrust":
                     data[comp_id][attr] = comp.output_thrust_value
+                elif attr == "current_gain":
+                    data[comp_id][attr] = comp.current_gain
+                elif attr == "current_tau":
+                    data[comp_id][attr] = comp.current_tau
 
         return data
 
@@ -214,23 +248,58 @@ class InverseCompensator:
         comp_id: str,
         gain: float = 15.0,
         comp_type: str = "command",
+        tau_to_gain_ratio: float = 0.1,
+        base_tau: float = 100.0,
+        tau_model_type: str = "constant",
+        tau_model_params: dict = None,
+        time_resolution: float = 0.001,
+        step_size: int = 1,
     ):
         """
         Initialize the compensator
 
         Args:
             comp_id: Compensator ID
-            gain: Compensation gain (typically equals delay samples)
+            gain: Direct compensation gain (used when tau_model_type="constant")
             comp_type: "command" (pre-delay) or "sensor" (post-delay)
+            tau_to_gain_ratio: Ratio to convert tau to gain (for non-constant models)
+            base_tau: Base time constant for tau_model [ms]
+            tau_model_type: "constant" (use direct gain) or "linear", "hybrid", etc.
+            tau_model_params: Time constant model parameters (dict)
+            time_resolution: Time resolution [s]
+            step_size: Step size in simulation steps
         """
         self.comp_id = comp_id
-        self.gain = gain
+        self.base_gain = gain  # Store original direct gain
         self.comp_type = comp_type
+        self.tau_to_gain_ratio = tau_to_gain_ratio
+        self.time_resolution = time_resolution
+        self.step_size = step_size
+
+        # Time constant model setup
+        self.base_tau = base_tau
+        self.tau_model_type = tau_model_type
+        if tau_model_params is None:
+            tau_model_params = {}
+
+        # Determine if we use adaptive (tau-based) gain or constant (direct) gain
+        self.use_adaptive_gain = tau_model_type != "constant"
+
+        if self.use_adaptive_gain:
+            # Adaptive mode: create tau_model for calculating gain from thrust
+            self.tau_model = create_time_constant_model(tau_model_type, **tau_model_params)
+            self.gain = base_tau * tau_to_gain_ratio  # Initial gain from base_tau
+        else:
+            # Constant mode: use direct gain parameter
+            self.tau_model = None
+            self.gain = gain
 
         # State
         self.prev_value: float = 0.0
         self.current_output: Any = 0.0
         self.input_count: int = 0
+        self.current_gain: float = self.gain  # Track current gain for debugging
+        self.current_tau: float = base_tau  # Track current tau for debugging
 
         # Debug information
         self.raw_input_value: Any = 0.0
@@ -257,14 +326,27 @@ class InverseCompensator:
                 numeric_value = value["thrust"]
                 self.input_thrust_value = numeric_value
 
+                # Adaptive mode: calculate gain from thrust-based time constant
+                if self.use_adaptive_gain:
+                    dt = self.step_size * self.time_resolution * 1000  # [ms]
+                    self.current_tau = self.tau_model.get_time_constant(
+                        thrust=numeric_value,
+                        base_tau=self.base_tau,
+                        dt=dt,
+                    )
+                    # Update gain based on calculated tau
+                    self.gain = max(1.0, self.current_tau * self.tau_to_gain_ratio)
+                    self.current_gain = self.gain
+
                 # Apply compensation
                 compensated_thrust = self._apply_compensation(numeric_value)
                 self.output_thrust_value = compensated_thrust
 
                 # Debug logging (every 1000 steps)
                 if self.input_count % 1000 == 0:
+                    mode_str = f"tau={self.current_tau:.1f}ms" if self.use_adaptive_gain else "constant"
                     print(
-                        f"[InverseComp-{self.comp_id}] Step {self.input_count}: input={numeric_value:.3f}N → output={compensated_thrust:.3f}N (gain={self.gain:.1f}, delta={self.delta_value:.3f})"
+                        f"[InverseComp-{self.comp_id}] Step {self.input_count}: input={numeric_value:.3f}N → output={compensated_thrust:.3f}N (gain={self.gain:.1f}, {mode_str})"
                     )
 
                 # Reconstruct command dict with compensated value
@@ -279,9 +361,35 @@ class InverseCompensator:
                         compensated_val = self._apply_compensation(val)
                         self.current_output = {**value, key: compensated_val}
                         break
-        # Numeric input - direct compensation
+        # Numeric input - direct compensation (for actual_thrust from plant)
         elif isinstance(value, (int, float)):
-            self.current_output = self._apply_compensation(value)
+            numeric_value = value
+            self.input_thrust_value = numeric_value
+
+            # Adaptive mode: calculate gain from thrust-based time constant
+            if self.use_adaptive_gain:
+                dt = self.step_size * self.time_resolution * 1000  # [ms]
+                self.current_tau = self.tau_model.get_time_constant(
+                    thrust=numeric_value,
+                    base_tau=self.base_tau,
+                    dt=dt,
+                )
+                # Update gain based on calculated tau
+                self.gain = max(1.0, self.current_tau * self.tau_to_gain_ratio)
+                self.current_gain = self.gain
+
+            # Apply compensation
+            compensated_value = self._apply_compensation(value)
+            self.output_thrust_value = compensated_value
+            self.current_output = compensated_value
+
+            # Debug logging (every 1000 steps)
+            if self.input_count % 1000 == 0:
+                mode_str = f"tau={self.current_tau:.1f}ms, gain={self.gain:.1f}" if self.use_adaptive_gain else f"gain={self.gain:.1f} (constant)"
+                print(
+                    f"[InverseComp-{self.comp_id}] Step {self.input_count}: "
+                    f"input={numeric_value:.3f}N → output={compensated_value:.3f}N ({mode_str})"
+                )
         else:
             # Pass through if unable to process
             self.current_output = value
@@ -352,7 +460,13 @@ class InverseCompensator:
         stats = {
             "comp_id": self.comp_id,
             "gain": self.gain,
+            "base_gain": self.base_gain,
             "comp_type": self.comp_type,
+            "use_adaptive_gain": self.use_adaptive_gain,
+            "tau_model_type": self.tau_model_type,
+            "base_tau": self.base_tau,
+            "current_tau": self.current_tau,
+            "tau_to_gain_ratio": self.tau_to_gain_ratio,
             "input_count": self.input_count,
             "prev_value": self.prev_value,
         }
