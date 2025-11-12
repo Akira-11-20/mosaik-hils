@@ -83,7 +83,7 @@ def load_simulation_data(result_dir: Path):
     # Load config
     config = {}
     if config_file.exists():
-        with open(config_file, "r") as f:
+        with open(config_file) as f:
             config = json.load(f)
 
     return data, config
@@ -145,7 +145,15 @@ def analyze_tau_comparison(sweep_dir: Path):
     # Plot RT baseline first (if exists) with thicker line
     if rt_baseline:
         data = rt_baseline["data"]
-        ax.plot(data["time_s"], data["position"], label="RT Baseline", color=colors["RT Baseline"], linewidth=2.5, linestyle="--", alpha=0.8)
+        ax.plot(
+            data["time_s"],
+            data["position"],
+            label="RT Baseline",
+            color=colors["RT Baseline"],
+            linewidth=2.5,
+            linestyle="--",
+            alpha=0.8,
+        )
     # Plot HILS scenarios
     for scenario_type, info in scenarios.items():
         data = info["data"]
@@ -161,7 +169,15 @@ def analyze_tau_comparison(sweep_dir: Path):
     # Plot RT baseline error
     if rt_baseline:
         data = rt_baseline["data"]
-        ax.plot(data["time_s"], data["error"], label="RT Baseline", color=colors["RT Baseline"], linewidth=2.5, linestyle="--", alpha=0.8)
+        ax.plot(
+            data["time_s"],
+            data["error"],
+            label="RT Baseline",
+            color=colors["RT Baseline"],
+            linewidth=2.5,
+            linestyle="--",
+            alpha=0.8,
+        )
     # Plot HILS scenarios
     for scenario_type, info in scenarios.items():
         data = info["data"]
@@ -261,7 +277,7 @@ def analyze_tau_comparison(sweep_dir: Path):
             position_diff = data["position"] - rt_position
             ax.plot(data["time_s"], position_diff, label=scenario_type, color=colors[scenario_type], linewidth=1.5)
 
-        ax.axhline(y=0, color='purple', linestyle='--', alpha=0.5, label='RT Baseline')
+        ax.axhline(y=0, color="purple", linestyle="--", alpha=0.5, label="RT Baseline")
         ax.set_xlabel("Time [s]")
         ax.set_ylabel("Position Deviation from RT [m]")
         ax.set_title("Position Deviation from RT Baseline")
@@ -293,9 +309,7 @@ def analyze_tau_comparison(sweep_dir: Path):
         # Add value labels on bars
         for i, (bar, val) in enumerate(zip(bars, rmse_vs_rt)):
             height = bar.get_height()
-            ax.text(bar.get_x() + bar.get_width()/2., height,
-                   f'{val:.4f}',
-                   ha='center', va='bottom', fontsize=9)
+            ax.text(bar.get_x() + bar.get_width() / 2.0, height, f"{val:.4f}", ha="center", va="bottom", fontsize=9)
 
     plt.tight_layout()
 
@@ -367,7 +381,7 @@ def analyze_tau_comparison(sweep_dir: Path):
         # Config info
         if "inverse_compensation" in config:
             comp_config = config["inverse_compensation"]
-            print(f"  Compensation Config:")
+            print("  Compensation Config:")
             if "gain" in comp_config:
                 print(f"    Gain: {comp_config['gain']}")
             if "tau_to_gain_ratio" in comp_config:
@@ -383,7 +397,7 @@ def analyze_tau_comparison(sweep_dir: Path):
             mae_vs_rt = np.mean(np.abs(position_diff))
             max_diff_vs_rt = np.max(np.abs(position_diff))
 
-            print(f"  Deviation from RT Baseline:")
+            print("  Deviation from RT Baseline:")
             print(f"    RMSE: {rmse_vs_rt:.6f} m")
             print(f"    MAE:  {mae_vs_rt:.6f} m")
             print(f"    Max Deviation: {max_diff_vs_rt:.6f} m")

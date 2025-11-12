@@ -108,7 +108,7 @@ def load_simulation_data(h5_file_path: Path) -> dict:
 
 def load_config(config_file: Path) -> dict:
     """Load simulation configuration from JSON file."""
-    with open(config_file, "r") as f:
+    with open(config_file) as f:
         return json.load(f)
 
 
@@ -375,23 +375,17 @@ def analyze_sweep(sweep_dir: Path, output_dir: Path):
     )
 
     # 4. Line plot: RMSE vs cmd_delay (for each tau)
-    plot_line_by_delay(
-        df_comp, "rmse", "RMSE vs CMD Delay", output_dir / "line_rmse_vs_delay.png"
-    )
+    plot_line_by_delay(df_comp, "rmse", "RMSE vs CMD Delay", output_dir / "line_rmse_vs_delay.png")
 
     # 5. Line plot: RMSE vs tau (for each cmd_delay)
-    plot_line_by_tau(
-        df_comp, "rmse", "RMSE vs Plant Tau", output_dir / "line_rmse_vs_tau.png"
-    )
+    plot_line_by_tau(df_comp, "rmse", "RMSE vs Plant Tau", output_dir / "line_rmse_vs_tau.png")
 
     # 6. Tau comparison plot (plant_tau vs comp_tau)
     if "avg_tau" in df_comp.columns and "avg_comp_tau" in df_comp.columns:
         plot_tau_comparison(df_comp, output_dir / "tau_comparison.png")
 
     # 7. Position trajectories comparison (sample)
-    plot_trajectory_comparison(
-        sweep_dir, df_comp, baseline_dir, output_dir / "trajectory_comparison.png"
-    )
+    plot_trajectory_comparison(sweep_dir, df_comp, baseline_dir, output_dir / "trajectory_comparison.png")
 
     print(f"\n✅ All plots saved to: {output_dir}")
 
@@ -423,9 +417,7 @@ def plot_line_by_delay(df, metric_col, title, output_path):
 
     # Group by plant_tau
     for tau, group in df.groupby("plant_tau_ms"):
-        plt.plot(
-            group["cmd_delay_ms"], group[metric_col], marker="o", label=f"τ={tau:.0f}ms"
-        )
+        plt.plot(group["cmd_delay_ms"], group[metric_col], marker="o", label=f"τ={tau:.0f}ms")
 
     plt.xlabel("CMD Delay [ms]")
     plt.ylabel(metric_col)
@@ -444,9 +436,7 @@ def plot_line_by_tau(df, metric_col, title, output_path):
 
     # Group by cmd_delay
     for delay, group in df.groupby("cmd_delay_ms"):
-        plt.plot(
-            group["plant_tau_ms"], group[metric_col], marker="o", label=f"delay={delay:.0f}ms"
-        )
+        plt.plot(group["plant_tau_ms"], group[metric_col], marker="o", label=f"delay={delay:.0f}ms")
 
     plt.xlabel("Plant Tau [ms]")
     plt.ylabel(metric_col)

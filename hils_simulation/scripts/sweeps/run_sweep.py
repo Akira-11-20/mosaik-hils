@@ -51,7 +51,9 @@ test_inverse_comp = [True]
 
 # Generate all combinations using itertools.product
 configs = []
-for cmd_delay, time_constant, use_inverse in product(command_delay, time_constants, test_inverse_comp):  # product( #, (tau, gain), noise, use_inv
+for cmd_delay, time_constant, use_inverse in product(
+    command_delay, time_constants, test_inverse_comp
+):  # product( #, (tau, gain), noise, use_inv
     # command_delay,
     # time_constants,
     # time_constant_noises,
@@ -62,7 +64,7 @@ for cmd_delay, time_constant, use_inverse in product(command_delay, time_constan
             sense_delay=0.0,
             plant_time_constant=time_constant[0],
             plant_time_constant_noise=0,
-            comp_gain=cmd_delay[1]+time_constant[1],
+            comp_gain=cmd_delay[1] + time_constant[1],
             plant_enable_lag=True,
             use_inverse_comp=use_inverse,
         )

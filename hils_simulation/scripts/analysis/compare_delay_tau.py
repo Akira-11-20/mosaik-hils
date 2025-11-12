@@ -88,7 +88,7 @@ def load_simulation_data(result_dir: Path):
     # Load config
     config = {}
     if config_file.exists():
-        with open(config_file, "r") as f:
+        with open(config_file) as f:
             config = json.load(f)
 
     return data, config
@@ -170,16 +170,12 @@ def create_comparison_plots(sweep_dir: Path):
     print("\n📈 Generating plots...")
 
     # Create multi-panel plot
-    plot_comprehensive_comparison(
-        scenarios, baseline_data, baseline_config, baseline_dir, output_dir
-    )
+    plot_comprehensive_comparison(scenarios, baseline_data, baseline_config, baseline_dir, output_dir)
 
     print(f"\n✅ All plots saved to: {output_dir}")
 
 
-def plot_comprehensive_comparison(
-    scenarios, baseline_data, baseline_config, baseline_dir, output_dir
-):
+def plot_comprehensive_comparison(scenarios, baseline_data, baseline_config, baseline_dir, output_dir):
     """Create comprehensive comparison plot with multiple panels"""
 
     # Create figure with 4 rows x 1 column (vertical layout)
@@ -355,11 +351,11 @@ def print_summary_statistics_v2(scenarios, baseline_data, baseline_config, basel
 
         print(f"\nCMD Delay = {cmd_delay:.0f}ms:")
         print(f"  Directory: {scenario['name']}")
-        print(f"  Position vs RT:")
+        print("  Position vs RT:")
         print(f"    RMSE: {pos_rmse:.6f} m")
         print(f"    MAE:  {pos_mae:.6f} m")
         print(f"    Max Deviation: {pos_max:.6f} m")
-        print(f"  Velocity vs RT:")
+        print("  Velocity vs RT:")
         print(f"    RMSE: {vel_rmse:.6f} m/s")
         print(f"    MAE:  {vel_mae:.6f} m/s")
         print(f"    Max Deviation: {vel_max:.6f} m/s")
@@ -367,13 +363,13 @@ def print_summary_statistics_v2(scenarios, baseline_data, baseline_config, basel
         # Tau statistics (if available)
         if "plant_tau" in data and data["plant_tau"] is not None:
             tau = data["plant_tau"]
-            print(f"  Plant Tau:")
+            print("  Plant Tau:")
             print(f"    Mean: {np.mean(tau):.2f} ms, Std: {np.std(tau):.2f} ms")
             print(f"    Min: {np.min(tau):.2f} ms, Max: {np.max(tau):.2f} ms")
 
         if "comp_tau" in data and data["comp_tau"] is not None:
             tau = data["comp_tau"]
-            print(f"  Comp Tau:")
+            print("  Comp Tau:")
             print(f"    Mean: {np.mean(tau):.2f} ms, Std: {np.std(tau):.2f} ms")
             print(f"    Min: {np.min(tau):.2f} ms, Max: {np.max(tau):.2f} ms")
 
@@ -383,4 +379,3 @@ def print_summary_statistics_v2(scenarios, baseline_data, baseline_config, basel
 def plot_position_trajectories(scenarios, baseline_data, baseline_config, output_dir):
     """Plot position trajectories for all scenarios"""
     fig, ax = plt.subplots(figsize=(12, 6))
-

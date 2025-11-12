@@ -74,7 +74,7 @@ def load_simulation_data(result_dir: Path):
     # Load config
     config = {}
     if config_file.exists():
-        with open(config_file, "r") as f:
+        with open(config_file) as f:
             config = json.load(f)
 
     return data, config
@@ -118,7 +118,7 @@ def analyze_tau_comparison(sweep_dir: Path):
         print("Warning: No RT baseline found")
 
     if len(scenarios) < 1:
-        print(f"Error: No HILS scenarios found")
+        print("Error: No HILS scenarios found")
         return
 
     # Create 2x2 comparison plots (position, velocity)
@@ -152,20 +152,26 @@ def analyze_tau_comparison(sweep_dir: Path):
     ax = axes[0]
     if rt_baseline:
         data = rt_baseline["data"]
-        ax.plot(data["time_s"], data["position"],
-                label="RT Baseline",
-                color=colors["RT Baseline"],
-                linewidth=linewidths["RT Baseline"],
-                linestyle=linestyles["RT Baseline"],
-                alpha=0.9)
+        ax.plot(
+            data["time_s"],
+            data["position"],
+            label="RT Baseline",
+            color=colors["RT Baseline"],
+            linewidth=linewidths["RT Baseline"],
+            linestyle=linestyles["RT Baseline"],
+            alpha=0.9,
+        )
 
     for scenario_type, info in scenarios.items():
         data = info["data"]
-        ax.plot(data["time_s"], data["position"],
-                label=scenario_type,
-                color=colors[scenario_type],
-                linewidth=linewidths[scenario_type],
-                linestyle=linestyles[scenario_type])
+        ax.plot(
+            data["time_s"],
+            data["position"],
+            label=scenario_type,
+            color=colors[scenario_type],
+            linewidth=linewidths[scenario_type],
+            linestyle=linestyles[scenario_type],
+        )
 
     ax.set_xlabel("Time [s]", fontsize=11)
     ax.set_ylabel("Position [m]", fontsize=11)
@@ -181,12 +187,15 @@ def analyze_tau_comparison(sweep_dir: Path):
         for scenario_type, info in scenarios.items():
             data = info["data"]
             position_diff = data["position"] - rt_position
-            ax.plot(data["time_s"], position_diff,
-                    label=scenario_type,
-                    color=colors[scenario_type],
-                    linewidth=linewidths[scenario_type])
+            ax.plot(
+                data["time_s"],
+                position_diff,
+                label=scenario_type,
+                color=colors[scenario_type],
+                linewidth=linewidths[scenario_type],
+            )
 
-        ax.axhline(y=0, color='purple', linestyle='--', alpha=0.5, linewidth=2, label='RT Baseline (0)')
+        ax.axhline(y=0, color="purple", linestyle="--", alpha=0.5, linewidth=2, label="RT Baseline (0)")
 
     ax.set_xlabel("Time [s]", fontsize=11)
     ax.set_ylabel("Position Deviation from RT [m]", fontsize=11)
@@ -200,20 +209,26 @@ def analyze_tau_comparison(sweep_dir: Path):
     ax = axes[2]
     if rt_baseline:
         data = rt_baseline["data"]
-        ax.plot(data["time_s"], data["velocity"],
-                label="RT Baseline",
-                color=colors["RT Baseline"],
-                linewidth=linewidths["RT Baseline"],
-                linestyle=linestyles["RT Baseline"],
-                alpha=0.9)
+        ax.plot(
+            data["time_s"],
+            data["velocity"],
+            label="RT Baseline",
+            color=colors["RT Baseline"],
+            linewidth=linewidths["RT Baseline"],
+            linestyle=linestyles["RT Baseline"],
+            alpha=0.9,
+        )
 
     for scenario_type, info in scenarios.items():
         data = info["data"]
-        ax.plot(data["time_s"], data["velocity"],
-                label=scenario_type,
-                color=colors[scenario_type],
-                linewidth=linewidths[scenario_type],
-                linestyle=linestyles[scenario_type])
+        ax.plot(
+            data["time_s"],
+            data["velocity"],
+            label=scenario_type,
+            color=colors[scenario_type],
+            linewidth=linewidths[scenario_type],
+            linestyle=linestyles[scenario_type],
+        )
 
     ax.set_xlabel("Time [s]", fontsize=11)
     ax.set_ylabel("Velocity [m/s]", fontsize=11)
@@ -229,12 +244,15 @@ def analyze_tau_comparison(sweep_dir: Path):
         for scenario_type, info in scenarios.items():
             data = info["data"]
             velocity_diff = data["velocity"] - rt_velocity
-            ax.plot(data["time_s"], velocity_diff,
-                    label=scenario_type,
-                    color=colors[scenario_type],
-                    linewidth=linewidths[scenario_type])
+            ax.plot(
+                data["time_s"],
+                velocity_diff,
+                label=scenario_type,
+                color=colors[scenario_type],
+                linewidth=linewidths[scenario_type],
+            )
 
-        ax.axhline(y=0, color='purple', linestyle='--', alpha=0.5, linewidth=2, label='RT Baseline (0)')
+        ax.axhline(y=0, color="purple", linestyle="--", alpha=0.5, linewidth=2, label="RT Baseline (0)")
 
     ax.set_xlabel("Time [s]", fontsize=11)
     ax.set_ylabel("Velocity Deviation from RT [m/s]", fontsize=11)
@@ -289,11 +307,11 @@ def analyze_tau_comparison(sweep_dir: Path):
 
             print(f"\n{scenario_type}:")
             print(f"  Directory: {info['dir'].name}")
-            print(f"  Position vs RT:")
+            print("  Position vs RT:")
             print(f"    RMSE: {pos_rmse:.6f} m")
             print(f"    MAE:  {pos_mae:.6f} m")
             print(f"    Max Deviation: {pos_max:.6f} m")
-            print(f"  Velocity vs RT:")
+            print("  Velocity vs RT:")
             print(f"    RMSE: {vel_rmse:.6f} m/s")
             print(f"    MAE:  {vel_mae:.6f} m/s")
             print(f"    Max Deviation: {vel_max:.6f} m/s")
@@ -301,7 +319,7 @@ def analyze_tau_comparison(sweep_dir: Path):
             # Tau statistics (if available)
             if data["tau"] is not None:
                 tau = data["tau"]
-                print(f"  Plant Tau:")
+                print("  Plant Tau:")
                 print(f"    Mean: {np.mean(tau):.2f} ms, Std: {np.std(tau):.2f} ms")
                 print(f"    Min: {np.min(tau):.2f} ms, Max: {np.max(tau):.2f} ms")
 

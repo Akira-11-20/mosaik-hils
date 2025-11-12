@@ -88,9 +88,7 @@ def test_stats():
     print("=" * 60)
 
     # Constant mode
-    comp_const = InverseCompensator(
-        comp_id="const", gain=15.0, tau_model_type="constant"
-    )
+    comp_const = InverseCompensator(comp_id="const", gain=15.0, tau_model_type="constant")
     print("\nConstant mode stats:")
     print(comp_const.get_stats())
 

@@ -112,7 +112,7 @@ def load_simulation_config(sim_dir):
         return None
 
     try:
-        with open(config_file, "r") as f:
+        with open(config_file) as f:
             return json.load(f)
     except Exception as e:
         print(f"⚠️  Warning: Failed to load config from {config_file}: {e}")
@@ -148,43 +148,33 @@ def create_unified_comparison_plot(baseline_data, sim_data_list, sim_names, sim_
 
     # プロット1: Position（絶対値）
     axes[0].plot(
-        time_baseline, pos_baseline,
+        time_baseline,
+        pos_baseline,
         label="Baseline (RT)",
         color=baseline_color,
         linestyle=baseline_linestyle,
         lw=baseline_linewidth,
         alpha=0.9,
-        zorder=100
+        zorder=100,
     )
 
     # プロット2: Position差分
-    axes[1].axhline(
-        y=0,
-        color="k",
-        linestyle="--",
-        alpha=0.3,
-        zorder=1
-    )
+    axes[1].axhline(y=0, color="k", linestyle="--", alpha=0.3, zorder=1)
 
     # プロット3: Velocity（絶対値）
     axes[2].plot(
-        time_baseline, vel_baseline,
+        time_baseline,
+        vel_baseline,
         label="Baseline (RT)",
         color=baseline_color,
         linestyle=baseline_linestyle,
         lw=baseline_linewidth,
         alpha=0.9,
-        zorder=100
+        zorder=100,
     )
 
     # プロット4: Velocity差分
-    axes[3].axhline(
-        y=0,
-        color="k",
-        linestyle="--",
-        alpha=0.3,
-        zorder=1
-    )
+    axes[3].axhline(y=0, color="k", linestyle="--", alpha=0.3, zorder=1)
 
     # 各シミュレーションをプロット（順順：小さい遅延から大きい遅延へ）
     for idx, (sim_data, sim_name, sim_config) in enumerate(zip(sim_data_list, sim_names, sim_configs)):
@@ -227,7 +217,8 @@ def create_unified_comparison_plot(baseline_data, sim_data_list, sim_names, sim_
 
         # プロット1: Position（絶対値）
         axes[0].plot(
-            time_sim, pos_sim,
+            time_sim,
+            pos_sim,
             label=short_name,
             color=color,
             linestyle=linestyle,
@@ -236,7 +227,8 @@ def create_unified_comparison_plot(baseline_data, sim_data_list, sim_names, sim_
 
         # プロット2: Position差分
         axes[1].plot(
-            time_baseline, pos_diff,
+            time_baseline,
+            pos_diff,
             label=short_name,
             color=color,
             linestyle=linestyle,
@@ -245,7 +237,8 @@ def create_unified_comparison_plot(baseline_data, sim_data_list, sim_names, sim_
 
         # プロット3: Velocity（絶対値）
         axes[2].plot(
-            time_sim, vel_sim,
+            time_sim,
+            vel_sim,
             label=short_name,
             color=color,
             linestyle=linestyle,
@@ -254,7 +247,8 @@ def create_unified_comparison_plot(baseline_data, sim_data_list, sim_names, sim_
 
         # プロット4: Velocity差分
         axes[3].plot(
-            time_baseline, vel_diff,
+            time_baseline,
+            vel_diff,
             label=short_name,
             color=color,
             linestyle=linestyle,
@@ -297,9 +291,7 @@ def create_unified_comparison_plot(baseline_data, sim_data_list, sim_names, sim_
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Generate comparison plots (absolute + difference) for sweep results"
-    )
+    parser = argparse.ArgumentParser(description="Generate comparison plots (absolute + difference) for sweep results")
     parser.add_argument(
         "sweep_dir",
         type=str,
@@ -339,7 +331,7 @@ def main():
 
     if baseline_dir is None:
         print(f"❌ Error: Baseline directory not found (looking for '{args.baseline_name}' in name)")
-        print(f"   Available directories:")
+        print("   Available directories:")
         for subdir in subdirs:
             print(f"     - {subdir.name}")
         return
@@ -364,7 +356,7 @@ def main():
     sim_names = []
     sim_configs = []
 
-    print(f"\n📊 Loading simulation data...")
+    print("\n📊 Loading simulation data...")
     for subdir in sorted(subdirs):
         # baselineはスキップ
         if subdir == baseline_dir:
@@ -390,17 +382,18 @@ def main():
         print(f"   ✓ Loaded: {subdir.name}")
 
     if len(sim_data_list) == 0:
-        print(f"❌ Error: No valid simulation data found")
+        print("❌ Error: No valid simulation data found")
         return
 
     # 統一プロットを作成
     output_path = sweep_dir / "unified_comparison.png"
-    print(f"\n📈 Creating unified comparison plot...")
+    print("\n📈 Creating unified comparison plot...")
     try:
         create_unified_comparison_plot(baseline_data, sim_data_list, sim_names, sim_configs, output_path)
     except Exception as e:
         print(f"❌ Error creating unified plot: {e}")
         import traceback
+
         traceback.print_exc()
         return
 

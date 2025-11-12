@@ -385,7 +385,11 @@ class InverseCompensator:
 
             # Debug logging (every 1000 steps)
             if self.input_count % 1000 == 0:
-                mode_str = f"tau={self.current_tau:.1f}ms, gain={self.gain:.1f}" if self.use_adaptive_gain else f"gain={self.gain:.1f} (constant)"
+                mode_str = (
+                    f"tau={self.current_tau:.1f}ms, gain={self.gain:.1f}"
+                    if self.use_adaptive_gain
+                    else f"gain={self.gain:.1f} (constant)"
+                )
                 print(
                     f"[InverseComp-{self.comp_id}] Step {self.input_count}: "
                     f"input={numeric_value:.3f}N → output={compensated_value:.3f}N ({mode_str})"

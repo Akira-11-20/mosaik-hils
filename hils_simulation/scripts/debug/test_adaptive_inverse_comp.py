@@ -132,9 +132,9 @@ def test_adaptive_compensation():
     results = {}
 
     for model_name, model_info in models_to_test.items():
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print(f"Testing: {model_name}")
-        print(f"{'='*80}")
+        print(f"{'=' * 80}")
 
         tau_model = model_info["model"]
         color = model_info["color"]
@@ -175,10 +175,10 @@ def test_adaptive_compensation():
         rmse_fixed = np.sqrt(np.mean(error_fixed_comp**2))
         rmse_adaptive = np.sqrt(np.mean(error_adaptive_comp**2))
 
-        print(f"\nRMSE Results:")
+        print("\nRMSE Results:")
         print(f"  No compensation:    {rmse_no_comp:.4f} N")
-        print(f"  Fixed gain (α={fixed_gain:.2f}):   {rmse_fixed:.4f} N ({(rmse_fixed/rmse_no_comp)*100:.1f}%)")
-        print(f"  Adaptive gain:      {rmse_adaptive:.4f} N ({(rmse_adaptive/rmse_no_comp)*100:.1f}%)")
+        print(f"  Fixed gain (α={fixed_gain:.2f}):   {rmse_fixed:.4f} N ({(rmse_fixed / rmse_no_comp) * 100:.1f}%)")
+        print(f"  Adaptive gain:      {rmse_adaptive:.4f} N ({(rmse_adaptive / rmse_no_comp) * 100:.1f}%)")
         print(f"  Improvement: {((rmse_fixed - rmse_adaptive) / rmse_fixed * 100):.1f}% reduction")
 
         # Store results
@@ -298,14 +298,14 @@ def test_adaptive_compensation():
     output_dir.mkdir(exist_ok=True)
     output_file = output_dir / "adaptive_inverse_compensation_test.png"
     plt.savefig(output_file, dpi=150, bbox_inches="tight")
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print(f"Plot saved to: {output_file}")
-    print(f"{'='*80}")
+    print(f"{'=' * 80}")
 
     # Summary table
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print("RMSE Comparison Summary")
-    print(f"{'='*80}")
+    print(f"{'=' * 80}")
     print(f"{'Model':<30} {'No Comp':>12} {'Fixed Gain':>12} {'Adaptive':>12} {'Improvement':>12}")
     print("-" * 80)
     for model_name, result in results.items():
@@ -314,7 +314,7 @@ def test_adaptive_compensation():
             f"{model_name:<30} {result['rmse_no_comp']:>12.4f} {result['rmse_fixed']:>12.4f} "
             f"{result['rmse_adaptive']:>12.4f} {improvement:>11.1f}%"
         )
-    print(f"{'='*80}\n")
+    print(f"{'=' * 80}\n")
 
 
 if __name__ == "__main__":
