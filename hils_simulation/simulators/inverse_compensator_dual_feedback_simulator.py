@@ -1,21 +1,22 @@
 """
-Dual Feedback Inverse Compensator Simulator for HILS
+Dual Feedback Inverse Compensator Simulator for HILS (Alpha-based Compensation)
 
 This simulator receives inputs from two sources:
-1. Plant actual thrust (direct input)
-2. Bridge-0 delayed command (delayed feedback)
+1. Plant actual thrust (direct input) - used for compensation calculation
+2. Bridge-0 delayed command (ideal reference) - used to calculate time constant τ
 
-The compensator can use both inputs to perform more sophisticated compensation
-algorithms that take into account both the current plant state and the delayed
-command information.
+Compensation Strategy:
+- Uses ideal command thrust to calculate time constant τ via linear model
+- Computes alpha: α = 1 - exp(-dt/τ)
+- Applies inverse compensation: y_comp[k] = (y[k] - (1-α) * y[k-1]) / α
+- This compensates for the first-order hold dynamics of the plant
 
 Data Flow:
-    Plant → [input] → InverseComp
-    Bridge-0 → [delayed_feedback] → InverseComp
-    InverseComp → [compensated_output] → Bridge-1 → Env
+    Plant → [input] → InverseComp → [compensated_output] → Bridge-1 → Env
+    Bridge-0 → [ideal_input] → InverseComp (for τ calculation)
 
-デュアルフィードバック逆補償シミュレータ - HILS用
-PlantとBridge-0の両方からデータを受け取り、より高度な補償を実現
+デュアルフィードバック逆補償シミュレータ (Alpha方式) - HILS用
+理想推力から時定数τを計算し、αベースの補償を実現
 """
 
 import json
@@ -60,6 +61,7 @@ meta = {
                 "output_thrust",
                 "current_gain",
                 "current_tau",
+                "current_alpha",  # α = 1 - exp(-dt/τ)
                 "ideal_input_value",
                 "ideal_command_thrust",  # Extracted thrust from ideal input
                 "ideal_input_contribution",  # Contribution from ideal input
@@ -145,6 +147,9 @@ class DualFeedbackInverseCompensatorSimulator(mosaik_api.Simulator):
         """
         Execute one simulation step
 
+        IMPORTANT: Process ideal_input FIRST to update alpha, then process input.
+        This ensures compensation uses the correct alpha value.
+
         Args:
             time: Current simulation time (in steps)
             inputs: Input data from connected entities
@@ -156,44 +161,43 @@ class DualFeedbackInverseCompensatorSimulator(mosaik_api.Simulator):
         for comp_id, comp in self.compensators.items():
             comp_inputs = inputs.get(comp_id, {})
 
-            # Process input signal (from Plant)
-            for attr, sources in comp_inputs.items():
-                if attr == "input":
-                    for src_id, value_dict in sources.items():
-                        if isinstance(value_dict, dict) and "input" in value_dict:
-                            value = value_dict["input"]
-                        else:
-                            value = value_dict
+            # STEP 1: Process ideal_input FIRST to calculate tau and alpha
+            if "ideal_input" in comp_inputs:
+                for src_id, value_dict in comp_inputs["ideal_input"].items():
+                    if isinstance(value_dict, dict) and "ideal_input" in value_dict:
+                        value = value_dict["ideal_input"]
+                    else:
+                        value = value_dict
 
-                        # Handle JSON strings
-                        if isinstance(value, (str, bytes)):
-                            try:
-                                if isinstance(value, bytes):
-                                    value = value.decode("utf-8")
-                                value = json.loads(value)
-                            except (json.JSONDecodeError, ValueError):
-                                pass
+                    # Handle JSON strings
+                    if isinstance(value, (str, bytes)):
+                        try:
+                            if isinstance(value, bytes):
+                                value = value.decode("utf-8")
+                            value = json.loads(value)
+                        except (json.JSONDecodeError, ValueError):
+                            pass
 
-                        comp.process_input(value)
+                    comp.process_ideal_input(value)
 
-                elif attr == "ideal_input":
-                    # Process ideal input from Bridge-0
-                    for src_id, value_dict in sources.items():
-                        if isinstance(value_dict, dict) and "ideal_input" in value_dict:
-                            value = value_dict["ideal_input"]
-                        else:
-                            value = value_dict
+            # STEP 2: Process input AFTER alpha is updated
+            if "input" in comp_inputs:
+                for src_id, value_dict in comp_inputs["input"].items():
+                    if isinstance(value_dict, dict) and "input" in value_dict:
+                        value = value_dict["input"]
+                    else:
+                        value = value_dict
 
-                        # Handle JSON strings
-                        if isinstance(value, (str, bytes)):
-                            try:
-                                if isinstance(value, bytes):
-                                    value = value.decode("utf-8")
-                                value = json.loads(value)
-                            except (json.JSONDecodeError, ValueError):
-                                pass
+                    # Handle JSON strings
+                    if isinstance(value, (str, bytes)):
+                        try:
+                            if isinstance(value, bytes):
+                                value = value.decode("utf-8")
+                            value = json.loads(value)
+                        except (json.JSONDecodeError, ValueError):
+                            pass
 
-                        comp.process_ideal_input(value)
+                    comp.process_input(value)
 
         return time + self.step_size
 
@@ -235,6 +239,8 @@ class DualFeedbackInverseCompensatorSimulator(mosaik_api.Simulator):
                     data[comp_id][attr] = comp.current_gain
                 elif attr == "current_tau":
                     data[comp_id][attr] = comp.current_tau
+                elif attr == "current_alpha":
+                    data[comp_id][attr] = comp.current_alpha
                 elif attr == "ideal_input_value":
                     data[comp_id][attr] = comp.ideal_input_value
                 elif attr == "ideal_command_thrust":
@@ -247,16 +253,21 @@ class DualFeedbackInverseCompensatorSimulator(mosaik_api.Simulator):
 
 class DualFeedbackInverseCompensator:
     """
-    Dual Feedback Inverse Compensator Entity
+    Dual Feedback Inverse Compensator Entity (Alpha-based)
 
     Receives inputs from:
     1. Plant (actual thrust) - primary input for compensation
-    2. Bridge-0 (ideal command) - ideal reference for enhanced compensation
+    2. Bridge-0 (ideal command) - used to calculate time constant τ
 
-    Compensation strategy:
-    - Uses plant output as primary signal
-    - Optionally incorporates ideal command information from Bridge-0
-    - Can implement custom compensation algorithms using both signals
+    Compensation strategy (adaptive alpha mode):
+    - Extract ideal thrust from Bridge-0 delayed command
+    - Calculate time constant τ using linear model: τ(F) = τ_base + k * |dF/dt|
+    - Compute alpha: α = 1 - exp(-dt/τ)
+    - Apply inverse first-order hold compensation:
+        y_comp[k] = (y[k] - (1-α) * y[k-1]) / α
+
+    Compensation strategy (constant mode):
+    - Traditional gain-based compensation: y_comp[k] = gain * y[k] - (gain-1) * y[k-1]
     """
 
     def __init__(
@@ -278,13 +289,13 @@ class DualFeedbackInverseCompensator:
 
         Args:
             comp_id: Compensator ID
-            gain: Direct compensation gain
+            gain: Direct compensation gain (used only when tau_model_type="constant")
             comp_type: "command" or "sensor"
-            tau_to_gain_ratio: Ratio to convert tau to gain
+            tau_to_gain_ratio: Ratio to convert tau to gain (deprecated for linear model)
             base_tau: Base time constant [ms]
-            tau_model_type: "constant" or model type
+            tau_model_type: "constant", "linear", etc.
             tau_model_params: Time constant model parameters
-            feedback_weight: Weight for delayed feedback contribution (0.0-1.0)
+            feedback_weight: Weight for delayed feedback contribution (0.0-1.0) (deprecated)
             enable_dual_compensation: Enable dual feedback compensation
             time_resolution: Time resolution [s]
             step_size: Step size in simulation steps
@@ -304,15 +315,17 @@ class DualFeedbackInverseCompensator:
         if tau_model_params is None:
             tau_model_params = {}
 
-        # Determine if we use adaptive gain
-        self.use_adaptive_gain = tau_model_type != "constant"
+        # Determine if we use adaptive alpha from tau model
+        self.use_adaptive_alpha = tau_model_type != "constant"
 
-        if self.use_adaptive_gain:
+        if self.use_adaptive_alpha:
+            # Create tau model (e.g., LinearThrustDependentModel)
             self.tau_model = create_time_constant_model(tau_model_type, **tau_model_params)
-            self.gain = base_tau * tau_to_gain_ratio
         else:
             self.tau_model = None
-            self.gain = gain
+
+        # For constant mode, use fixed gain
+        self.gain = gain
 
         # State
         self.prev_value: float = 0.0
@@ -320,6 +333,11 @@ class DualFeedbackInverseCompensator:
         self.input_count: int = 0
         self.current_gain: float = self.gain
         self.current_tau: float = base_tau
+        # Initialize alpha from base_tau to ensure valid compensation from step 0
+        if self.use_adaptive_alpha:
+            self.current_alpha: float = base_tau * tau_to_gain_ratio
+        else:
+            self.current_alpha: float = gain  # Use gain for constant mode
 
         # Debug information
         self.raw_input_value: Any = 0.0
@@ -347,33 +365,20 @@ class DualFeedbackInverseCompensator:
             numeric_value = value
             self.input_thrust_value = numeric_value
 
-            # Adaptive mode: calculate gain from thrust
-            if self.use_adaptive_gain:
-                dt = self.step_size * self.time_resolution * 1000  # [ms]
-                self.current_tau = self.tau_model.get_time_constant(
-                    thrust=numeric_value,
-                    base_tau=self.base_tau,
-                    dt=dt,
-                )
-                self.gain = max(1.0, self.current_tau * self.tau_to_gain_ratio)
-                self.current_gain = self.gain
-
-            # Apply compensation
+            # Apply compensation using alpha (if adaptive) or fixed gain (if constant)
             compensated_value = self._apply_compensation(numeric_value)
             self.output_thrust_value = compensated_value
             self.current_output = compensated_value
 
             # Debug logging (every 1000 steps)
             if self.input_count % 1000 == 0:
-                mode_str = (
-                    f"tau={self.current_tau:.1f}ms, gain={self.gain:.1f}"
-                    if self.use_adaptive_gain
-                    else f"gain={self.gain:.1f} (constant)"
-                )
-                fb_str = f", ideal_contrib={self.ideal_input_contribution:.3f}N" if self.enable_dual_compensation else ""
+                if self.use_adaptive_alpha:
+                    mode_str = f"τ={self.current_tau:.2f}ms, α={self.current_alpha:.6f}"
+                else:
+                    mode_str = f"gain={self.gain:.2f} (constant)"
                 print(
                     f"[DualFbInverseComp-{self.comp_id}] Step {self.input_count}: "
-                    f"input={numeric_value:.3f}N → output={compensated_value:.3f}N ({mode_str}{fb_str})"
+                    f"input={numeric_value:.3f}N → output={compensated_value:.3f}N ({mode_str})"
                 )
         else:
             # Pass through if unable to process
@@ -383,8 +388,9 @@ class DualFeedbackInverseCompensator:
         """
         Process ideal input from Bridge-0
 
-        This receives the ideal command (delayed through Bridge-0) and can be used
-        to enhance the compensation algorithm by providing a reference signal.
+        This receives the ideal command (delayed through Bridge-0) and uses it
+        to calculate the time constant (tau) from the linear model, then computes
+        alpha = 1 - exp(-dt/tau) for compensation.
 
         Args:
             value: Ideal input signal (command dict from Bridge-0)
@@ -394,44 +400,52 @@ class DualFeedbackInverseCompensator:
         # Extract thrust from ideal command
         if isinstance(value, dict) and "thrust" in value:
             self.ideal_command_thrust = value["thrust"]
-
-            # Calculate ideal input contribution if dual compensation is enabled
-            if self.enable_dual_compensation:
-                # Example: Use the difference between ideal command and current output
-                # This is a placeholder - you can customize this algorithm
-                self.ideal_input_contribution = self.feedback_weight * (
-                    self.ideal_command_thrust - self.input_thrust_value
-                )
-            else:
-                self.ideal_input_contribution = 0.0
-
-            # Debug logging (every 1000 steps)
-            if self.input_count % 1000 == 0 and self.enable_dual_compensation:
-                print(
-                    f"[DualFbInverseComp-{self.comp_id}] Ideal cmd: {self.ideal_command_thrust:.3f}N, "
-                    f"current input: {self.input_thrust_value:.3f}N, "
-                    f"contribution: {self.ideal_input_contribution:.3f}N"
-                )
         elif isinstance(value, (int, float)):
             self.ideal_command_thrust = value
-            if self.enable_dual_compensation:
-                self.ideal_input_contribution = self.feedback_weight * (
-                    self.ideal_command_thrust - self.input_thrust_value
-                )
+        else:
+            # Cannot extract thrust, skip tau/alpha calculation
+            return
+
+        # Calculate tau from ideal thrust using the model
+        if self.use_adaptive_alpha and self.tau_model is not None:
+            dt_ms = self.step_size * self.time_resolution * 1000  # [ms]
+
+            # Use ideal_command_thrust to calculate tau from linear model
+            self.current_tau = self.tau_model.get_time_constant(
+                thrust=self.ideal_command_thrust,
+                base_tau=self.base_tau,
+                dt=dt_ms,
+            )
+
+            # Calculate alpha from tau using tau_to_gain_ratio
+            if self.current_tau > 0:
+                self.current_alpha = self.current_tau * self.tau_to_gain_ratio
+                self.current_gain = self.current_alpha
             else:
-                self.ideal_input_contribution = 0.0
+                self.current_alpha = 1.0  # Prevent division by zero
+                self.current_gain = self.current_alpha
+
+            # Debug logging (every 1000 steps)
+            if self.input_count % 1000 == 0:
+                print(
+                    f"[DualFbInverseComp-{self.comp_id}] Ideal thrust: {self.ideal_command_thrust:.3f}N → "
+                    f"τ={self.current_tau:.2f}ms, α={self.current_alpha:.6f}"
+                )
 
     def _apply_compensation(self, value: float) -> float:
         """
-        Apply dual feedback compensation formula
+        Apply inverse compensation using alpha calculated from ideal thrust
 
-        Base formula: y_comp[k] = gain * y[k] - (gain-1) * y[k-1]
+        For adaptive mode (use_adaptive_alpha=True):
+            Alpha-based formula: y_comp[k] = (y[k] - (1-α) * y[k-1]) / α
+            where α = 1 - exp(-dt/τ)
+            τ is calculated from ideal thrust using linear model
 
-        With ideal input:
-        y_comp[k] = gain * y[k] - (gain-1) * y[k-1] + ideal_input_contribution
+        For constant mode (use_adaptive_alpha=False):
+            Traditional gain-based formula: y_comp[k] = gain * y[k] - (gain-1) * y[k-1]
 
         Args:
-            value: Current input value
+            value: Current input value (actual thrust from plant)
 
         Returns:
             Compensated value
@@ -439,26 +453,43 @@ class DualFeedbackInverseCompensator:
         # Store previous input for debugging
         self.prev_input_value = self.prev_value
 
-        # Calculate delta and base compensation amount
-        self.delta_value = value - self.prev_value
-        self.compensation_amount_value = (self.gain - 1.0) * self.delta_value
+        if self.use_adaptive_alpha:
+            # Alpha-based compensation (inverse of first-order hold)
+            # y[k] = α * y_comp[k] + (1-α) * y[k-1]
 
-        # Apply base compensation formula
-        compensated = self.gain * value - (self.gain - 1.0) * self.prev_value
+            if self.current_alpha > 0:
+                compensated = self.current_alpha*value - (self.current_alpha-1.0) * self.prev_value
+                self.compensation_amount_value = compensated - value
+            else:
+                # If alpha is zero, pass through
+                compensated = value
+                self.compensation_amount_value = 0.0
 
-        # Add ideal input contribution if enabled
-        if self.enable_dual_compensation:
-            compensated += self.ideal_input_contribution
+            # Calculate delta for debugging
+            self.delta_value = value - self.prev_value
 
-        # Debug: show first few compensations
-        if self.input_count <= 10:
-            fb_str = f", ideal_contrib={self.ideal_input_contribution:.3f}" if self.enable_dual_compensation else ""
-            print(
-                f"[DualFbInverseComp] Step {self.input_count}: "
-                f"curr={value:.3f}, prev={self.prev_value:.3f}, "
-                f"delta={self.delta_value:.3f}, comp_amt={self.compensation_amount_value:.3f}, "
-                f"gain={self.gain:.1f}{fb_str} → comp={compensated:.3f}"
-            )
+            # Debug: show first few compensations
+            if self.input_count <= 10:
+                print(
+                    f"[DualFbInverseComp] Step {self.input_count}: "
+                    f"curr={value:.3f}, prev={self.prev_value:.3f}, "
+                    f"delta={self.delta_value:.3f}, α={self.current_alpha:.6f}, "
+                    f"τ={self.current_tau:.2f}ms → comp={compensated:.3f}"
+                )
+        else:
+            # Traditional gain-based compensation (constant mode)
+            self.delta_value = value - self.prev_value
+            self.compensation_amount_value = (self.gain - 1.0) * self.delta_value
+            compensated = self.gain * value - (self.gain - 1.0) * self.prev_value
+
+            # Debug: show first few compensations
+            if self.input_count <= 10:
+                print(
+                    f"[DualFbInverseComp] Step {self.input_count}: "
+                    f"curr={value:.3f}, prev={self.prev_value:.3f}, "
+                    f"delta={self.delta_value:.3f}, comp_amt={self.compensation_amount_value:.3f}, "
+                    f"gain={self.gain:.1f} → comp={compensated:.3f}"
+                )
 
         # Update state
         self.prev_value = value
@@ -486,10 +517,11 @@ class DualFeedbackInverseCompensator:
             "gain": self.gain,
             "base_gain": self.base_gain,
             "comp_type": self.comp_type,
-            "use_adaptive_gain": self.use_adaptive_gain,
+            "use_adaptive_alpha": self.use_adaptive_alpha,
             "tau_model_type": self.tau_model_type,
             "base_tau": self.base_tau,
             "current_tau": self.current_tau,
+            "current_alpha": self.current_alpha,
             "tau_to_gain_ratio": self.tau_to_gain_ratio,
             "input_count": self.input_count,
             "prev_value": self.prev_value,
