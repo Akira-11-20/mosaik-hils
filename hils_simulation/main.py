@@ -14,6 +14,9 @@ Available Scenarios:
     inverse_comp  - HILS + Inverse Compensation
                     逆補償を用いた遅延補償の評価
 
+    dual_feedback - HILS + Inverse Compensation + Dual Feedback
+                    逆補償とデュアルフィードバック経路による評価
+
     pure_python   - Pure Python
                     Mosaikフレームワークなしの純粋なPython実装
 
@@ -25,6 +28,7 @@ Examples:
     python main.py hils         # HILS明示的指定
     python main.py rt           # RT
     python main.py inverse_comp # 逆補償
+    python main.py dual_feedback # デュアルフィードバック
     python main.py pure_python  # Pure Python
     python main.py --help       # ヘルプ表示
 
@@ -44,6 +48,7 @@ from typing import Optional
 from config.parameters import SimulationParameters
 from scenarios import (
     HILSScenario,
+    InverseCompDualFeedbackScenario,
     InverseCompScenario,
     PurePythonScenario,
     RTScenario,
@@ -62,12 +67,14 @@ Examples:
   python main.py h            # HILS (shortcut)
   python main.py r            # RT (shortcut)
   python main.py i            # Inverse Compensation (shortcut)
+  python main.py d            # Dual Feedback (shortcut)
   python main.py p            # Pure Python (shortcut)
 
   # Full names also work:
   python main.py hils
   python main.py rt
   python main.py inverse_comp
+  python main.py dual_feedback
   python main.py pure_python
 
 Documentation:
@@ -84,6 +91,9 @@ Scenario Descriptions:
   inverse_comp  - HILS with inverse compensation
                   逆補償を用いた遅延補償の評価
 
+  dual_feedback - HILS with inverse compensation and dual feedback paths
+                  逆補償とデュアルフィードバック経路による評価
+
   pure_python   - Pure Python simulation (no Mosaik)
                   Mosaikフレームワークなしの純粋なPython実装
         """,
@@ -93,8 +103,8 @@ Scenario Descriptions:
         "scenario",
         nargs="?",
         default="h",
-        choices=["h", "hils", "r", "rt", "i", "inverse_comp", "p", "pure_python"],
-        help="Simulation scenario to run (default: h=hils). Shortcuts: h=hils, r=rt, i=inverse_comp, p=pure_python",
+        choices=["h", "hils", "r", "rt", "i", "inverse_comp", "d", "dual_feedback", "p", "pure_python"],
+        help="Simulation scenario to run (default: h=hils). Shortcuts: h=hils, r=rt, i=inverse_comp, d=dual_feedback, p=pure_python",
     )
 
     return parser
@@ -119,6 +129,7 @@ def get_scenario(scenario_name: str, params: Optional[SimulationParameters] = No
         "h": "hils",
         "r": "rt",
         "i": "inverse_comp",
+        "d": "dual_feedback",
         "p": "pure_python",
     }
 
@@ -127,6 +138,7 @@ def get_scenario(scenario_name: str, params: Optional[SimulationParameters] = No
         "hils": HILSScenario,
         "rt": RTScenario,
         "inverse_comp": InverseCompScenario,
+        "dual_feedback": InverseCompDualFeedbackScenario,
         "pure_python": PurePythonScenario,
     }
 

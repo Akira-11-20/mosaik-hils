@@ -6,13 +6,18 @@ used by all Mosaik-based scenarios.
 """
 
 
-def get_simulator_config(include_bridge: bool = True, include_inverse_comp: bool = False) -> dict:
+def get_simulator_config(
+    include_bridge: bool = True,
+    include_inverse_comp: bool = False,
+    include_dual_feedback_inverse_comp: bool = False,
+) -> dict:
     """
     Get simulator configuration for Mosaik world.
 
     Args:
         include_bridge: Whether to include communication bridge simulators
         include_inverse_comp: Whether to include inverse compensator simulator
+        include_dual_feedback_inverse_comp: Whether to include dual feedback inverse compensator
 
     Returns:
         Dictionary of simulator configurations for Mosaik
@@ -40,6 +45,11 @@ def get_simulator_config(include_bridge: bool = True, include_inverse_comp: bool
     if include_inverse_comp:
         config["InverseCompSim"] = {
             "python": "simulators.inverse_compensator_simulator:InverseCompensatorSimulator",
+        }
+
+    if include_dual_feedback_inverse_comp:
+        config["DualFeedbackInverseCompSim"] = {
+            "python": "simulators.inverse_compensator_dual_feedback_simulator:DualFeedbackInverseCompensatorSimulator",
         }
 
     return config
