@@ -108,7 +108,7 @@ class LinearThrustDependentModel(TimeConstantModel):
 
         # 変化率に基づく時定数の調整
         delta_tau = self.sensitivity * thrust_rate
-        tau = base_tau + delta_tau
+        tau = base_tau - delta_tau
 
         # 時定数が負にならないようにクリップ
         return max(0.1, tau)
