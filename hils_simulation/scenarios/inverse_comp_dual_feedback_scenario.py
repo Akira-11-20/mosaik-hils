@@ -224,12 +224,12 @@ class InverseCompDualFeedbackScenario(BaseScenario):
                 "velocity",
             )
 
-            # Additional feedback: Bridge-0 → Inverse (dual feedback)
-            print("   🔄 Bridge-0 (cmd) → Inverse Compensator: delayed feedback (dual path)")
+            # Additional ideal input: Bridge-0 → Inverse (ideal reference)
+            print("   🔄 Bridge-0 (cmd) → Inverse Compensator: ideal input (reference path)")
             self.world.connect(
                 self.bridge_cmd,
                 self.inverse_comp,
-                ("delayed_output", "delayed_feedback"),
+                ("delayed_output", "ideal_input"),
             )
 
         else:
@@ -274,8 +274,8 @@ class InverseCompDualFeedbackScenario(BaseScenario):
         if comp_enabled:
             print("   Main Loop:")
             print("     Controller → Bridge-0 (cmd) → Plant → Inverse → Bridge-1 (sense) → Env → Controller")
-            print("   Dual Feedback:")
-            print("     Bridge-0 (cmd) → Inverse (delayed feedback)")
+            print("   Ideal Input:")
+            print("     Bridge-0 (cmd) → Inverse (ideal reference)")
         else:
             print("   Controller → Bridge(cmd) → Plant → Env → Controller")
 
@@ -321,9 +321,9 @@ class InverseCompDualFeedbackScenario(BaseScenario):
                 "current_tau",
                 "delta",
                 "compensation_amount",
-                "delayed_feedback_value",  # Delayed feedback from Bridge-0
-                "delayed_command_thrust",  # Extracted thrust from delayed feedback
-                "feedback_contribution",  # Contribution from dual feedback
+                "ideal_input_value",  # Ideal input from Bridge-0
+                "ideal_command_thrust",  # Extracted thrust from ideal input
+                "ideal_input_contribution",  # Contribution from ideal input
             )
 
         mosaik.util.connect_many_to_one(

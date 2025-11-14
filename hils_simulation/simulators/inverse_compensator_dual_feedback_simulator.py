@@ -48,7 +48,7 @@ meta = {
             ],
             "attrs": [
                 "input",  # From Plant (actual_thrust)
-                "delayed_feedback",  # From Bridge-0 (delayed command)
+                "ideal_input",  # From Bridge-0 (delayed command - ideal reference)
                 "compensated_output",
                 "stats",
                 # Debug attributes
@@ -60,9 +60,9 @@ meta = {
                 "output_thrust",
                 "current_gain",
                 "current_tau",
-                "delayed_feedback_value",
-                "delayed_command_thrust",  # NEW: Extracted thrust from delayed feedback
-                "feedback_contribution",  # NEW: Contribution from delayed feedback
+                "ideal_input_value",
+                "ideal_command_thrust",  # Extracted thrust from ideal input
+                "ideal_input_contribution",  # Contribution from ideal input
             ],
         }
     },
@@ -176,11 +176,11 @@ class DualFeedbackInverseCompensatorSimulator(mosaik_api.Simulator):
 
                         comp.process_input(value)
 
-                elif attr == "delayed_feedback":
-                    # Process delayed feedback from Bridge-0
+                elif attr == "ideal_input":
+                    # Process ideal input from Bridge-0
                     for src_id, value_dict in sources.items():
-                        if isinstance(value_dict, dict) and "delayed_feedback" in value_dict:
-                            value = value_dict["delayed_feedback"]
+                        if isinstance(value_dict, dict) and "ideal_input" in value_dict:
+                            value = value_dict["ideal_input"]
                         else:
                             value = value_dict
 
@@ -193,7 +193,7 @@ class DualFeedbackInverseCompensatorSimulator(mosaik_api.Simulator):
                             except (json.JSONDecodeError, ValueError):
                                 pass
 
-                        comp.process_delayed_feedback(value)
+                        comp.process_ideal_input(value)
 
         return time + self.step_size
 
@@ -235,12 +235,12 @@ class DualFeedbackInverseCompensatorSimulator(mosaik_api.Simulator):
                     data[comp_id][attr] = comp.current_gain
                 elif attr == "current_tau":
                     data[comp_id][attr] = comp.current_tau
-                elif attr == "delayed_feedback_value":
-                    data[comp_id][attr] = comp.delayed_feedback_value
-                elif attr == "delayed_command_thrust":
-                    data[comp_id][attr] = comp.delayed_command_thrust
-                elif attr == "feedback_contribution":
-                    data[comp_id][attr] = comp.feedback_contribution
+                elif attr == "ideal_input_value":
+                    data[comp_id][attr] = comp.ideal_input_value
+                elif attr == "ideal_command_thrust":
+                    data[comp_id][attr] = comp.ideal_command_thrust
+                elif attr == "ideal_input_contribution":
+                    data[comp_id][attr] = comp.ideal_input_contribution
 
         return data
 
@@ -251,11 +251,11 @@ class DualFeedbackInverseCompensator:
 
     Receives inputs from:
     1. Plant (actual thrust) - primary input for compensation
-    2. Bridge-0 (delayed command) - secondary feedback for enhanced compensation
+    2. Bridge-0 (ideal command) - ideal reference for enhanced compensation
 
     Compensation strategy:
     - Uses plant output as primary signal
-    - Optionally incorporates delayed command information
+    - Optionally incorporates ideal command information from Bridge-0
     - Can implement custom compensation algorithms using both signals
     """
 
@@ -328,9 +328,9 @@ class DualFeedbackInverseCompensator:
         self.compensation_amount_value: float = 0.0
         self.input_thrust_value: float = 0.0
         self.output_thrust_value: float = 0.0
-        self.delayed_feedback_value: Any = 0.0
-        self.delayed_command_thrust: float = 0.0
-        self.feedback_contribution: float = 0.0
+        self.ideal_input_value: Any = 0.0
+        self.ideal_command_thrust: float = 0.0
+        self.ideal_input_contribution: float = 0.0
 
     def process_input(self, value: Any) -> None:
         """
@@ -370,7 +370,7 @@ class DualFeedbackInverseCompensator:
                     if self.use_adaptive_gain
                     else f"gain={self.gain:.1f} (constant)"
                 )
-                fb_str = f", fb_contrib={self.feedback_contribution:.3f}N" if self.enable_dual_compensation else ""
+                fb_str = f", ideal_contrib={self.ideal_input_contribution:.3f}N" if self.enable_dual_compensation else ""
                 print(
                     f"[DualFbInverseComp-{self.comp_id}] Step {self.input_count}: "
                     f"input={numeric_value:.3f}N → output={compensated_value:.3f}N ({mode_str}{fb_str})"
@@ -379,47 +379,47 @@ class DualFeedbackInverseCompensator:
             # Pass through if unable to process
             self.current_output = value
 
-    def process_delayed_feedback(self, value: Any) -> None:
+    def process_ideal_input(self, value: Any) -> None:
         """
-        Process delayed feedback from Bridge-0
+        Process ideal input from Bridge-0
 
-        This receives the delayed command and can be used to enhance
-        the compensation algorithm.
+        This receives the ideal command (delayed through Bridge-0) and can be used
+        to enhance the compensation algorithm by providing a reference signal.
 
         Args:
-            value: Delayed feedback signal (command dict from Bridge-0)
+            value: Ideal input signal (command dict from Bridge-0)
         """
-        self.delayed_feedback_value = value
+        self.ideal_input_value = value
 
-        # Extract thrust from delayed command
+        # Extract thrust from ideal command
         if isinstance(value, dict) and "thrust" in value:
-            self.delayed_command_thrust = value["thrust"]
+            self.ideal_command_thrust = value["thrust"]
 
-            # Calculate feedback contribution if dual compensation is enabled
+            # Calculate ideal input contribution if dual compensation is enabled
             if self.enable_dual_compensation:
-                # Example: Use the difference between delayed command and current output
+                # Example: Use the difference between ideal command and current output
                 # This is a placeholder - you can customize this algorithm
-                self.feedback_contribution = self.feedback_weight * (
-                    self.delayed_command_thrust - self.input_thrust_value
+                self.ideal_input_contribution = self.feedback_weight * (
+                    self.ideal_command_thrust - self.input_thrust_value
                 )
             else:
-                self.feedback_contribution = 0.0
+                self.ideal_input_contribution = 0.0
 
             # Debug logging (every 1000 steps)
             if self.input_count % 1000 == 0 and self.enable_dual_compensation:
                 print(
-                    f"[DualFbInverseComp-{self.comp_id}] Delayed cmd: {self.delayed_command_thrust:.3f}N, "
+                    f"[DualFbInverseComp-{self.comp_id}] Ideal cmd: {self.ideal_command_thrust:.3f}N, "
                     f"current input: {self.input_thrust_value:.3f}N, "
-                    f"contribution: {self.feedback_contribution:.3f}N"
+                    f"contribution: {self.ideal_input_contribution:.3f}N"
                 )
         elif isinstance(value, (int, float)):
-            self.delayed_command_thrust = value
+            self.ideal_command_thrust = value
             if self.enable_dual_compensation:
-                self.feedback_contribution = self.feedback_weight * (
-                    self.delayed_command_thrust - self.input_thrust_value
+                self.ideal_input_contribution = self.feedback_weight * (
+                    self.ideal_command_thrust - self.input_thrust_value
                 )
             else:
-                self.feedback_contribution = 0.0
+                self.ideal_input_contribution = 0.0
 
     def _apply_compensation(self, value: float) -> float:
         """
@@ -427,8 +427,8 @@ class DualFeedbackInverseCompensator:
 
         Base formula: y_comp[k] = gain * y[k] - (gain-1) * y[k-1]
 
-        With dual feedback:
-        y_comp[k] = gain * y[k] - (gain-1) * y[k-1] + feedback_contribution
+        With ideal input:
+        y_comp[k] = gain * y[k] - (gain-1) * y[k-1] + ideal_input_contribution
 
         Args:
             value: Current input value
@@ -446,13 +446,13 @@ class DualFeedbackInverseCompensator:
         # Apply base compensation formula
         compensated = self.gain * value - (self.gain - 1.0) * self.prev_value
 
-        # Add feedback contribution if enabled
+        # Add ideal input contribution if enabled
         if self.enable_dual_compensation:
-            compensated += self.feedback_contribution
+            compensated += self.ideal_input_contribution
 
         # Debug: show first few compensations
         if self.input_count <= 10:
-            fb_str = f", fb_contrib={self.feedback_contribution:.3f}" if self.enable_dual_compensation else ""
+            fb_str = f", ideal_contrib={self.ideal_input_contribution:.3f}" if self.enable_dual_compensation else ""
             print(
                 f"[DualFbInverseComp] Step {self.input_count}: "
                 f"curr={value:.3f}, prev={self.prev_value:.3f}, "
@@ -495,8 +495,8 @@ class DualFeedbackInverseCompensator:
             "prev_value": self.prev_value,
             "feedback_weight": self.feedback_weight,
             "enable_dual_compensation": self.enable_dual_compensation,
-            "delayed_command_thrust": self.delayed_command_thrust,
-            "feedback_contribution": self.feedback_contribution,
+            "ideal_command_thrust": self.ideal_command_thrust,
+            "ideal_input_contribution": self.ideal_input_contribution,
         }
         return json.dumps(stats)
 
