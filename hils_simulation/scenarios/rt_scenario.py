@@ -77,6 +77,7 @@ class RTScenario(BaseScenario):
             ki=self.params.control.ki,
             kd=self.params.control.kd,
             target_position=self.params.control.target_position,
+            min_thrust=self.params.control.min_thrust,
             max_thrust=self.params.control.max_thrust,
             thrust_duration=self.params.control.control_period,
             integral_limit=self.params.control.integral_limit,
@@ -90,6 +91,8 @@ class RTScenario(BaseScenario):
             enable_lag=False,
             tau_model_type=self.params.plant.tau_model_type,
             tau_model_params=self.params.plant.tau_model_params,
+            min_thrust=self.params.plant.min_thrust,
+            max_thrust=self.params.plant.max_thrust,
         )
 
         self.spacecraft = env_sim.Spacecraft1DOF(

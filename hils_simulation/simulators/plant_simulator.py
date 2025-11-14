@@ -15,13 +15,14 @@ meta = {
     "models": {
         "ThrustStand": {
             "public": True,
-            "params": ["stand_id", "time_constant", "time_constant_std", "time_constant_noise", "enable_lag"],
+            "params": ["stand_id", "time_constant", "time_constant_std", "time_constant_noise", "enable_lag", "min_thrust", "max_thrust"],
             "attrs": [
                 "command",  # 入力: 制御コマンド（辞書: {thrust, duration}）
                 "measured_thrust",  # 出力: 測定された推力 [N]
                 "actual_thrust",  # 出力: 1次遅延後の実推力 [N]
                 "status",  # 状態: "idle", "thrusting"
                 "time_constant",  # 出力: 実際の時定数 [ms] (ばらつき適用後)
+                "saturated",  # 出力: 飽和フラグ (True: 飽和中, False: 正常)
             ],
         },
     },
@@ -84,6 +85,8 @@ class PlantSimulator(mosaik_api.Simulator):
         time_constant_std=0.0,  # 時定数の標準偏差 [ms]
         time_constant_noise=0.0,  # 時定数の時間変動ノイズ [ms]
         enable_lag=True,  # 1次遅延の有効化
+        min_thrust=-100.0,  # 最小推力 [N]
+        max_thrust=100.0,  # 最大推力 [N]
     ):
         """
         推力測定器エンティティの作成
@@ -96,6 +99,8 @@ class PlantSimulator(mosaik_api.Simulator):
             time_constant_std: 時定数のばらつき（標準偏差） [ms]
             time_constant_noise: 時定数の時間変動ノイズ（標準偏差） [ms]
             enable_lag: 1次遅延を有効にするか
+            min_thrust: 最小推力制限 [N]
+            max_thrust: 最大推力制限 [N]
         """
         entities = []
 
@@ -123,6 +128,10 @@ class PlantSimulator(mosaik_api.Simulator):
                 "time_constant": actual_time_constant,  # 記録用時定数 [ms] (ノイズ反映後、毎ステップ更新)
                 "time_constant_noise": time_constant_noise,  # 時間変動ノイズ [ms]
                 "enable_lag": enable_lag,  # 1次遅延の有効/無効
+                # 推力制限パラメータ
+                "min_thrust": min_thrust,  # 最小推力 [N]
+                "max_thrust": max_thrust,  # 最大推力 [N]
+                "saturated": False,  # 飽和フラグ
             }
 
             entities.append({"eid": eid, "type": model})
@@ -175,17 +184,32 @@ class PlantSimulator(mosaik_api.Simulator):
             if entity["status"] == "thrusting":
                 # 推力持続時間内かチェック
                 if entity["thrust_end_time"] is not None and time < entity["thrust_end_time"]:
-                    # 指令通りの推力を出力（理想的な応答）
-                    entity["measured_thrust"] = entity["thrust_cmd"]
+                    # 指令値を飽和処理
+                    thrust_cmd = entity["thrust_cmd"]
+                    min_thrust = entity["min_thrust"]
+                    max_thrust = entity["max_thrust"]
+
+                    # 飽和チェック
+                    if thrust_cmd < min_thrust:
+                        entity["measured_thrust"] = min_thrust
+                        entity["saturated"] = True
+                    elif thrust_cmd > max_thrust:
+                        entity["measured_thrust"] = max_thrust
+                        entity["saturated"] = True
+                    else:
+                        entity["measured_thrust"] = thrust_cmd
+                        entity["saturated"] = False
                 else:
                     # 持続時間終了
                     entity["measured_thrust"] = 0.0
+                    entity["saturated"] = False
                     entity["status"] = "idle"
                     entity["thrust_start_time"] = None
                     entity["thrust_end_time"] = None
             else:
                 # アイドル状態
                 entity["measured_thrust"] = 0.0
+                entity["saturated"] = False
 
             # 1次遅延ダイナミクス（アクチュエーター応答遅れ）
             if entity["enable_lag"]:

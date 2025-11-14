@@ -19,6 +19,7 @@ meta = {
                 "ki",
                 "kd",
                 "target_position",
+                "min_thrust",
                 "max_thrust",
                 "thrust_duration",
                 "integral_limit",
@@ -91,6 +92,7 @@ class ControllerSimulator(mosaik_api.Simulator):
         ki=0.1,
         kd=0.5,
         target_position=10.0,
+        min_thrust=-50.0,
         max_thrust=50.0,
         thrust_duration=10,
         integral_limit=100.0,
@@ -105,6 +107,7 @@ class ControllerSimulator(mosaik_api.Simulator):
             ki: 積分ゲイン
             kd: 微分ゲイン
             target_position: 目標位置 [m]
+            min_thrust: 最小推力 [N]
             max_thrust: 最大推力 [N]
             thrust_duration: 推力持続時間 [ms]
             integral_limit: 積分項の上限（アンチワインドアップ）
@@ -119,6 +122,7 @@ class ControllerSimulator(mosaik_api.Simulator):
                 "ki": ki,
                 "kd": kd,
                 "target_position": target_position,
+                "min_thrust": min_thrust,
                 "max_thrust": max_thrust,
                 "thrust_duration": thrust_duration,
                 "integral_limit": integral_limit,
@@ -182,8 +186,9 @@ class ControllerSimulator(mosaik_api.Simulator):
             thrust = entity["kp"] * error + entity["ki"] * entity["integral"] - entity["kd"] * entity["velocity"]
 
             # 推力飽和処理
+            min_thrust = entity["min_thrust"]
             max_thrust = entity["max_thrust"]
-            thrust = max(-max_thrust, min(thrust, max_thrust))
+            thrust = max(min_thrust, min(thrust, max_thrust))
 
             # コマンドをパッケージ化
             entity["command"] = {

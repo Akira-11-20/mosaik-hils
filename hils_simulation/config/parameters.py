@@ -83,6 +83,7 @@ class ControlParams:
     ki: float = 0.5  # Integral gain
     kd: float = 5.0  # Derivative gain
     target_position: float = 5.0  # Target position [m]
+    min_thrust: float = -100.0  # Minimum thrust [N]
     max_thrust: float = 100.0  # Maximum thrust [N]
     integral_limit: float = 100.0  # Integral term limit
 
@@ -95,6 +96,7 @@ class ControlParams:
             ki=get_env_float("KI", 0.5),
             kd=get_env_float("KD", 5.0),
             target_position=get_env_float("TARGET_POSITION", 5.0),
+            min_thrust=get_env_float("MIN_THRUST", -100.0),
             max_thrust=get_env_float("MAX_THRUST", 100.0),
             integral_limit=get_env_float("INTEGRAL_LIMIT", 100.0),
         )
@@ -146,6 +148,8 @@ class PlantParams:
     enable_lag: bool = True  # Enable first-order lag dynamics
     tau_model_type: str = "constant"  # Time constant model type
     tau_model_params: dict = field(default_factory=dict)  # Additional model parameters
+    min_thrust: float = -100.0  # Minimum thrust limit [N]
+    max_thrust: float = 100.0  # Maximum thrust limit [N]
 
     @classmethod
     def from_env(cls) -> "PlantParams":
@@ -165,6 +169,8 @@ class PlantParams:
             enable_lag=get_env_bool("PLANT_ENABLE_LAG", True),
             tau_model_type=os.getenv("PLANT_TAU_MODEL_TYPE", "constant"),
             tau_model_params=tau_model_params,
+            min_thrust=get_env_float("PLANT_MIN_THRUST", -100.0),
+            max_thrust=get_env_float("PLANT_MAX_THRUST", 100.0),
         )
 
 
@@ -316,6 +322,7 @@ class SimulationParameters:
                 "ki": self.control.ki,
                 "kd": self.control.kd,
                 "target_position_m": self.control.target_position,
+                "min_thrust_N": self.control.min_thrust,
                 "max_thrust_N": self.control.max_thrust,
                 "integral_limit": self.control.integral_limit,
             },

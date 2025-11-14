@@ -27,6 +27,8 @@ meta = {
                 "enable_lag",
                 "tau_model_type",  # 新規: 時定数モデルのタイプ
                 "tau_model_params",  # 新規: モデルパラメータ（辞書）
+                "min_thrust",  # 最小推力制限 [N]
+                "max_thrust",  # 最大推力制限 [N]
             ],
             "attrs": [
                 "command",
@@ -34,6 +36,7 @@ meta = {
                 "actual_thrust",
                 "status",
                 "time_constant",  # 動的に変化する時定数
+                "saturated",  # 飽和フラグ
             ],
         },
     },
@@ -75,6 +78,8 @@ class PlantSimulator(mosaik_api.Simulator):
         enable_lag=True,
         tau_model_type="linear",  # "constant", "linear", "saturation", "thermal", "hybrid"
         tau_model_params=None,  # モデル固有のパラメータ
+        min_thrust=-100.0,  # 最小推力 [N]
+        max_thrust=100.0,  # 最大推力 [N]
     ):
         """
         推力測定器エンティティの作成
@@ -89,6 +94,8 @@ class PlantSimulator(mosaik_api.Simulator):
                 - "stochastic": 確率的変動
             tau_model_params: モデルパラメータ（辞書）
                 例: {"sensitivity": 0.5} for linear model
+            min_thrust: 最小推力制限 [N]
+            max_thrust: 最大推力制限 [N]
         """
         entities = []
 
@@ -124,6 +131,10 @@ class PlantSimulator(mosaik_api.Simulator):
                 # 新規: 時定数モデル
                 "tau_model": tau_model,
                 "tau_model_type": tau_model_type,
+                # 推力制限パラメータ
+                "min_thrust": min_thrust,
+                "max_thrust": max_thrust,
+                "saturated": False,
             }
 
             entities.append({"eid": eid, "type": model})
@@ -159,17 +170,33 @@ class PlantSimulator(mosaik_api.Simulator):
                         entity["thrust_end_time"] = time + duration
                         entity["status"] = "thrusting"
 
-            # 2. 理想的な推力測定
+            # 2. 理想的な推力測定（飽和処理あり）
             if entity["status"] == "thrusting":
                 if entity["thrust_end_time"] is not None and time < entity["thrust_end_time"]:
-                    entity["measured_thrust"] = entity["thrust_cmd"]
+                    # 指令値を飽和処理
+                    thrust_cmd = entity["thrust_cmd"]
+                    min_thrust = entity["min_thrust"]
+                    max_thrust = entity["max_thrust"]
+
+                    # 飽和チェック
+                    if thrust_cmd < min_thrust:
+                        entity["measured_thrust"] = min_thrust
+                        entity["saturated"] = True
+                    elif thrust_cmd > max_thrust:
+                        entity["measured_thrust"] = max_thrust
+                        entity["saturated"] = True
+                    else:
+                        entity["measured_thrust"] = thrust_cmd
+                        entity["saturated"] = False
                 else:
                     entity["measured_thrust"] = 0.0
+                    entity["saturated"] = False
                     entity["status"] = "idle"
                     entity["thrust_start_time"] = None
                     entity["thrust_end_time"] = None
             else:
                 entity["measured_thrust"] = 0.0
+                entity["saturated"] = False
 
             # 3. 一次遅延ダイナミクス（時定数モデル統合）
             if entity["enable_lag"]:
@@ -199,13 +226,13 @@ class PlantSimulator(mosaik_api.Simulator):
                 y = entity["actual_thrust"]
 
                 # サブステップ分割
-                # sub_steps = max(1, int(dt / 0.1))
-                # dt_sub = dt / sub_steps
+                sub_steps = max(1, int(dt / 0.1))
+                dt_sub = dt / sub_steps
 
-                # for _ in range(sub_steps):
-                #     y = y + (dt_sub / tau) * (u - y)
+                for _ in range(sub_steps):
+                    y = y + (dt_sub / tau) * (u - y)
 
-                y = y + (dt / tau) * (u - y)
+                # y = y + (dt / tau) * (u - y)
 
                 entity["actual_thrust"] = y
                 entity["time_constant"] = tau  # 記録用

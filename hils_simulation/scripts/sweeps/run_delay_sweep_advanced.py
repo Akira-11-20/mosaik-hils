@@ -39,6 +39,7 @@ class DelayConfig:
         comp_tau_to_gain_ratio: Optional[float] = None,
         comp_tau_model_type: Optional[str] = None,
         comp_tau_model_params: Optional[Dict[str, Any]] = None,
+        comp_position: Optional[str] = None,  # "pre" or "post"
         label: Optional[str] = None,
     ):
         """
@@ -58,6 +59,7 @@ class DelayConfig:
             comp_tau_to_gain_ratio: Ratio to convert tau to gain for adaptive compensation
             comp_tau_model_type: Time constant model type for compensator (should match plant)
             comp_tau_model_params: Time constant model parameters for compensator (should match plant)
+            comp_position: Inverse compensator position - "pre" (before plant) or "post" (after plant)
             label: Custom label for this configuration
         """
         self.cmd_delay = cmd_delay
@@ -77,11 +79,16 @@ class DelayConfig:
         self.comp_tau_to_gain_ratio = comp_tau_to_gain_ratio
         self.comp_tau_model_type = comp_tau_model_type
         self.comp_tau_model_params = comp_tau_model_params or {}
+        self.comp_position = comp_position
         self.label = label or self._generate_label()
 
     def _generate_label(self) -> str:
         """Generate a descriptive label"""
         comp_str = "comp" if self.use_inverse_comp else "nocomp"
+
+        # Add position flag if specified
+        if self.use_inverse_comp and self.comp_position is not None:
+            comp_str = f"{self.comp_position}_{comp_str}"
 
         # Add adaptive flag if enabled
         if self.use_adaptive_comp:
@@ -121,6 +128,8 @@ class DelayConfig:
         if self.use_inverse_comp:
             gain_str = f"{self.comp_gain}" if self.comp_gain else "default"
             parts.append(f"comp_gain={gain_str}")
+            if self.comp_position is not None:
+                parts.append(f"comp_position={self.comp_position}")
         else:
             parts.append("no_comp")
 
@@ -238,6 +247,10 @@ def run_simulation(config: DelayConfig, sweep_dir: Optional[Path] = None) -> Dic
         # Set inverse compensation parameters
         if config.use_inverse_comp:
             params.inverse_comp.enabled = True
+
+            # Set compensation position (pre/post)
+            if config.comp_position is not None:
+                params.inverse_comp.position = config.comp_position
 
             # Adaptive compensation (NEW)
             if config.use_adaptive_comp:

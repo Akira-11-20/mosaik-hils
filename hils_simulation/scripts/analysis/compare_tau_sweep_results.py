@@ -17,14 +17,28 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def extract_tau_from_dirname(dirname: str) -> int:
-    """Extract tau (plant time constant) from directory name."""
+def extract_tau_from_dirname(dirname: str) -> tuple:
+    """Extract tau (plant time constant) and compensation type from directory name.
+
+    Returns:
+        tuple: (tau_ms, comp_type) where comp_type is 'pre' or 'post'
+    """
     # Pattern: tau<X>ms
     match = re.search(r"tau(\d+)ms", dirname)
-    if match:
-        tau = int(match.group(1))
-        return tau
-    return None
+    if not match:
+        return None, None
+
+    tau = int(match.group(1))
+
+    # Determine compensation type
+    if "pre_comp" in dirname:
+        comp_type = "pre"
+    elif "post_comp" in dirname:
+        comp_type = "post"
+    else:
+        comp_type = None
+
+    return tau, comp_type
 
 
 def load_simulation_data(h5_file: Path) -> dict:
@@ -70,8 +84,8 @@ def calculate_metrics(test_data: dict, baseline_data: dict) -> dict:
 def plot_tau_sweep_comparison(baseline_data: dict, sweep_data: dict, output_dir: Path):
     """Generate comparison plots for all tau sweep cases."""
 
-    # Sort by tau
-    sorted_cases = sorted(sweep_data.items(), key=lambda x: x[1]["tau"])
+    # Sort by tau, then by comp_type
+    sorted_cases = sorted(sweep_data.items(), key=lambda x: (x[1]["tau"], x[1]["comp_type"]))
 
     # Create figure with 6 subplots (vertical layout)
     fig, axes = plt.subplots(6, 1, figsize=(12, 24))
@@ -88,13 +102,16 @@ def plot_tau_sweep_comparison(baseline_data: dict, sweep_data: dict, output_dir:
     for idx, (case_name, case_data) in enumerate(sorted_cases):
         min_len = min(len(time), len(case_data["data"]["time"]))
         tau = case_data["tau"]
-        color = colors[idx % len(colors)]
+        comp_type = case_data["comp_type"]
+        color = colors[(tau // 50 - 1) % len(colors)]  # Color by tau value
+        linestyle = "--" if comp_type == "pre" else "-"
+        label = f"tau={tau}ms ({comp_type}_comp)"
         ax.plot(
             time[:min_len],
             case_data["data"]["position"][:min_len],
-            "--",
+            linestyle,
             color=color,
-            label=f"tau={tau}ms",
+            label=label,
             linewidth=1.5,
         )
     ax.set_xlabel("Time [s]")
@@ -108,9 +125,12 @@ def plot_tau_sweep_comparison(baseline_data: dict, sweep_data: dict, output_dir:
     for idx, (case_name, case_data) in enumerate(sorted_cases):
         min_len = min(len(time), len(case_data["data"]["time"]))
         tau = case_data["tau"]
-        color = colors[idx % len(colors)]
+        comp_type = case_data["comp_type"]
+        color = colors[(tau // 50 - 1) % len(colors)]
+        linestyle = "--" if comp_type == "pre" else "-"
+        label = f"tau={tau}ms ({comp_type}_comp)"
         pos_diff = case_data["data"]["position"][:min_len] - baseline_data["position"][:min_len]
-        ax.plot(time[:min_len], pos_diff, "-", color=color, label=f"tau={tau}ms", linewidth=1.5)
+        ax.plot(time[:min_len], pos_diff, linestyle, color=color, label=label, linewidth=1.5)
     ax.axhline(y=0, color="k", linestyle="--", alpha=0.3)
     ax.set_xlabel("Time [s]")
     ax.set_ylabel("Position Error [m]")
@@ -124,13 +144,16 @@ def plot_tau_sweep_comparison(baseline_data: dict, sweep_data: dict, output_dir:
     for idx, (case_name, case_data) in enumerate(sorted_cases):
         min_len = min(len(time), len(case_data["data"]["time"]))
         tau = case_data["tau"]
-        color = colors[idx % len(colors)]
+        comp_type = case_data["comp_type"]
+        color = colors[(tau // 50 - 1) % len(colors)]
+        linestyle = "--" if comp_type == "pre" else "-"
+        label = f"tau={tau}ms ({comp_type}_comp)"
         ax.plot(
             time[:min_len],
             case_data["data"]["velocity"][:min_len],
-            "--",
+            linestyle,
             color=color,
-            label=f"tau={tau}ms",
+            label=label,
             linewidth=1.5,
         )
     ax.set_xlabel("Time [s]")
@@ -144,9 +167,12 @@ def plot_tau_sweep_comparison(baseline_data: dict, sweep_data: dict, output_dir:
     for idx, (case_name, case_data) in enumerate(sorted_cases):
         min_len = min(len(time), len(case_data["data"]["time"]))
         tau = case_data["tau"]
-        color = colors[idx % len(colors)]
+        comp_type = case_data["comp_type"]
+        color = colors[(tau // 50 - 1) % len(colors)]
+        linestyle = "--" if comp_type == "pre" else "-"
+        label = f"tau={tau}ms ({comp_type}_comp)"
         vel_diff = case_data["data"]["velocity"][:min_len] - baseline_data["velocity"][:min_len]
-        ax.plot(time[:min_len], vel_diff, "-", color=color, label=f"tau={tau}ms", linewidth=1.5)
+        ax.plot(time[:min_len], vel_diff, linestyle, color=color, label=label, linewidth=1.5)
     ax.axhline(y=0, color="k", linestyle="--", alpha=0.3)
     ax.set_xlabel("Time [s]")
     ax.set_ylabel("Velocity Error [m/s]")
@@ -160,13 +186,16 @@ def plot_tau_sweep_comparison(baseline_data: dict, sweep_data: dict, output_dir:
     for idx, (case_name, case_data) in enumerate(sorted_cases):
         min_len = min(len(time), len(case_data["data"]["time"]))
         tau = case_data["tau"]
-        color = colors[idx % len(colors)]
+        comp_type = case_data["comp_type"]
+        color = colors[(tau // 50 - 1) % len(colors)]
+        linestyle = "--" if comp_type == "pre" else "-"
+        label = f"tau={tau}ms ({comp_type}_comp)"
         ax.plot(
             time[:min_len],
             case_data["data"]["thrust"][:min_len],
-            "--",
+            linestyle,
             color=color,
-            label=f"tau={tau}ms",
+            label=label,
             linewidth=1.5,
         )
     ax.set_xlabel("Time [s]")
@@ -180,9 +209,12 @@ def plot_tau_sweep_comparison(baseline_data: dict, sweep_data: dict, output_dir:
     for idx, (case_name, case_data) in enumerate(sorted_cases):
         min_len = min(len(time), len(case_data["data"]["time"]))
         tau = case_data["tau"]
-        color = colors[idx % len(colors)]
+        comp_type = case_data["comp_type"]
+        color = colors[(tau // 50 - 1) % len(colors)]
+        linestyle = "--" if comp_type == "pre" else "-"
+        label = f"tau={tau}ms ({comp_type}_comp)"
         thrust_diff = case_data["data"]["thrust"][:min_len] - baseline_data["thrust"][:min_len]
-        ax.plot(time[:min_len], thrust_diff, "-", color=color, label=f"tau={tau}ms", linewidth=1.5)
+        ax.plot(time[:min_len], thrust_diff, linestyle, color=color, label=label, linewidth=1.5)
     ax.axhline(y=0, color="k", linestyle="--", alpha=0.3)
     ax.set_xlabel("Time [s]")
     ax.set_ylabel("Thrust Error [N]")
@@ -270,12 +302,14 @@ def plot_200ms_comparison(baseline_data: dict, sweep_data: dict, output_dir: Pat
 
 
 def plot_metrics_summary(all_metrics: dict, output_dir: Path):
-    """Plot summary of metrics across all tau values."""
+    """Plot summary of metrics across all tau values, separated by compensation type."""
 
-    # Sort by tau
-    sorted_cases = sorted(all_metrics.items(), key=lambda x: x[1]["tau"])
+    # Sort by tau, then comp_type
+    sorted_cases = sorted(all_metrics.items(), key=lambda x: (x[1]["tau"], x[1]["comp_type"]))
 
-    taus = [item[1]["tau"] for item in sorted_cases]
+    # Separate pre and post compensation cases
+    pre_cases = [(item[1]["tau"], item[1]["metrics"]) for item in sorted_cases if item[1]["comp_type"] == "pre"]
+    post_cases = [(item[1]["tau"], item[1]["metrics"]) for item in sorted_cases if item[1]["comp_type"] == "post"]
 
     fig, axes = plt.subplots(3, 3, figsize=(15, 15))
 
@@ -296,17 +330,23 @@ def plot_metrics_summary(all_metrics: dict, output_dir: Path):
         col = idx % 3
         ax = axes[row, col]
 
-        values = [item[1]["metrics"][var][metric_key] for item in sorted_cases]
+        # Plot pre-compensation (dashed)
+        if pre_cases:
+            pre_taus = [item[0] for item in pre_cases]
+            pre_values = [item[1][var][metric_key] for item in pre_cases]
+            ax.plot(pre_taus, pre_values, "bo--", linewidth=2, markersize=8, label="pre_comp")
 
-        ax.plot(taus, values, "bo-", linewidth=2, markersize=8)
+        # Plot post-compensation (solid)
+        if post_cases:
+            post_taus = [item[0] for item in post_cases]
+            post_values = [item[1][var][metric_key] for item in post_cases]
+            ax.plot(post_taus, post_values, "ro-", linewidth=2, markersize=8, label="post_comp")
+
         ax.set_xlabel("Tau (Plant Time Constant) [ms]")
         ax.set_ylabel("Error")
         ax.set_title(title)
+        ax.legend()
         ax.grid(True, alpha=0.3)
-
-        # Add value labels
-        for x, y in zip(taus, values):
-            ax.text(x, y, f"{y:.2e}", fontsize=8, ha="center", va="bottom")
 
     plt.tight_layout()
 
@@ -319,8 +359,8 @@ def plot_metrics_summary(all_metrics: dict, output_dir: Path):
 def save_summary_report(baseline_data: dict, all_metrics: dict, output_dir: Path):
     """Save comprehensive summary report."""
 
-    # Sort by tau
-    sorted_cases = sorted(all_metrics.items(), key=lambda x: x[1]["tau"])
+    # Sort by tau, then comp_type
+    sorted_cases = sorted(all_metrics.items(), key=lambda x: (x[1]["tau"], x[1]["comp_type"]))
 
     # Save JSON
     json_file = output_dir / "tau_sweep_comparison.json"
@@ -332,7 +372,11 @@ def save_summary_report(baseline_data: dict, all_metrics: dict, output_dir: Path
     }
 
     for case_name, case_info in sorted_cases:
-        json_data["cases"][case_name] = {"tau_ms": case_info["tau"], "metrics": case_info["metrics"]}
+        json_data["cases"][case_name] = {
+            "tau_ms": case_info["tau"],
+            "comp_type": case_info["comp_type"],
+            "metrics": case_info["metrics"],
+        }
 
     with open(json_file, "w") as f:
         json.dump(json_data, f, indent=2)
@@ -355,7 +399,8 @@ def save_summary_report(baseline_data: dict, all_metrics: dict, output_dir: Path
         for case_name, case_info in sorted_cases:
             f.write(f"\nCase: {case_name}\n")
             f.write("-" * 80 + "\n")
-            f.write(f"Plant Time Constant (tau): {case_info['tau']:3d} ms\n\n")
+            f.write(f"Plant Time Constant (tau): {case_info['tau']:3d} ms\n")
+            f.write(f"Compensation Type: {case_info['comp_type']}\n\n")
 
             for var in ["position", "velocity", "thrust"]:
                 f.write(f"{var.upper()}:\n")
@@ -431,26 +476,28 @@ Example:
             continue
 
         test_data = load_simulation_data(test_file)
-        tau = extract_tau_from_dirname(test_dir.name)
+        tau, comp_type = extract_tau_from_dirname(test_dir.name)
 
-        if tau is None:
-            print(f"Warning: Could not extract tau from {test_dir.name}")
+        if tau is None or comp_type is None:
+            print(f"Warning: Could not extract tau/comp_type from {test_dir.name}")
             continue
 
         sweep_data[test_dir.name] = {
             "data": test_data,
             "tau": tau,
+            "comp_type": comp_type,
         }
 
         # Calculate metrics
         metrics = calculate_metrics(test_data, baseline_data)
         all_metrics[test_dir.name] = {
             "tau": tau,
+            "comp_type": comp_type,
             "metrics": metrics,
         }
 
         print(f"Loaded: {test_dir.name}")
-        print(f"  Tau: {tau}ms")
+        print(f"  Tau: {tau}ms, Comp: {comp_type}")
 
     print(f"\nTotal test cases loaded: {len(sweep_data)}")
 
@@ -463,11 +510,11 @@ Example:
     print("=" * 80)
 
     # Print metrics summary
-    sorted_cases = sorted(all_metrics.items(), key=lambda x: x[1]["tau"])
+    sorted_cases = sorted(all_metrics.items(), key=lambda x: (x[1]["tau"], x[1]["comp_type"]))
 
     for case_name, case_info in sorted_cases:
         print(f"\n{case_name}:")
-        print(f"  Tau: {case_info['tau']}ms")
+        print(f"  Tau: {case_info['tau']}ms, Comp: {case_info['comp_type']}")
         for var in ["position", "velocity", "thrust"]:
             rmse = case_info["metrics"][var]["rmse"]
             mae = case_info["metrics"][var]["mae"]

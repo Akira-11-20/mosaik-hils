@@ -52,11 +52,12 @@ class Spacecraft1DOF:
 class PIDController:
     """PID controller for position tracking."""
 
-    def __init__(self, kp: float, kd: float, ki: float, target_position: float, max_thrust: float, dt: float):
+    def __init__(self, kp: float, kd: float, ki: float, target_position: float, min_thrust: float, max_thrust: float, dt: float):
         self.kp = kp
         self.kd = kd
         self.ki = ki
         self.target_position = target_position
+        self.min_thrust = min_thrust
         self.max_thrust = max_thrust
         self.dt = dt
         self.error = 0.0
@@ -77,7 +78,7 @@ class PIDController:
         self.integral += self.error * self.dt
         thrust = self.kp * self.error - self.kd * velocity + self.ki * self.integral
         # Apply thrust saturation limits
-        thrust = max(-self.max_thrust, min(thrust, self.max_thrust))
+        thrust = max(self.min_thrust, min(thrust, self.max_thrust))
         return thrust
 
 
@@ -143,6 +144,7 @@ class PurePythonScenario(BaseScenario):
             kd=self.params.control.kd,
             ki=self.params.control.ki,
             target_position=self.params.control.target_position,
+            min_thrust=self.params.control.min_thrust,
             max_thrust=self.params.control.max_thrust,
             dt=self.params.control.control_period / 1000.0,  # Use control period, not time resolution
         )
