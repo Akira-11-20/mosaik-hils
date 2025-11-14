@@ -15,7 +15,15 @@ meta = {
     "models": {
         "ThrustStand": {
             "public": True,
-            "params": ["stand_id", "time_constant", "time_constant_std", "time_constant_noise", "enable_lag", "min_thrust", "max_thrust"],
+            "params": [
+                "stand_id",
+                "time_constant",
+                "time_constant_std",
+                "time_constant_noise",
+                "enable_lag",
+                "min_thrust",
+                "max_thrust",
+            ],
             "attrs": [
                 "command",  # 入力: 制御コマンド（辞書: {thrust, duration}）
                 "measured_thrust",  # 出力: 測定された推力 [N]

@@ -195,7 +195,7 @@ def calculate_metrics(data: dict, config: dict, baseline_data: dict = None, targ
 
         # Calculate RMSE (position vs baseline)
         error_vs_baseline = position[:min_len] - baseline_position[:min_len]
-        rmse = np.sqrt(np.mean(error_vs_baseline ** 2))
+        rmse = np.sqrt(np.mean(error_vs_baseline**2))
 
         # Calculate MAE (position vs baseline)
         mae = np.mean(np.abs(error_vs_baseline))
@@ -440,7 +440,13 @@ def plot_heatmap(df, x_col, y_col, z_col, title, output_path):
         cbar_label = z_col
 
     plt.figure(figsize=(10, 8))
-    sns.heatmap(pivot, annot=True, fmt=".6f" if z_col in ["rmse", "mae"] else ".3f", cmap="YlOrRd", cbar_kws={"label": cbar_label})
+    sns.heatmap(
+        pivot,
+        annot=True,
+        fmt=".6f" if z_col in ["rmse", "mae"] else ".3f",
+        cmap="YlOrRd",
+        cbar_kws={"label": cbar_label},
+    )
     plt.title(title, fontsize=14, fontweight="bold")
     plt.xlabel("CMD Delay [ms]", fontsize=12)
     plt.ylabel("Plant Tau [ms]", fontsize=12)

@@ -52,7 +52,9 @@ class Spacecraft1DOF:
 class PIDController:
     """PID controller for position tracking."""
 
-    def __init__(self, kp: float, kd: float, ki: float, target_position: float, min_thrust: float, max_thrust: float, dt: float):
+    def __init__(
+        self, kp: float, kd: float, ki: float, target_position: float, min_thrust: float, max_thrust: float, dt: float
+    ):
         self.kp = kp
         self.kd = kd
         self.ki = ki

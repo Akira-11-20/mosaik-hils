@@ -65,9 +65,7 @@ class InverseCompDualFeedbackScenario(BaseScenario):
 
     def create_world(self) -> mosaik.World:
         """Create Mosaik world with dual feedback inverse compensator."""
-        sim_config = get_simulator_config(
-            include_bridge=True, include_dual_feedback_inverse_comp=True
-        )
+        sim_config = get_simulator_config(include_bridge=True, include_dual_feedback_inverse_comp=True)
 
         world = mosaik.World(
             sim_config,
@@ -98,7 +96,7 @@ class InverseCompDualFeedbackScenario(BaseScenario):
             else:
                 mode_info += f", base_tau={self.params.inverse_comp.base_tau}ms, ratio={self.params.inverse_comp.tau_to_gain_ratio}"
             print(f" ✨ Dual Feedback Inverse Compensator enabled ({mode_info})")
-            print(f" 📡 Dual Feedback mode: Plant → InverseComp, Bridge-0 → InverseComp")
+            print(" 📡 Dual Feedback mode: Plant → InverseComp, Bridge-0 → InverseComp")
 
         plant_sim = self.world.start("PlantSim", step_size=self.params.plant_sim_period_steps)
         env_sim = self.world.start("EnvSim", step_size=self.params.env_sim_period_steps)

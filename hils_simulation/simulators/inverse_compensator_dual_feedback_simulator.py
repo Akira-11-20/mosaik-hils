@@ -370,11 +370,7 @@ class DualFeedbackInverseCompensator:
                     if self.use_adaptive_gain
                     else f"gain={self.gain:.1f} (constant)"
                 )
-                fb_str = (
-                    f", fb_contrib={self.feedback_contribution:.3f}N"
-                    if self.enable_dual_compensation
-                    else ""
-                )
+                fb_str = f", fb_contrib={self.feedback_contribution:.3f}N" if self.enable_dual_compensation else ""
                 print(
                     f"[DualFbInverseComp-{self.comp_id}] Step {self.input_count}: "
                     f"input={numeric_value:.3f}N → output={compensated_value:.3f}N ({mode_str}{fb_str})"
@@ -456,11 +452,7 @@ class DualFeedbackInverseCompensator:
 
         # Debug: show first few compensations
         if self.input_count <= 10:
-            fb_str = (
-                f", fb_contrib={self.feedback_contribution:.3f}"
-                if self.enable_dual_compensation
-                else ""
-            )
+            fb_str = f", fb_contrib={self.feedback_contribution:.3f}" if self.enable_dual_compensation else ""
             print(
                 f"[DualFbInverseComp] Step {self.input_count}: "
                 f"curr={value:.3f}, prev={self.prev_value:.3f}, "
