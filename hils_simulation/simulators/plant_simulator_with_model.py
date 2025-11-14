@@ -226,13 +226,13 @@ class PlantSimulator(mosaik_api.Simulator):
                 y = entity["actual_thrust"]
 
                 # サブステップ分割
-                sub_steps = max(1, int(dt / 0.1))
-                dt_sub = dt / sub_steps
+                # sub_steps = max(1, int(dt / 0.1))
+                # dt_sub = dt / sub_steps
 
-                for _ in range(sub_steps):
-                    y = y + (dt_sub / tau) * (u - y)
+                # for _ in range(sub_steps):
+                #     y = y + (dt_sub / tau) * (u - y)
 
-                # y = y + (dt / tau) * (u - y)
+                y = y + (dt / tau) * (u - y)
 
                 entity["actual_thrust"] = y
                 entity["time_constant"] = tau  # 記録用

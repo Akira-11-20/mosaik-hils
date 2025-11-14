@@ -2,11 +2,14 @@
 Compare simulation results from delay-tau sweep experiments.
 
 This script analyzes sweep results where both cmd_delay and tau (time constant)
-are varied, comparing performance with inverse compensation.
+are varied, comparing performance with inverse compensation RELATIVE TO RT BASELINE.
+
+All metrics (RMSE, MAE, max_error) are calculated as the difference between
+each simulation and the RT baseline trajectory, NOT the target position.
 
 Expected directory structure:
     results/YYYYMMDD-HHMMSS_sweep/
-        ├── YYYYMMDD-HHMMSS_baseline_rt/
+        ├── YYYYMMDD-HHMMSS_baseline_rt/          (reference for comparison)
         ├── YYYYMMDD-HHMMSS_cmd5ms_sense0ms_comp_tau100ms/
         ├── YYYYMMDD-HHMMSS_cmd10ms_sense0ms_comp_tau100ms/
         └── ...
@@ -170,21 +173,40 @@ def parse_sweep_dir_name(dir_name: str) -> dict:
     return params
 
 
-def calculate_metrics(data: dict, config: dict, target_position: float = 5.0) -> dict:
-    """Calculate performance metrics."""
+def calculate_metrics(data: dict, config: dict, baseline_data: dict = None, target_position: float = 5.0) -> dict:
+    """
+    Calculate performance metrics.
+
+    Args:
+        data: Simulation data
+        config: Simulation configuration
+        baseline_data: Baseline (RT) data for comparison. If None, metrics are calculated relative to target.
+        target_position: Target position for settling time and overshoot calculations
+    """
     time = data["time"]
     position = data["position"]
     velocity = data["velocity"]
     error = data["error"]
 
-    # Calculate RMSE (position)
-    rmse = np.sqrt(np.mean((position - target_position) ** 2))
+    # If baseline data is provided, calculate metrics relative to baseline
+    if baseline_data is not None:
+        baseline_position = baseline_data["position"]
+        min_len = min(len(position), len(baseline_position))
 
-    # Calculate MAE (position)
-    mae = np.mean(np.abs(position - target_position))
+        # Calculate RMSE (position vs baseline)
+        error_vs_baseline = position[:min_len] - baseline_position[:min_len]
+        rmse = np.sqrt(np.mean(error_vs_baseline ** 2))
 
-    # Calculate max error
-    max_error = np.max(np.abs(position - target_position))
+        # Calculate MAE (position vs baseline)
+        mae = np.mean(np.abs(error_vs_baseline))
+
+        # Calculate max error (vs baseline)
+        max_error = np.max(np.abs(error_vs_baseline))
+    else:
+        # Calculate metrics relative to target position (original behavior)
+        rmse = np.sqrt(np.mean((position - target_position) ** 2))
+        mae = np.mean(np.abs(position - target_position))
+        max_error = np.max(np.abs(position - target_position))
 
     # Calculate settling time (within 2% of target)
     settling_threshold = 0.02 * target_position
@@ -279,7 +301,14 @@ def analyze_sweep(sweep_dir: Path, output_dir: Path):
 
         # Calculate metrics
         target_pos = config["control"]["target_position_m"]
-        metrics = calculate_metrics(data, config, target_position=target_pos)
+
+        # For baseline, calculate metrics relative to target
+        # For other simulations, calculate metrics relative to baseline
+        is_baseline = params.get("is_baseline", False)
+        if is_baseline or baseline_data is None:
+            metrics = calculate_metrics(data, config, baseline_data=None, target_position=target_pos)
+        else:
+            metrics = calculate_metrics(data, config, baseline_data=baseline_data, target_position=target_pos)
 
         # Store results
         result = {
@@ -289,7 +318,7 @@ def analyze_sweep(sweep_dir: Path, output_dir: Path):
             "plant_tau_ms": plant_tau,
             "comp_enabled": comp_enabled,
             "comp_base_tau_ms": comp_base_tau,
-            "is_baseline": params.get("is_baseline", False),
+            "is_baseline": is_baseline,
             **metrics,
         }
         results.append(result)
@@ -350,7 +379,7 @@ def analyze_sweep(sweep_dir: Path, output_dir: Path):
         "cmd_delay_ms",
         "plant_tau_ms",
         "rmse",
-        "RMSE vs CMD Delay and Plant Tau",
+        "RMSE vs CMD Delay and Plant Tau\n(vs RT Baseline)",
         output_dir / "heatmap_rmse_delay_tau.png",
     )
 
@@ -360,7 +389,7 @@ def analyze_sweep(sweep_dir: Path, output_dir: Path):
         "cmd_delay_ms",
         "plant_tau_ms",
         "mae",
-        "MAE vs CMD Delay and Plant Tau",
+        "MAE vs CMD Delay and Plant Tau\n(vs RT Baseline)",
         output_dir / "heatmap_mae_delay_tau.png",
     )
 
@@ -375,10 +404,10 @@ def analyze_sweep(sweep_dir: Path, output_dir: Path):
     )
 
     # 4. Line plot: RMSE vs cmd_delay (for each tau)
-    plot_line_by_delay(df_comp, "rmse", "RMSE vs CMD Delay", output_dir / "line_rmse_vs_delay.png")
+    plot_line_by_delay(df_comp, "rmse", "RMSE vs CMD Delay\n(vs RT Baseline)", output_dir / "line_rmse_vs_delay.png")
 
     # 5. Line plot: RMSE vs tau (for each cmd_delay)
-    plot_line_by_tau(df_comp, "rmse", "RMSE vs Plant Tau", output_dir / "line_rmse_vs_tau.png")
+    plot_line_by_tau(df_comp, "rmse", "RMSE vs Plant Tau\n(vs RT Baseline)", output_dir / "line_rmse_vs_tau.png")
 
     # 6. Tau comparison plot (plant_tau vs comp_tau)
     if "avg_tau" in df_comp.columns and "avg_comp_tau" in df_comp.columns:
@@ -400,11 +429,21 @@ def plot_heatmap(df, x_col, y_col, z_col, title, output_path):
     # Sort index in descending order so larger tau values appear at the top
     pivot = pivot.sort_index(ascending=False)
 
+    # Format colorbar label based on metric
+    if z_col == "rmse":
+        cbar_label = "RMSE [m]"
+    elif z_col == "mae":
+        cbar_label = "MAE [m]"
+    elif z_col == "settling_time":
+        cbar_label = "Settling Time [s]"
+    else:
+        cbar_label = z_col
+
     plt.figure(figsize=(10, 8))
-    sns.heatmap(pivot, annot=True, fmt=".3f", cmap="YlOrRd", cbar_kws={"label": z_col})
-    plt.title(title)
-    plt.xlabel("CMD Delay [ms]")
-    plt.ylabel("Plant Tau [ms]")
+    sns.heatmap(pivot, annot=True, fmt=".6f" if z_col in ["rmse", "mae"] else ".3f", cmap="YlOrRd", cbar_kws={"label": cbar_label})
+    plt.title(title, fontsize=14, fontweight="bold")
+    plt.xlabel("CMD Delay [ms]", fontsize=12)
+    plt.ylabel("Plant Tau [ms]", fontsize=12)
     plt.tight_layout()
     plt.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close()
@@ -417,12 +456,19 @@ def plot_line_by_delay(df, metric_col, title, output_path):
 
     # Group by plant_tau
     for tau, group in df.groupby("plant_tau_ms"):
-        plt.plot(group["cmd_delay_ms"], group[metric_col], marker="o", label=f"τ={tau:.0f}ms")
+        plt.plot(group["cmd_delay_ms"], group[metric_col], marker="o", label=f"τ={tau:.0f}ms", linewidth=2)
 
-    plt.xlabel("CMD Delay [ms]")
-    plt.ylabel(metric_col)
-    plt.title(title)
-    plt.legend()
+    plt.xlabel("CMD Delay [ms]", fontsize=12)
+    # Format y-axis label based on metric
+    if metric_col == "rmse":
+        ylabel = "RMSE [m]"
+    elif metric_col == "mae":
+        ylabel = "MAE [m]"
+    else:
+        ylabel = metric_col
+    plt.ylabel(ylabel, fontsize=12)
+    plt.title(title, fontsize=14, fontweight="bold")
+    plt.legend(fontsize=10)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.savefig(output_path, dpi=300, bbox_inches="tight")
@@ -436,12 +482,19 @@ def plot_line_by_tau(df, metric_col, title, output_path):
 
     # Group by cmd_delay
     for delay, group in df.groupby("cmd_delay_ms"):
-        plt.plot(group["plant_tau_ms"], group[metric_col], marker="o", label=f"delay={delay:.0f}ms")
+        plt.plot(group["plant_tau_ms"], group[metric_col], marker="o", label=f"delay={delay:.0f}ms", linewidth=2)
 
-    plt.xlabel("Plant Tau [ms]")
-    plt.ylabel(metric_col)
-    plt.title(title)
-    plt.legend()
+    plt.xlabel("Plant Tau [ms]", fontsize=12)
+    # Format y-axis label based on metric
+    if metric_col == "rmse":
+        ylabel = "RMSE [m]"
+    elif metric_col == "mae":
+        ylabel = "MAE [m]"
+    else:
+        ylabel = metric_col
+    plt.ylabel(ylabel, fontsize=12)
+    plt.title(title, fontsize=14, fontweight="bold")
+    plt.legend(fontsize=10)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.savefig(output_path, dpi=300, bbox_inches="tight")
@@ -564,7 +617,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-    # Analyze a sweep directory
+    # Analyze a sweep directory (output saved in sweep_dir/comparison/)
     python compare_delay_tau_sweep.py results/20251111-183809_sweep
 
     # Specify custom output directory
@@ -582,7 +635,7 @@ Examples:
         "--output-dir",
         type=str,
         default=None,
-        help="Output directory for analysis results (default: results/comparison_delay_tau_sweep)",
+        help="Output directory for analysis results (default: <sweep_dir>/comparison/)",
     )
 
     args = parser.parse_args()
@@ -598,7 +651,8 @@ Examples:
     if args.output_dir:
         output_dir = Path(args.output_dir)
     else:
-        output_dir = Path("results") / "comparison_delay_tau_sweep"
+        # Default: save comparison results inside the sweep directory
+        output_dir = sweep_dir / "comparison"
 
     # Run analysis
     df = analyze_sweep(sweep_dir, output_dir)
