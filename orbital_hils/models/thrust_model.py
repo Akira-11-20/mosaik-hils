@@ -115,7 +115,7 @@ if __name__ == "__main__":
     test_velocity = np.array([0.0, 7500.0, 0.0])
 
     thrust = model.calculate_thrust(test_position, test_velocity)
-    print(f"\nTest thrust calculation:")
+    print("\nTest thrust calculation:")
     print(f"  Position: {test_position} m")
     print(f"  Velocity: {test_velocity} m/s")
     print(f"  Thrust: {thrust} N")

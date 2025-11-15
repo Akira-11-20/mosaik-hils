@@ -34,7 +34,6 @@ meta = {
 }
 
 
-
 class OrbitalPlantSimulator(mosaik_api.Simulator):
     """
     3軸推力計測デバイスシミュレーター

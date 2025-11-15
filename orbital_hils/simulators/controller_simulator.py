@@ -97,9 +97,7 @@ class OrbitalControllerSimulator(mosaik_api.Simulator):
             eid = f"{model}_{i}"
 
             # ThrustModelの初期化
-            thrust_model = ThrustModel(
-                target_position=target_position, control_gain=control_gain
-            )
+            thrust_model = ThrustModel(target_position=target_position, control_gain=control_gain)
 
             self.entities[eid] = {
                 "thrust_model": thrust_model,

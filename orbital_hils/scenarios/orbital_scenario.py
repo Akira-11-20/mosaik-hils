@@ -150,9 +150,7 @@ class OrbitalScenario:
             time_resolution=self.config.time_resolution,
             step_size=self.config.step_size,
         )
-        self.collector = collector_sim.Collector(
-            output_dir=str(self.output_dir), minimal_mode=minimal_data_mode
-        )
+        self.collector = collector_sim.Collector(output_dir=str(self.output_dir), minimal_mode=minimal_data_mode)
 
         print("  ✅ All entities created")
 

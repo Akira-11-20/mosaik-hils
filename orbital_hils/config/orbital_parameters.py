@@ -286,9 +286,10 @@ def load_config_from_env(env_file: str = ".env") -> OrbitalSimulationConfig:
         OrbitalSimulationConfig
     """
     try:
-        from dotenv import load_dotenv
         import os
         from pathlib import Path
+
+        from dotenv import load_dotenv
 
         # .envファイルを読み込み
         env_path = Path(__file__).parent.parent / env_file
@@ -361,9 +362,10 @@ def get_env_param(key: str, default: any, convert_type: type = str) -> any:
         変換後の値
     """
     try:
-        from dotenv import load_dotenv
         import os
         from pathlib import Path
+
+        from dotenv import load_dotenv
 
         env_path = Path(__file__).parent.parent / ".env"
         if env_path.exists():

@@ -14,8 +14,8 @@ from pathlib import Path
 # プロジェクトルートをパスに追加
 sys.path.insert(0, str(Path(__file__).parent))
 
+from config.orbital_parameters import load_config_from_env
 from scenarios.orbital_scenario import OrbitalScenario
-from config.orbital_parameters import CONFIG_ISS, load_config_from_env
 
 
 def main():
@@ -46,14 +46,10 @@ def main():
     print(f"📊 HDF5 data file: {output_dir / 'hils_data.h5'}")
     print()
     print("Next steps:")
-    print(f"  1. Visualize results:")
-    print(
-        f"     uv run python scripts/analysis/visualize_orbital_results.py {output_dir / 'hils_data.h5'}"
-    )
-    print(f"  2. Interactive 3D plot:")
-    print(
-        f"     uv run python scripts/analysis/visualize_orbital_interactive.py {output_dir / 'hils_data.h5'}"
-    )
+    print("  1. Visualize results:")
+    print(f"     uv run python scripts/analysis/visualize_orbital_results.py {output_dir / 'hils_data.h5'}")
+    print("  2. Interactive 3D plot:")
+    print(f"     uv run python scripts/analysis/visualize_orbital_interactive.py {output_dir / 'hils_data.h5'}")
     print("=" * 70)
 
 
