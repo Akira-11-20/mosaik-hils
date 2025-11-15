@@ -28,6 +28,8 @@ meta = {
                 "measured_force_x",
                 "measured_force_y",
                 "measured_force_z",
+                "norm_measured_force",
+                "alpha",
             ],
         },
     },
@@ -132,9 +134,9 @@ class OrbitalPlantSimulator(mosaik_api.Simulator):
 
             # 離散化: f[n+1] = f[n] + (dt/τ)*(f_cmd[n] - f[n])
 
-            alpha = dt / tau
+            alpha = tau / dt
             if alpha > 1.0:
-                new_force = force + alpha * (command - force)
+                new_force = force + (command - force) / alpha
             else:
                 # τ=0の場合は即座に追従
                 new_force = command
@@ -147,6 +149,7 @@ class OrbitalPlantSimulator(mosaik_api.Simulator):
             measured_force = new_force + noise
 
             entity["measured_force"] = measured_force
+            entity["alpha"] = alpha
 
         return time + self.step_size
 
@@ -176,6 +179,8 @@ class OrbitalPlantSimulator(mosaik_api.Simulator):
                 "command_x": entity["command"][0],
                 "command_y": entity["command"][1],
                 "command_z": entity["command"][2],
+                "norm_measured_force": np.linalg.norm(measured_force),
+                "alpha": entity["alpha"],
             }
 
             for attr in attrs:

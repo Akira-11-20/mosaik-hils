@@ -234,6 +234,8 @@ class OrbitalScenario:
             "measured_force_x",
             "measured_force_y",
             "measured_force_z",
+            "norm_measured_force",
+            "alpha",
         )
 
         # Environment data
@@ -248,6 +250,10 @@ class OrbitalScenario:
             "velocity_y",
             "velocity_z",
             "velocity_norm",
+            "force_x",
+            "force_y",
+            "force_z",
+            "norm_force",
             "acceleration_x",
             "acceleration_y",
             "acceleration_z",

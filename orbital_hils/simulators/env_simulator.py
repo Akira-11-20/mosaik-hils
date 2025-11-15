@@ -31,6 +31,7 @@ meta = {
                 "force_x",  # 推力 X成分 [N]
                 "force_y",  # 推力 Y成分 [N]
                 "force_z",  # 推力 Z成分 [N]
+                "norm_force",  # 推力ノルム [N]
                 # 出力（位置）
                 "position_x",  # 位置 X [m]
                 "position_y",  # 位置 Y [m]
@@ -332,6 +333,11 @@ class OrbitalEnvSimulator(mosaik_api.Simulator):
                 "acceleration_x": a[0],
                 "acceleration_y": a[1],
                 "acceleration_z": a[2],
+                #推力
+                "force_x": entity["force"][0],
+                "force_y": entity["force"][1],
+                "force_z": entity["force"][2],
+                "norm_force": np.linalg.norm(entity["force"]),
                 # 軌道要素
                 "altitude": altitude,
                 "semi_major_axis": semi_major_axis,
