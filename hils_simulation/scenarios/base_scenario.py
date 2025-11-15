@@ -141,7 +141,14 @@ class BaseScenario(ABC):
 
         print("\n📊 Generating execution graphs...")
         try:
-            from utils.plot_utils import plot_dataflow_graph_custom
+            import sys
+            from pathlib import Path
+
+            # プロジェクトルートをパスに追加
+            project_root = Path(__file__).parent.parent.parent
+            sys.path.insert(0, str(project_root))
+
+            from common_utils.plot_utils import plot_dataflow_graph_custom
 
             plot_kwargs = {
                 "folder": str(self.run_dir),

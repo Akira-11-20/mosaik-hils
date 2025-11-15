@@ -12,7 +12,14 @@ import random
 import mosaik_api
 
 try:
-    from utils.event_logger import DataTag, EventLogger
+    import sys
+    from pathlib import Path
+
+    # プロジェクトルートをパスに追加
+    project_root = Path(__file__).parent.parent.parent
+    sys.path.insert(0, str(project_root))
+
+    from common_utils.event_logger import DataTag, EventLogger
 except ImportError:
     EventLogger = None
     DataTag = None
