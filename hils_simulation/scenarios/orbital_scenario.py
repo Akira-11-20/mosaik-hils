@@ -220,22 +220,36 @@ class OrbitalScenario:
             return
 
         print("\n📊 Generating plots...")
+
+        # DataCollectorが生成するHDF5ファイル名を検索
+        h5_files = list(self.run_dir.glob("*.h5"))
+        if not h5_files:
+            print(f"   ⚠️  No HDF5 data file found in {self.run_dir}")
+            return
+
+        h5_path = h5_files[0]
+
+        # 静的プロット (matplotlib)
         try:
             from scripts.analysis.visualize_orbital_results import plot_orbital_simulation
 
-            # DataCollectorが生成するHDF5ファイル名を検索
-            h5_files = list(self.run_dir.glob("*.h5"))
-            if not h5_files:
-                print(f"   ⚠️  No HDF5 data file found in {self.run_dir}")
-                return
-
-            h5_path = h5_files[0]
             plot_orbital_simulation(str(h5_path), output_dir=str(self.run_dir))
-            print(f"   ✅ Plots saved to {self.run_dir}/")
+            print(f"   ✅ Static plots saved to {self.run_dir}/")
         except ImportError:
-            print("   ℹ️  Visualization script not found (will create later)")
+            print("   ℹ️  Static visualization script not found")
         except Exception as e:
-            print(f"   ⚠️  Plot generation failed: {e}")
+            print(f"   ⚠️  Static plot generation failed: {e}")
+
+        # インタラクティブプロット (plotly HTML)
+        try:
+            from scripts.analysis.visualize_orbital_interactive import plot_orbital_simulation_interactive
+
+            plot_orbital_simulation_interactive(str(h5_path), output_dir=str(self.run_dir))
+            print(f"   ✅ Interactive HTML plots saved to {self.run_dir}/")
+        except ImportError:
+            print("   ℹ️  Interactive visualization script not found")
+        except Exception as e:
+            print(f"   ⚠️  Interactive plot generation failed: {e}")
 
     def run(self):
         """シミュレーションの実行"""
