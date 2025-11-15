@@ -131,12 +131,19 @@ class OrbitalPlantSimulator(mosaik_api.Simulator):
             # 1次遅れ系の更新
             tau = entity["time_constant"]
             force = entity["force"]
+            
+            norm_command = np.linalg.norm(command)
+            norm_force = np.linalg.norm(force)
 
             # 離散化: f[n+1] = f[n] + (dt/τ)*(f_cmd[n] - f[n])
 
             alpha = tau / dt
             if alpha > 1.0:
-                new_force = force + (command - force) / alpha
+                new_norm_force = norm_force + (norm_command - norm_force) / alpha
+                if norm_command >0:
+                    new_force = new_norm_force * (command / norm_command)
+                else:
+                    new_force = np.zeros(3)
             else:
                 # τ=0の場合は即座に追従
                 new_force = command
