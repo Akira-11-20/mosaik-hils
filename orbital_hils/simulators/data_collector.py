@@ -324,6 +324,82 @@ class DataCollectorSimulator(mosaik_api.Simulator):
 
         print(f"[DataCollector] 📁 Output: {output_path}")
 
+        # ホーマン遷移検出と自動可視化
+        self._auto_visualize_if_hohmann(output_path)
+
+    def _auto_visualize_if_hohmann(self, h5_file_path):
+        """
+        ホーマン遷移を検出し、自動的にフェーズ色分けプロットを生成
+
+        Args:
+            h5_file_path: HDF5ファイルのパス
+        """
+        try:
+            import numpy as np
+
+            # HDF5から推力データを読み込んで、ホーマン遷移かどうか判定
+            with h5py.File(h5_file_path, "r") as f:
+                # Controllerグループを探す
+                controller_groups = [k for k in f.keys() if "OrbitalController" in k]
+                if not controller_groups:
+                    return  # コントローラーがない場合はスキップ
+
+                ctrl = f[controller_groups[0]]
+
+                # 推力データが存在するか確認
+                if "thrust_command_x" not in ctrl:
+                    return
+
+                thrust_x = ctrl["thrust_command_x"][:]
+                thrust_y = ctrl["thrust_command_y"][:]
+                thrust_z = ctrl["thrust_command_z"][:]
+                thrust_mag = np.sqrt(thrust_x**2 + thrust_y**2 + thrust_z**2)
+
+            # 推力が1N以上のポイントが100個以上ある場合、ホーマン遷移と判定
+            burn_points = np.sum(thrust_mag > 1.0)
+            if burn_points < 100:
+                return  # 短いバーン → 自由軌道運動と判定
+
+            print("\n[DataCollector] 🔥 Hohmann transfer detected! Generating phase-colored plots...")
+
+            # フェーズ可視化スクリプトを実行
+            import subprocess
+            import sys
+
+            output_dir = h5_file_path.parent
+
+            # orbital_hilsディレクトリを特定
+            project_root = h5_file_path.parent.parent.parent
+
+            # 静止画版（PNG）
+            try:
+                png_script = project_root / "scripts" / "analysis" / "visualize_hohmann_phases.py"
+                subprocess.run(
+                    [sys.executable, str(png_script), str(h5_file_path)],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+                print("[DataCollector] ✅ PNG phase plots generated")
+            except subprocess.CalledProcessError as e:
+                print(f"[DataCollector] ⚠️  PNG generation failed: {e.stderr}")
+
+            # インタラクティブ版（HTML）
+            try:
+                html_script = project_root / "scripts" / "analysis" / "visualize_hohmann_phases_interactive.py"
+                subprocess.run(
+                    [sys.executable, str(html_script), str(h5_file_path)],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+                print("[DataCollector] ✅ HTML interactive plots generated")
+            except subprocess.CalledProcessError as e:
+                print(f"[DataCollector] ⚠️  HTML generation failed: {e.stderr}")
+
+        except Exception as e:
+            print(f"[DataCollector] ⚠️  Auto-visualization failed: {e}")
+
 
 if __name__ == "__main__":
     mosaik_api.start_simulator(DataCollectorSimulator())

@@ -11,6 +11,7 @@
 - RK4法による高精度数値積分
 - 制御ループ（Controller → Plant → Environment）
 - 3軸推力制御（X, Y, Z独立）
+- **ホーマン遷移制御**（lamberthubライブラリ使用）
 - HDF5形式でのデータ記録
 
 ## アーキテクチャ
@@ -55,7 +56,7 @@
 1. **OrbitalController** ([simulators/controller_simulator.py](simulators/controller_simulator.py))
    - 入力: 位置・速度ベクトル
    - 出力: 推力指令ベクトル [N]
-   - モデル: ThrustModel（現在はゼロ推力）
+   - モデル: ThrustModel（ゼロ推力、PD制御、ホーマン遷移）
 
 2. **OrbitalPlant** ([simulators/plant_simulator.py](simulators/plant_simulator.py))
    - 入力: 推力指令 [N]
@@ -90,10 +91,9 @@ orbital_hils/
 ├── scripts/                    # ツールスクリプト
 │   └── analysis/               # データ分析
 │       ├── visualize_orbital_results.py
-│       └── visualize_orbital_interactive.py
-│
-├── utils/                      # ユーティリティ
-│   └── data_collector.py       # HDF5データ記録
+│       ├── visualize_orbital_interactive.py
+│       ├── visualize_hohmann_phases.py
+│       └── visualize_hohmann_phases_interactive.py
 │
 ├── results_orbital/            # シミュレーション結果
 │
@@ -105,9 +105,46 @@ orbital_hils/
 
 ### 基本実行
 
+**推奨方法（main.pyを使用）**:
+
 ```bash
 cd /home/akira/mosaik-hils/orbital_hils
+
+# 1. .envファイルでシナリオを選択
+nano .env
+# CONTROLLER_TYPE=zero      # 自由軌道運動（デフォルト）
+# CONTROLLER_TYPE=pd        # PD制御
+# CONTROLLER_TYPE=hohmann   # ホーマン遷移
+
+# 2. 実行（.envの設定に応じて自動的にシナリオが選択される）
 uv run python main.py
+```
+
+**詳細設定例（ホーマン遷移の場合）**:
+
+```bash
+# .envファイルを編集
+nano .env
+
+# 主要パラメータ:
+# CONTROLLER_TYPE=hohmann
+# MAX_THRUST=50.0                    # 推力を変更
+# HOHMANN_INITIAL_ALTITUDE_KM=400.0  # 初期高度
+# HOHMANN_TARGET_ALTITUDE_KM=700.0   # 目標高度
+# HOHMANN_START_TIME=100.0           # 遷移開始時刻
+
+# 実行
+uv run python main.py
+```
+
+**旧方法（直接シナリオ指定）**:
+
+```bash
+# ホーマン遷移シナリオを直接実行
+uv run python -m scenarios.hohmann_scenario
+
+# デモ実行（パラメータ計算のみ）
+uv run python examples/demo_hohmann_transfer.py
 ```
 
 ### 結果の確認
@@ -116,12 +153,20 @@ uv run python main.py
 # 最新の結果ディレクトリを確認
 ls -ltr results_orbital/
 
-# プロット生成
+# 基本プロット生成
 uv run python scripts/analysis/visualize_orbital_results.py results_orbital/YYYYMMDD-HHMMSS/hils_data.h5
 
 # インタラクティブ3Dプロット（ブラウザで開く）
 uv run python scripts/analysis/visualize_orbital_interactive.py results_orbital/YYYYMMDD-HHMMSS/hils_data.h5
+
+# ホーマン遷移フェーズ色分けプロット（PNG）
+uv run python scripts/analysis/visualize_hohmann_phases.py results_orbital/YYYYMMDD-HHMMSS/hils_data.h5
+
+# ホーマン遷移フェーズ色分けプロット（HTML インタラクティブ）
+uv run python scripts/analysis/visualize_hohmann_phases_interactive.py results_orbital/YYYYMMDD-HHMMSS/hils_data.h5
 ```
+
+**注意**: ホーマン遷移シミュレーションでは、フェーズ色分けプロット（PNG & HTML）が**自動生成**されます。
 
 ## 設定
 
@@ -239,14 +284,26 @@ f[n+1] = f[n] + (dt/τ) * (f_cmd[n] - f[n])
 f_measured = f + N(0, σ²)
 ```
 
-## 将来の拡張
+## 制御アルゴリズム
 
-### 制御アルゴリズム
+### 実装済み
 
-- [ ] PD制御実装
+- [x] **ゼロ推力制御** - 自由軌道運動のシミュレーション
+- [x] **PD制御** - 位置・速度フィードバック制御
+- [x] **ホーマン遷移制御** - 2つの円軌道間の最適遷移
+  - ΔV計算
+  - 2インパルスバーン（第1バーン、第2バーン）
+  - コーストフェーズ
+  - Lambert問題ソルバー（lamberthub使用）
+
+**詳細**: [docs/HOHMANN_TRANSFER.md](docs/HOHMANN_TRANSFER.md)
+
+### 計画中
+
 - [ ] LQR (Linear Quadratic Regulator)
 - [ ] MPC (Model Predictive Control)
-- [ ] 軌道遷移制御
+- [ ] 軌道面変更を含む遷移
+- [ ] 低推力連続推進
 
 ### 通信遅延モデル
 
@@ -305,6 +362,12 @@ f_measured = f + N(0, σ²)
 Akira
 
 ## 更新履歴
+
+- **2025-11-15**: ホーマン遷移制御実装
+  - HohmannTransferModel追加（lamberthub使用）
+  - LambertTransferModel追加
+  - PDThrustModel実装
+  - デモスクリプト・ドキュメント追加
 
 - **2025-01-15**: プロジェクト作成
   - 基本アーキテクチャ実装

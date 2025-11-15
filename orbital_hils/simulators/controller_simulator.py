@@ -15,7 +15,7 @@ import numpy as np
 # プロジェクトルートをパスに追加
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from models.thrust_model import ThrustModel
+from models.thrust_model import ThrustModel, HohmannThrustModel, PDThrustModel
 
 meta = {
     "type": "time-based",
@@ -25,6 +25,14 @@ meta = {
             "params": [
                 "target_position",  # 目標位置 [x, y, z] [m]
                 "control_gain",  # 制御ゲイン
+                "controller_type",  # 制御タイプ: "zero", "pd", "hohmann"
+                "mu",  # 重力定数（ホーマン遷移用）
+                "initial_altitude",  # 初期軌道高度（ホーマン遷移用）
+                "target_altitude",  # 目標軌道高度（ホーマン遷移用）
+                "radius_body",  # 天体半径（ホーマン遷移用）
+                "spacecraft_mass",  # 衛星質量
+                "max_thrust",  # 最大推力
+                "start_time",  # 遷移開始時刻（ホーマン遷移用）
             ],
             "attrs": [
                 # 入力（from OrbitalEnv）
@@ -77,7 +85,21 @@ class OrbitalControllerSimulator(mosaik_api.Simulator):
         self.step_size = step_size
         return self.meta
 
-    def create(self, num, model, target_position=None, control_gain=1.0):
+    def create(
+        self,
+        num,
+        model,
+        target_position=None,
+        control_gain=1.0,
+        controller_type="zero",
+        mu=3.986004418e14,
+        initial_altitude=400e3,
+        target_altitude=600e3,
+        radius_body=6378137.0,
+        spacecraft_mass=500.0,
+        max_thrust=1.0,
+        start_time=10.0,
+    ):
         """
         軌道制御器エンティティの作成
 
@@ -86,6 +108,14 @@ class OrbitalControllerSimulator(mosaik_api.Simulator):
             model: モデル名
             target_position: 目標位置 [x, y, z] [m]
             control_gain: 制御ゲイン
+            controller_type: 制御タイプ ("zero", "pd", "hohmann")
+            mu: 重力定数 [m³/s²]
+            initial_altitude: 初期軌道高度 [m]
+            target_altitude: 目標軌道高度 [m]
+            radius_body: 天体半径 [m]
+            spacecraft_mass: 衛星質量 [kg]
+            max_thrust: 最大推力 [N]
+            start_time: 遷移開始時刻 [s]
         """
         entities = []
 
@@ -96,8 +126,41 @@ class OrbitalControllerSimulator(mosaik_api.Simulator):
         for i in range(num):
             eid = f"{model}_{i}"
 
-            # ThrustModelの初期化
-            thrust_model = ThrustModel(target_position=target_position, control_gain=control_gain)
+            # 制御タイプに応じてThrustModelを初期化
+            if controller_type == "hohmann":
+                # ホーマン遷移モデル
+                thrust_model = HohmannThrustModel(
+                    mu=mu,
+                    initial_altitude=initial_altitude,
+                    target_altitude=target_altitude,
+                    radius_body=radius_body,
+                    spacecraft_mass=spacecraft_mass,
+                    max_thrust=max_thrust,
+                    start_time=start_time,
+                )
+                print(f"[OrbitalControllerSim] Created {eid} with Hohmann transfer:")
+                print(f"  Initial altitude: {initial_altitude / 1e3:.2f} km")
+                print(f"  Target altitude: {target_altitude / 1e3:.2f} km")
+                print(f"  Start time: {start_time:.2f} s")
+
+            elif controller_type == "pd":
+                # PD制御モデル
+                thrust_model = PDThrustModel(
+                    target_position=target_position,
+                    kp=control_gain * 1e-3,
+                    kd=control_gain * 1e-2,
+                    max_thrust=max_thrust,
+                )
+                print(f"[OrbitalControllerSim] Created {eid} with PD control:")
+                print(f"  Target position: {target_position} m")
+                print(f"  Control gain: {control_gain}")
+
+            else:
+                # ゼロ推力モデル（デフォルト）
+                thrust_model = ThrustModel(target_position=target_position, control_gain=control_gain)
+                print(f"[OrbitalControllerSim] Created {eid} (zero thrust):")
+                print(f"  Target position: {target_position} m")
+                print(f"  Control gain: {control_gain}")
 
             self.entities[eid] = {
                 "thrust_model": thrust_model,
@@ -107,10 +170,6 @@ class OrbitalControllerSimulator(mosaik_api.Simulator):
             }
 
             entities.append({"eid": eid, "type": model})
-
-            print(f"[OrbitalControllerSim] Created {eid}:")
-            print(f"  Target position: {target_position} m")
-            print(f"  Control gain: {control_gain}")
 
         return entities
 
@@ -146,9 +205,10 @@ class OrbitalControllerSimulator(mosaik_api.Simulator):
             entity["position"] = position
             entity["velocity"] = velocity
 
-            # 推力指令の計算
+            # 推力指令の計算（時刻を渡す）
             thrust_model = entity["thrust_model"]
-            thrust_command = thrust_model.calculate_thrust(position, velocity)
+            current_time = time * self.time_resolution  # 時間単位を秒に変換
+            thrust_command = thrust_model.calculate_thrust(position, velocity, time=current_time)
             entity["thrust_command"] = thrust_command
 
         return time + self.step_size
