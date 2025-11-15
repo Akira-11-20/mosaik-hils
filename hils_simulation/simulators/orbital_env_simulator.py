@@ -196,28 +196,51 @@ class OrbitalEnvSimulator(mosaik_api.Simulator):
             r = entity["position"]
             v = entity["velocity"]
 
-            # k1
-            k1_v = self._acceleration(r, v, force, entity)
-            k1_r = v
-
-            # k2
-            k2_v = self._acceleration(r + 0.5 * dt * k1_r, v + 0.5 * dt * k1_v, force, entity)
-            k2_r = v + 0.5 * dt * k1_v
-
-            # k3
-            k3_v = self._acceleration(r + 0.5 * dt * k2_r, v + 0.5 * dt * k2_v, force, entity)
-            k3_r = v + 0.5 * dt * k2_v
-
-            # k4
-            k4_v = self._acceleration(r + dt * k3_r, v + dt * k3_v, force, entity)
-            k4_r = v + dt * k3_v
+            # RK4積分で状態を更新
+            new_r, new_v = self._rk4_step(r, v, force, entity, dt)
 
             # 状態更新
-            entity["position"] = r + (dt / 6.0) * (k1_r + 2 * k2_r + 2 * k3_r + k4_r)
-            entity["velocity"] = v + (dt / 6.0) * (k1_v + 2 * k2_v + 2 * k3_v + k4_v)
-            entity["acceleration"] = self._acceleration(entity["position"], entity["velocity"], force, entity)
+            entity["position"] = new_r
+            entity["velocity"] = new_v
+            entity["acceleration"] = self._acceleration(new_r, new_v, force, entity)
 
         return time + self.step_size
+
+    def _rk4_step(self, r, v, force, entity, dt):
+        """
+        RK4法による1ステップの積分
+
+        Args:
+            r: 位置ベクトル [m]
+            v: 速度ベクトル [m/s]
+            force: 推力ベクトル [N]
+            entity: エンティティデータ
+            dt: 時間ステップ [s]
+
+        Returns:
+            (new_r, new_v): 更新後の位置・速度ベクトル
+        """
+        # k1
+        k1_v = self._acceleration(r, v, force, entity)
+        k1_r = v
+
+        # k2
+        k2_v = self._acceleration(r + 0.5 * dt * k1_r, v + 0.5 * dt * k1_v, force, entity)
+        k2_r = v + 0.5 * dt * k1_v
+
+        # k3
+        k3_v = self._acceleration(r + 0.5 * dt * k2_r, v + 0.5 * dt * k2_v, force, entity)
+        k3_r = v + 0.5 * dt * k2_v
+
+        # k4
+        k4_v = self._acceleration(r + dt * k3_r, v + dt * k3_v, force, entity)
+        k4_r = v + dt * k3_v
+
+        # 状態更新
+        new_r = r + (dt / 6.0) * (k1_r + 2 * k2_r + 2 * k3_r + k4_r)
+        new_v = v + (dt / 6.0) * (k1_v + 2 * k2_v + 2 * k3_v + k4_v)
+
+        return new_r, new_v
 
     def _acceleration(self, r, v, force, entity):
         """
