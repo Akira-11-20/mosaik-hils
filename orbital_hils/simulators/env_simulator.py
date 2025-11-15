@@ -333,7 +333,7 @@ class OrbitalEnvSimulator(mosaik_api.Simulator):
                 "acceleration_x": a[0],
                 "acceleration_y": a[1],
                 "acceleration_z": a[2],
-                #推力
+                # 推力
                 "force_x": entity["force"][0],
                 "force_y": entity["force"][1],
                 "force_z": entity["force"][2],

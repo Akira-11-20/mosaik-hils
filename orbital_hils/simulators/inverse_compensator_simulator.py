@@ -28,8 +28,8 @@ import sys
 from pathlib import Path
 from typing import Any, Dict
 
-import numpy as np
 import mosaik_api
+import numpy as np
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -150,14 +150,13 @@ class InverseCompensatorSimulator(mosaik_api.Simulator):
                     if attr in inputs[eid]:
                         force_value = list(inputs[eid][attr].values())[0]
                         force[axis] = force_value if force_value is not None else 0.0
-            
-            
+
             entity["force"] = force
-            
+
             compensator = entity["compensator"]
-            
+
             compensated_force = compensator._process_input(force)
-            
+
             entity["compensated_force"] = compensated_force
             entity["compensated_norm_force"] = np.linalg.norm(compensated_force)
 
@@ -177,10 +176,10 @@ class InverseCompensatorSimulator(mosaik_api.Simulator):
         for eid, attrs in outputs.items():
             if eid not in self.entities:
                 continue
-            
+
             entity = self.entities[eid]
             data[eid] = {}
-            
+
             attr_map = {
                 "input_force_x": entity["force"][0],
                 "input_force_y": entity["force"][1],
@@ -192,7 +191,7 @@ class InverseCompensatorSimulator(mosaik_api.Simulator):
                 "compensated_norm_force": entity["compensated_norm_force"],
                 "gain": entity["compensator"].gain,
             }
-            
+
             for attr in attrs:
                 data[eid][attr] = attr_map.get(attr, None)
 
@@ -273,8 +272,7 @@ class InverseCompensator:
         # Debug logging (every 5000 steps to reduce output)
         if self.input_count % 5000 == 0:
             print(
-                f"[InverseComp] Step {self.input_count}: "
-                f"norm={current_norm:.3f}N → comp_norm={compensated_norm:.3f}N "
+                f"[InverseComp] Step {self.input_count}: norm={current_norm:.3f}N → comp_norm={compensated_norm:.3f}N "
             )
 
         return compensated_force
