@@ -70,7 +70,7 @@ class OrbitalScenario:
                 "python": "simulators.env_simulator:OrbitalEnvSimulator",
             },
             "DataCollector": {
-                "python": "utils.data_collector:DataCollectorSimulator",
+                "python": "simulators.data_collector:DataCollectorSimulator",
             },
         }
 
@@ -311,8 +311,23 @@ class OrbitalScenario:
                 project_root = Path(__file__).parent.parent.parent
                 sys.path.insert(0, str(project_root))
 
-                from common_utils import plot_execution_graph_with_data_only
+                from common_utils import (
+                    plot_dataflow_graph_custom,
+                    plot_execution_graph_with_data_only,
+                )
 
+                # データフローグラフ（ノード接続図）
+                plot_dataflow_graph_custom(
+                    self.world,
+                    folder=str(self.output_dir),
+                    show_plot=False,
+                    dpi=600,
+                    format="png",
+                    exclude_nodes=["DataCollector-0"],  # DataCollectorを除外
+                )
+                print("  ✅ Custom dataflow graph saved (dataflowGraph_custom.png)")
+
+                # 実行グラフ（データやり取りタイミング）
                 plot_execution_graph_with_data_only(
                     self.world,
                     title="Orbital HILS Execution Graph",
