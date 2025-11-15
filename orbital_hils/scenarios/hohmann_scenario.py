@@ -57,6 +57,8 @@ class HohmannScenario(OrbitalScenario):
         self.hohmann_start_time = get_env_param("HOHMANN_START_TIME", 100.0, float)
         self.plant_time_constant = get_env_param("PLANT_TIME_CONSTANT", 10.0, float)
         self.plant_noise_std = get_env_param("PLANT_NOISE_STD", 0.01, float)
+        self.inverse_compensation = get_env_param("INVERSE_COMPENSATION", False, bool)
+        self.inverse_compensation_gain = get_env_param("INVERSE_COMPENSATION_GAIN", 1.0, float)
 
         print("\n[HohmannScenario] Configuration:")
         print(f"  Controller type: {self.controller_type}")
@@ -187,6 +189,8 @@ def main():
         target_alt = get_env_param("HOHMANN_TARGET_ALTITUDE_KM", 600.0, float) * 1e3
         max_thrust = get_env_param("MAX_THRUST", 10.0, float)
         mass = get_env_param("SPACECRAFT_MASS", 500.0, float)
+        inverse_compensation = get_env_param("INVERSE_COMPENSATION", False, bool)
+        inverse_compensation_gain = get_env_param("INVERSE_COMPENSATION_GAIN", 1.0, float)
 
         constants = CelestialBodyConstants()
 
@@ -211,6 +215,9 @@ def main():
         print(
             f"   Total maneuver time: {(status['burn1_duration'] + status['transfer_time'] + status['burn2_duration']) / 60:.2f} min"
         )
+        print(f"   Inverse compensation: {'Enabled' if inverse_compensation else 'Disabled'}")
+        if inverse_compensation:
+            print(f"   Inverse compensation gain: {inverse_compensation_gain:.2f}")
 
     # シナリオ実行
     print("\n▶️  Running simulation...")
