@@ -377,14 +377,18 @@ def create_comparison_plots(rt_data, sim_data_list, sim_labels, metrics_list, si
     """Create comprehensive comparison plots"""
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. Position comparison
-    fig, axes = plt.subplots(2, 1, figsize=(14, 10))
+    # 1. Combined Position and Velocity comparison (4 subplots)
+    fig, axes = plt.subplots(4, 1, figsize=(14, 16))
 
-    # Top: All trajectories
+    # Use distinct colors for different simulation types
+    # Define a palette with clearly distinguishable colors
+    color_palette = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
+                     '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
+    colors = [color_palette[i % len(color_palette)] for i in range(len(sim_data_list))]
+
+    # Subplot 1: Position trajectories
     ax = axes[0]
     ax.plot(rt_data["time"], rt_data["position"], "k-", linewidth=2, label="RT Baseline", alpha=0.8)
-
-    colors = plt.cm.viridis(np.linspace(0, 1, len(sim_data_list)))
     for i, (data, label, color) in enumerate(zip(sim_data_list, sim_labels, colors)):
         min_len = min(len(rt_data["time"]), len(data["time"]))
         ax.plot(data["time"][:min_len], data["position"][:min_len], color=color, linewidth=1.5, label=label, alpha=0.7)
@@ -395,7 +399,7 @@ def create_comparison_plots(rt_data, sim_data_list, sim_labels, metrics_list, si
     ax.grid(True, alpha=0.3)
     ax.legend(loc="best", fontsize=9)
 
-    # Bottom: Error signals
+    # Subplot 2: Position error signals
     ax = axes[1]
     for i, (metrics, label, color) in enumerate(zip(metrics_list, sim_labels, colors)):
         min_len = min(len(rt_data["time"]), len(metrics["position"]["error_signal"]))
@@ -415,8 +419,42 @@ def create_comparison_plots(rt_data, sim_data_list, sim_labels, metrics_list, si
     ax.grid(True, alpha=0.3)
     ax.legend(loc="best", fontsize=9)
 
+    # Subplot 3: Velocity trajectories
+    ax = axes[2]
+    ax.plot(rt_data["time"], rt_data["velocity"], "k-", linewidth=2, label="RT Baseline", alpha=0.8)
+    for i, (data, label, color) in enumerate(zip(sim_data_list, sim_labels, colors)):
+        min_len = min(len(rt_data["time"]), len(data["time"]))
+        ax.plot(data["time"][:min_len], data["velocity"][:min_len], color=color, linewidth=1.5, label=label, alpha=0.7)
+
+    ax.set_xlabel("Time [s]", fontsize=12)
+    ax.set_ylabel("Velocity [m/s]", fontsize=12)
+    ax.set_title("Velocity Trajectories: RT Baseline vs Simulations", fontsize=14, fontweight="bold")
+    ax.grid(True, alpha=0.3)
+    ax.legend(loc="best", fontsize=9)
+
+    # Subplot 4: Velocity error signals
+    ax = axes[3]
+    for i, (metrics, label, color) in enumerate(zip(metrics_list, sim_labels, colors)):
+        if "velocity" in metrics:
+            min_len = min(len(rt_data["time"]), len(metrics["velocity"]["error_signal"]))
+            ax.plot(
+                rt_data["time"][:min_len],
+                metrics["velocity"]["error_signal"][:min_len],
+                color=color,
+                linewidth=1.5,
+                label=label,
+                alpha=0.7,
+            )
+
+    ax.axhline(y=0, color="k", linestyle="--", linewidth=1, alpha=0.5)
+    ax.set_xlabel("Time [s]", fontsize=12)
+    ax.set_ylabel("Velocity Error [m/s]", fontsize=12)
+    ax.set_title("Velocity Error vs RT Baseline", fontsize=14, fontweight="bold")
+    ax.grid(True, alpha=0.3)
+    ax.legend(loc="best", fontsize=9)
+
     plt.tight_layout()
-    plt.savefig(output_dir / "position_comparison.png", dpi=300, bbox_inches="tight")
+    plt.savefig(output_dir / "trajectory_comparison.png", dpi=300, bbox_inches="tight")
     plt.close()
 
     # 2. Error metrics bar chart
@@ -469,26 +507,7 @@ def create_comparison_plots(rt_data, sim_data_list, sim_labels, metrics_list, si
     plt.savefig(output_dir / "error_metrics_bar.png", dpi=300, bbox_inches="tight")
     plt.close()
 
-    # 3. Velocity comparison
-    fig, ax = plt.subplots(figsize=(14, 6))
-
-    ax.plot(rt_data["time"], rt_data["velocity"], "k-", linewidth=2, label="RT Baseline", alpha=0.8)
-
-    for i, (data, label, color) in enumerate(zip(sim_data_list, sim_labels, colors)):
-        min_len = min(len(rt_data["time"]), len(data["time"]))
-        ax.plot(data["time"][:min_len], data["velocity"][:min_len], color=color, linewidth=1.5, label=label, alpha=0.7)
-
-    ax.set_xlabel("Time [s]", fontsize=12)
-    ax.set_ylabel("Velocity [m/s]", fontsize=12)
-    ax.set_title("Velocity Trajectories: RT Baseline vs Simulations", fontsize=14, fontweight="bold")
-    ax.grid(True, alpha=0.3)
-    ax.legend(loc="best", fontsize=9)
-
-    plt.tight_layout()
-    plt.savefig(output_dir / "velocity_comparison.png", dpi=300, bbox_inches="tight")
-    plt.close()
-
-    # 4. Create heatmap if we have parameter sweep data
+    # 3. Create heatmap if we have parameter sweep data
     create_heatmap(sim_configs, metrics_list, sim_labels, output_dir)
 
     print(f"Comparison plots saved to: {output_dir}")
