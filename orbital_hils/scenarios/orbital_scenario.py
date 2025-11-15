@@ -149,7 +149,7 @@ class OrbitalScenario:
             initial_velocity=velocity.tolist(),
             radius_earth=self.config.orbit.radius_body,
         )
-        
+
         if self.use_inverse_compensation:
             # Inverse Compensator
             inverse_comp_sim = self.world.start(
@@ -209,12 +209,12 @@ class OrbitalScenario:
             ("thrust_command_y", "command_y"),
             ("thrust_command_z", "command_z"),
         )
-        
+
         if self.use_inverse_compensation:
             if self.show_dataflow:
                 print("  [2.5] InverseCompensator → OrbitalPlant")
                 print("      └─ compensated_command_x/y/z (same-step)")
-            
+
             self.world.connect(
                 self.plant,
                 self.inverse_compensator,
@@ -222,7 +222,7 @@ class OrbitalScenario:
                 ("measured_force_y", "input_force_y"),
                 ("measured_force_z", "input_force_z"),
             )
-            
+
             self.world.connect(
                 self.inverse_compensator,
                 self.spacecraft,
@@ -237,8 +237,7 @@ class OrbitalScenario:
                 },
             )
         else:
-            
-        # 計測: Plant → Env (time-shifted to break cycle)
+            # 計測: Plant → Env (time-shifted to break cycle)
             if self.show_dataflow:
                 print("  [3] OrbitalPlant → OrbitalEnv")
                 print("      └─ measured_force_x/y/z (time-shifted, breaks cycle)")
@@ -308,7 +307,7 @@ class OrbitalScenario:
             "eccentricity",
             "specific_energy",
         )
-        
+
         if self.use_inverse_compensation:
             # Inverse Compensator data
             self.world.connect(
