@@ -458,7 +458,7 @@ class DualFeedbackInverseCompensator:
             # y[k] = α * y_comp[k] + (1-α) * y[k-1]
 
             if self.current_alpha > 0:
-                compensated = self.current_alpha*value - (self.current_alpha-1.0) * self.prev_value
+                compensated = self.current_alpha * value - (self.current_alpha - 1.0) * self.prev_value
                 self.compensation_amount_value = compensated - value
             else:
                 # If alpha is zero, pass through

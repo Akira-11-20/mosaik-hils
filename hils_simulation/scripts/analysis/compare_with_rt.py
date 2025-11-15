@@ -382,8 +382,18 @@ def create_comparison_plots(rt_data, sim_data_list, sim_labels, metrics_list, si
 
     # Use distinct colors for different simulation types
     # Define a palette with clearly distinguishable colors
-    color_palette = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
-                     '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
+    color_palette = [
+        "#1f77b4",
+        "#ff7f0e",
+        "#2ca02c",
+        "#d62728",
+        "#9467bd",
+        "#8c564b",
+        "#e377c2",
+        "#7f7f7f",
+        "#bcbd22",
+        "#17becf",
+    ]
     colors = [color_palette[i % len(color_palette)] for i in range(len(sim_data_list))]
 
     # Subplot 1: Position trajectories
