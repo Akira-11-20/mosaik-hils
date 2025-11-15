@@ -57,7 +57,7 @@ class HohmannScenario(OrbitalScenario):
         self.hohmann_start_time = get_env_param("HOHMANN_START_TIME", 100.0, float)
         self.plant_time_constant = get_env_param("PLANT_TIME_CONSTANT", 10.0, float)
         self.plant_noise_std = get_env_param("PLANT_NOISE_STD", 0.01, float)
-        self.inverse_compensation = get_env_param("INVERSE_COMPENSATION", False, bool)
+        self.use_inverse_compensation = get_env_param("INVERSE_COMPENSATION", False, bool)
         self.inverse_compensation_gain = get_env_param("INVERSE_COMPENSATION_GAIN", 1.0, float)
 
         print("\n[HohmannScenario] Configuration:")
@@ -109,21 +109,7 @@ class HohmannScenario(OrbitalScenario):
             print("  ✅ Hohmann transfer controller created")
             print(f"     {self.hohmann_initial_altitude / 1e3:.0f}km → {self.hohmann_target_altitude / 1e3:.0f}km")
             print(f"     Start time: {self.hohmann_start_time:.0f}s")
-        elif self.controller_type == "pd":
-            # PD制御器
-            target_position = [
-                get_env_param("TARGET_POSITION_X", 0.0, float),
-                get_env_param("TARGET_POSITION_Y", 0.0, float),
-                get_env_param("TARGET_POSITION_Z", 0.0, float),
-            ]
-            control_gain = get_env_param("CONTROL_GAIN", 1.0, float)
-            self.controller = controller_sim.OrbitalController(
-                controller_type="pd",
-                target_position=target_position,
-                control_gain=control_gain,
-                max_thrust=self.config.spacecraft.max_thrust,
-            )
-            print("  ✅ PD controller created")
+
         else:
             # ゼロ推力（自由軌道運動）
             self.controller = controller_sim.OrbitalController(
@@ -158,6 +144,17 @@ class HohmannScenario(OrbitalScenario):
             radius_earth=self.config.orbit.radius_body,
         )
         print("  ✅ Environment created")
+
+        if self.use_inverse_compensation:
+            inverse_comp_sim = self.world.start(
+                "InverseCompensatorSim",
+                time_resolution=self.config.time_resolution,
+                step_size=self.config.step_size,
+            )
+            self.inverse_compensator = inverse_comp_sim.InverseCompensator(
+                gain=self.inverse_compensation_gain,
+            )
+            print(f"  ✅ Inverse compensator created (gain={self.inverse_compensation_gain})")
 
         # Data Collector
         minimal_mode = get_env_param("MINIMAL_DATA_MODE", False, bool)

@@ -46,6 +46,7 @@ class OrbitalScenario:
         self.plant = None
         self.spacecraft = None
         self.collector = None
+        self.inverse_compensator = None
 
         # 結果ディレクトリ
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -68,6 +69,9 @@ class OrbitalScenario:
             },
             "OrbitalEnvSim": {
                 "python": "simulators.env_simulator:OrbitalEnvSimulator",
+            },
+            "InverseCompensatorSim": {
+                "python": "simulators.inverse_compensator_simulator:InverseCompensatorSimulator",
             },
             "DataCollector": {
                 "python": "simulators.data_collector:DataCollectorSimulator",
@@ -107,6 +111,8 @@ class OrbitalScenario:
         plant_time_constant = get_env_param("PLANT_TIME_CONSTANT", 10.0, float)
         plant_noise_std = get_env_param("PLANT_NOISE_STD", 0.01, float)
         minimal_data_mode = get_env_param("MINIMAL_DATA_MODE", False, bool)
+        self.use_inverse_compensation = get_env_param("INVERSE_COMPENSATION", False, bool)
+        inverse_compensation_gain = get_env_param("INVERSE_COMPENSATION_GAIN", 1.0, float)
 
         # Controller
         controller_sim = self.world.start(
@@ -143,6 +149,18 @@ class OrbitalScenario:
             initial_velocity=velocity.tolist(),
             radius_earth=self.config.orbit.radius_body,
         )
+        
+        if self.use_inverse_compensation:
+            # Inverse Compensator
+            inverse_comp_sim = self.world.start(
+                "InverseCompensatorSim",
+                time_resolution=self.config.time_resolution,
+                step_size=self.config.step_size,
+            )
+            self.inverse_compensator = inverse_comp_sim.InverseCompensator(
+                gain=inverse_compensation_gain,
+            )
+            print(f"  ✅ Inverse Compensator created (Gain={inverse_compensation_gain})")
 
         # Data Collector
         collector_sim = self.world.start(
@@ -191,25 +209,53 @@ class OrbitalScenario:
             ("thrust_command_y", "command_y"),
             ("thrust_command_z", "command_z"),
         )
-
+        
+        if self.use_inverse_compensation:
+            if self.show_dataflow:
+                print("  [2.5] InverseCompensator → OrbitalPlant")
+                print("      └─ compensated_command_x/y/z (same-step)")
+            
+            self.world.connect(
+                self.plant,
+                self.inverse_compensator,
+                ("measured_force_x", "input_force_x"),
+                ("measured_force_y", "input_force_y"),
+                ("measured_force_z", "input_force_z"),
+            )
+            
+            self.world.connect(
+                self.inverse_compensator,
+                self.spacecraft,
+                ("compensated_force_x", "force_x"),
+                ("compensated_force_y", "force_y"),
+                ("compensated_force_z", "force_z"),
+                time_shifted=True,
+                initial_data={
+                    "compensated_force_x": 0.0,
+                    "compensated_force_y": 0.0,
+                    "compensated_force_z": 0.0,
+                },
+            )
+        else:
+            
         # 計測: Plant → Env (time-shifted to break cycle)
-        if self.show_dataflow:
-            print("  [3] OrbitalPlant → OrbitalEnv")
-            print("      └─ measured_force_x/y/z (time-shifted, breaks cycle)")
+            if self.show_dataflow:
+                print("  [3] OrbitalPlant → OrbitalEnv")
+                print("      └─ measured_force_x/y/z (time-shifted, breaks cycle)")
 
-        self.world.connect(
-            self.plant,
-            self.spacecraft,
-            ("measured_force_x", "force_x"),
-            ("measured_force_y", "force_y"),
-            ("measured_force_z", "force_z"),
-            time_shifted=True,
-            initial_data={
-                "measured_force_x": 0.0,
-                "measured_force_y": 0.0,
-                "measured_force_z": 0.0,
-            },
-        )
+            self.world.connect(
+                self.plant,
+                self.spacecraft,
+                ("measured_force_x", "force_x"),
+                ("measured_force_y", "force_y"),
+                ("measured_force_z", "force_z"),
+                time_shifted=True,
+                initial_data={
+                    "measured_force_x": 0.0,
+                    "measured_force_y": 0.0,
+                    "measured_force_z": 0.0,
+                },
+            )
 
         print("\n  ✅ Control loop connected")
         print("  ℹ️  Loop: Env → Controller → Plant → [time-shift] → Env")
@@ -262,6 +308,22 @@ class OrbitalScenario:
             "eccentricity",
             "specific_energy",
         )
+        
+        if self.use_inverse_compensation:
+            # Inverse Compensator data
+            self.world.connect(
+                self.inverse_compensator,
+                self.collector,
+                "input_force_x",
+                "input_force_y",
+                "input_force_z",
+                "input_norm_force",
+                "compensated_force_x",
+                "compensated_force_y",
+                "compensated_force_z",
+                "compensated_norm_force",
+                "gain",
+            )
 
         print("  ✅ Data collection configured")
 

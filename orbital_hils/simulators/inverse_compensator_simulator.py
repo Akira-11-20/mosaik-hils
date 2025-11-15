@@ -85,8 +85,8 @@ class InverseCompensatorSimulator(mosaik_api.Simulator):
             **sim_params: Additional simulator parameters
         """
         self.sid = sid
-        self.time_resolution = self.time_resolution
-        self.step_size = self.step_size
+        self.time_resolution = time_resolution
+        self.step_size = step_size
         return self.meta
 
     def create(self, num: int, model: str, **model_params) -> list[dict]:
@@ -121,8 +121,8 @@ class InverseCompensatorSimulator(mosaik_api.Simulator):
             )
             self.entities[eid] = {
                 "compensator": comp,
-                "force": np.zeros(3),
-                "norm_force": 0.0,
+                "input_force": np.zeros(3),
+                "input_norm_force": 0.0,
                 "compensated_force": np.zeros(3),
                 "compensated_norm_force": 0.0,
             }
@@ -146,12 +146,13 @@ class InverseCompensatorSimulator(mosaik_api.Simulator):
         for eid, entity in self.entities.items():
             force = np.zeros(3)
             if eid in inputs:
-                for axis, attr in enumerate(["force_x", "force_y", "force_z"]):
+                for axis, attr in enumerate(["input_force_x", "input_force_y", "input_force_z"]):
                     if attr in inputs[eid]:
                         force_value = list(inputs[eid][attr].values())[0]
                         force[axis] = force_value if force_value is not None else 0.0
 
-            entity["force"] = force
+            entity["input_force"] = force
+            entity["input_norm_force"] = np.linalg.norm(force)
 
             compensator = entity["compensator"]
 
@@ -181,10 +182,10 @@ class InverseCompensatorSimulator(mosaik_api.Simulator):
             data[eid] = {}
 
             attr_map = {
-                "input_force_x": entity["force"][0],
-                "input_force_y": entity["force"][1],
-                "input_force_z": entity["force"][2],
-                "input_norm_force": entity["norm_force"],
+                "input_force_x": entity["input_force"][0],
+                "input_force_y": entity["input_force"][1],
+                "input_force_z": entity["input_force"][2],
+                "input_norm_force": entity["input_norm_force"],
                 "compensated_force_x": entity["compensated_force"][0],
                 "compensated_force_y": entity["compensated_force"][1],
                 "compensated_force_z": entity["compensated_force"][2],
