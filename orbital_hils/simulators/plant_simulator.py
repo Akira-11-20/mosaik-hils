@@ -143,7 +143,7 @@ class OrbitalPlantSimulator(mosaik_api.Simulator):
                 if norm_command > 0:
                     new_force = new_norm_force * (command / norm_command)
                 else:
-                    new_force = np.zeros(3)
+                    new_force = new_norm_force * (force / norm_force) if norm_force > 0 else np.zeros(3)
             else:
                 # τ=0の場合は即座に追従
                 new_force = command

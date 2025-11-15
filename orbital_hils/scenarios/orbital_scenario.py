@@ -49,10 +49,16 @@ class OrbitalScenario:
         self.inverse_compensator = None
 
         # 結果ディレクトリ
-        timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        self.output_dir = Path(__file__).parent.parent / "results_orbital" / timestamp
-        self.output_dir.mkdir(parents=True, exist_ok=True)
+        # OUTPUT_DIR_OVERRIDE環境変数があればそれを使用（スイープ用）
+        import os
+        output_dir_override = os.environ.get("OUTPUT_DIR_OVERRIDE")
+        if output_dir_override:
+            self.output_dir = Path(output_dir_override)
+        else:
+            timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+            self.output_dir = Path(__file__).parent.parent / "results_orbital" / timestamp
 
+        self.output_dir.mkdir(parents=True, exist_ok=True)
         print(f"[OrbitalScenario] Output directory: {self.output_dir}")
 
     def create_world(self):
