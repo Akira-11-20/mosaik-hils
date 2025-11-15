@@ -17,8 +17,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from config.orbital_parameters import (
     CelestialBodyConstants,
-    OrbitalSimulationConfig,
     OrbitalParameters,
+    OrbitalSimulationConfig,
     SpacecraftParameters,
 )
 from scenarios.orbital_scenario import OrbitalScenario
@@ -80,9 +80,9 @@ def main():
     # 設定を作成
     config = create_hohmann_transfer_config()
 
-    print(f"📋 Simulation Configuration:")
-    print(f"   Initial altitude: 400 km")
-    print(f"   Target altitude: 600 km")
+    print("📋 Simulation Configuration:")
+    print("   Initial altitude: 400 km")
+    print("   Target altitude: 600 km")
     print(f"   Spacecraft mass: {config.spacecraft.mass} kg")
     print(f"   Max thrust: {config.spacecraft.max_thrust} N")
     print(f"   Simulation time: {config.simulation_time / 60:.2f} min")
@@ -101,7 +101,7 @@ def main():
     )
 
     status = hohmann.get_status()
-    print(f"\n📊 Hohmann Transfer Parameters:")
+    print("\n📊 Hohmann Transfer Parameters:")
     print(f"   ΔV1: {status['delta_v1']:+.2f} m/s")
     print(f"   ΔV2: {status['delta_v2']:+.2f} m/s")
     print(f"   Total ΔV: {status['total_delta_v']:.2f} m/s")
@@ -110,18 +110,18 @@ def main():
     print(f"   Burn2 duration: {status['burn2_duration'] / 60:.2f} min")
 
     # シミュレーション実行
-    print(f"\n🔧 Creating scenario...")
+    print("\n🔧 Creating scenario...")
 
     # カスタムシナリオを作成
     scenario = create_hohmann_scenario(config)
 
-    print(f"\n▶️  Running simulation...")
+    print("\n▶️  Running simulation...")
     result_dir = scenario.run()
 
-    print(f"\n✅ Simulation completed!")
+    print("\n✅ Simulation completed!")
     print(f"📁 Results saved to: {result_dir}")
-    print(f"\n💡 To visualize results:")
-    print(f"   cd orbital_hils")
+    print("\n💡 To visualize results:")
+    print("   cd orbital_hils")
     print(f"   uv run python scripts/analysis/visualize_orbital_results.py {result_dir}/hils_data.h5")
 
 
@@ -131,7 +131,6 @@ def create_hohmann_scenario(config):
 
     OrbitalScenarioを継承して、コントローラーにホーマン遷移モデルを使用。
     """
-    from scenarios.orbital_scenario import OrbitalScenario
 
     class HohmannTransferScenario(OrbitalScenario):
         """ホーマン遷移シナリオ"""

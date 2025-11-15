@@ -16,11 +16,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from config.orbital_parameters import (
     CelestialBodyConstants,
-    OrbitalParameters,
     OrbitalSimulationConfig,
-    SpacecraftParameters,
     get_env_param,
 )
+
 from scenarios.orbital_scenario import OrbitalScenario
 
 
@@ -105,7 +104,7 @@ class HohmannScenario(OrbitalScenario):
                 max_thrust=self.config.spacecraft.max_thrust,
                 start_time=self.hohmann_start_time,
             )
-            print(f"  ✅ Hohmann transfer controller created")
+            print("  ✅ Hohmann transfer controller created")
             print(f"     {self.hohmann_initial_altitude / 1e3:.0f}km → {self.hohmann_target_altitude / 1e3:.0f}km")
             print(f"     Start time: {self.hohmann_start_time:.0f}s")
         elif self.controller_type == "pd":
@@ -122,14 +121,14 @@ class HohmannScenario(OrbitalScenario):
                 control_gain=control_gain,
                 max_thrust=self.config.spacecraft.max_thrust,
             )
-            print(f"  ✅ PD controller created")
+            print("  ✅ PD controller created")
         else:
             # ゼロ推力（自由軌道運動）
             self.controller = controller_sim.OrbitalController(
                 controller_type="zero",
                 max_thrust=self.config.spacecraft.max_thrust,
             )
-            print(f"  ✅ Zero-thrust controller created (free orbit)")
+            print("  ✅ Zero-thrust controller created (free orbit)")
 
         # Plant
         plant_sim = self.world.start(
@@ -156,7 +155,7 @@ class HohmannScenario(OrbitalScenario):
             initial_velocity=velocity.tolist(),
             radius_earth=self.config.orbit.radius_body,
         )
-        print(f"  ✅ Environment created")
+        print("  ✅ Environment created")
 
         # Data Collector
         minimal_mode = get_env_param("MINIMAL_DATA_MODE", False, bool)
@@ -169,7 +168,7 @@ class HohmannScenario(OrbitalScenario):
             output_dir=str(self.output_dir),
             minimal_mode=minimal_mode,
         )
-        print(f"  ✅ Data collector created")
+        print("  ✅ Data collector created")
 
 
 def main():
@@ -202,7 +201,7 @@ def main():
         )
 
         status = hohmann.get_status()
-        print(f"\n📊 Hohmann Transfer Parameters:")
+        print("\n📊 Hohmann Transfer Parameters:")
         print(f"   ΔV1: {status['delta_v1']:+.2f} m/s")
         print(f"   ΔV2: {status['delta_v2']:+.2f} m/s")
         print(f"   Total ΔV: {status['total_delta_v']:.2f} m/s")
@@ -214,13 +213,13 @@ def main():
         )
 
     # シナリオ実行
-    print(f"\n▶️  Running simulation...")
+    print("\n▶️  Running simulation...")
     scenario = HohmannScenario()
     result_dir = scenario.run()
 
-    print(f"\n✅ Simulation completed!")
+    print("\n✅ Simulation completed!")
     print(f"📁 Results: {result_dir}")
-    print(f"\n💡 Results include auto-generated phase-colored plots (PNG & HTML)")
+    print("\n💡 Results include auto-generated phase-colored plots (PNG & HTML)")
     print("=" * 70)
 
 

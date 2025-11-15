@@ -16,7 +16,7 @@ import numpy as np
 # プロジェクトルートをパスに追加
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from config.orbital_parameters import CONFIG_ISS, CelestialBodyConstants
+from config.orbital_parameters import CelestialBodyConstants
 from models.thrust_model import HohmannThrustModel
 
 
@@ -60,7 +60,7 @@ def demo_hohmann_transfer():
     position = np.array([r_initial, 0.0, 0.0])
     velocity = np.array([0.0, v_circular, 0.0])
 
-    print(f"\n📍 Initial state:")
+    print("\n📍 Initial state:")
     print(f"   Position: {position / 1e3} km")
     print(f"   Velocity: {velocity} m/s")
     print(f"   Orbital speed: {v_circular:.2f} m/s")
@@ -68,7 +68,7 @@ def demo_hohmann_transfer():
     # 遷移状態を取得
     status = hohmann_model.get_status()
 
-    print(f"\n🚀 Hohmann transfer parameters:")
+    print("\n🚀 Hohmann transfer parameters:")
     print(f"   ΔV1 (first burn):  {status['delta_v1']:+.2f} m/s")
     print(f"   ΔV2 (second burn): {status['delta_v2']:+.2f} m/s")
     print(f"   Total ΔV:          {status['total_delta_v']:.2f} m/s")
@@ -77,7 +77,7 @@ def demo_hohmann_transfer():
     print(f"   Burn2 duration:    {status['burn2_duration']:.2f} s")
 
     # 簡易的なタイムラインシミュレーション
-    print(f"\n⏱️  Transfer timeline:")
+    print("\n⏱️  Transfer timeline:")
     print(f"   t = 10.0s - {10.0 + status['burn1_duration']:.2f}s : First burn (velocity increase)")
     print(
         f"   t = {10.0 + status['burn1_duration']:.2f}s - {10.0 + status['transfer_time']:.2f}s : Coast phase (elliptical transfer)"
@@ -87,7 +87,7 @@ def demo_hohmann_transfer():
     )
 
     # 推力計算のテスト（各フェーズ）
-    print(f"\n🔥 Thrust calculation test:")
+    print("\n🔥 Thrust calculation test:")
 
     # フェーズ1: 第1バーン前（ゼロ推力）
     t1 = 5.0
@@ -114,10 +114,10 @@ def demo_hohmann_transfer():
     thrust5 = hohmann_model.calculate_thrust(position, velocity, time=t5)
     print(f"   t={t5:.2f}s (completed):        thrust = {thrust5} N")
 
-    print(f"\n✅ Hohmann transfer demo completed!")
-    print(f"\n💡 To run a full HILS simulation with Hohmann transfer:")
-    print(f"   1. Update config/orbital_parameters.py to use HohmannThrustModel")
-    print(f"   2. Run: cd orbital_hils && uv run python main.py")
+    print("\n✅ Hohmann transfer demo completed!")
+    print("\n💡 To run a full HILS simulation with Hohmann transfer:")
+    print("   1. Update config/orbital_parameters.py to use HohmannThrustModel")
+    print("   2. Run: cd orbital_hils && uv run python main.py")
 
 
 if __name__ == "__main__":

@@ -15,7 +15,7 @@ import numpy as np
 # プロジェクトルートをパスに追加
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from models.thrust_model import ThrustModel, HohmannThrustModel, PDThrustModel
+from models.thrust_model import HohmannThrustModel, PDThrustModel, ThrustModel
 
 meta = {
     "type": "time-based",

@@ -453,7 +453,7 @@ def main():
 
     print()
     print("✅ All interactive visualizations completed!")
-    print(f"📁 Open the HTML files in your browser to view interactive plots")
+    print("📁 Open the HTML files in your browser to view interactive plots")
     print("=" * 70)
 
 

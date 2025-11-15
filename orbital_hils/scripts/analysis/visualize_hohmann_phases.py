@@ -19,7 +19,6 @@ from pathlib import Path
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
-from mpl_toolkits.mplot3d import Axes3D
 
 
 def detect_phases(thrust_magnitude, time, threshold=1.0):

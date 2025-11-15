@@ -17,8 +17,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from config.orbital_parameters import (
     CelestialBodyConstants,
-    OrbitalSimulationConfig,
     OrbitalParameters,
+    OrbitalSimulationConfig,
     SpacecraftParameters,
 )
 from scenarios.orbital_scenario import OrbitalScenario
@@ -156,7 +156,7 @@ def main():
     )
 
     status = hohmann.get_status()
-    print(f"📊 Hohmann Parameters (100N thrust):")
+    print("📊 Hohmann Parameters (100N thrust):")
     print(f"   ΔV1: {status['delta_v1']:+.2f} m/s")
     print(f"   ΔV2: {status['delta_v2']:+.2f} m/s")
     print(f"   Total ΔV: {status['total_delta_v']:.2f} m/s")
@@ -165,17 +165,17 @@ def main():
     print(f"   Burn2 duration: {status['burn2_duration']:.2f} s")
 
     # シナリオ実行
-    print(f"\n▶️  Running simulation...")
+    print("\n▶️  Running simulation...")
     scenario = ShortHohmannScenario(config=config)
     result_dir = scenario.run()
 
-    print(f"\n✅ Test completed!")
+    print("\n✅ Test completed!")
     print(f"📁 Results: {result_dir}")
-    print(f"\n💡 Expected timeline:")
-    print(f"   t = 0-100s      : No thrust (free orbit)")
+    print("\n💡 Expected timeline:")
+    print("   t = 0-100s      : No thrust (free orbit)")
     print(f"   t = 100-{100 + status['burn1_duration']:.0f}s : First burn (should see thrust)")
-    print(f"   t > 400s        : Still in first burn")
-    print(f"\n📊 To visualize:")
+    print("   t > 400s        : Still in first burn")
+    print("\n📊 To visualize:")
     print(f"   uv run python scripts/analysis/visualize_orbital_results.py {result_dir}/hils_data.h5")
 
 

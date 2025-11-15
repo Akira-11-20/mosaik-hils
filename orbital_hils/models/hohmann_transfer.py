@@ -266,7 +266,7 @@ class LambertTransferModel:
         Returns:
             (v1, v2): 初期速度、最終速度ベクトル [m/s]
         """
-        print(f"\n[LambertTransfer] Solving Lambert problem...")
+        print("\n[LambertTransfer] Solving Lambert problem...")
         print(f"  r1: {r1 / 1e3} km")
         print(f"  r2: {r2 / 1e3} km")
         print(f"  Time of flight: {tof:.2f} s ({tof / 60:.2f} min)")
@@ -379,6 +379,6 @@ if __name__ == "__main__":
     v1_lambert, v2_lambert = lambert.solve_lambert(r1, r2, tof, v1)
 
     if v1_lambert is not None:
-        print(f"\n✅ Lambert solution found:")
+        print("\n✅ Lambert solution found:")
         print(f"  Required ΔV1: {np.linalg.norm(v1_lambert - v1):.2f} m/s")
         print(f"  Hohmann ΔV1: {abs(hohmann.delta_v1):.2f} m/s")
