@@ -214,10 +214,10 @@ def plot_altitude_with_phases(h5_file, output_dir=None, dpi=150):
         # 軌道データ
         env = f["OrbitalEnvSim-0_OrbitalSpacecraft_0"]
         altitude = env["altitude"][:]
-
+        
         # 推力データ
-        ctrl = f["OrbitalPlantSim-0_OrbitalThrustStand_0"]
-        thrust_mag = ctrl["norm_measured_force"][:]
+        ctrl = f["OrbitalEnvSim-0_OrbitalSpacecraft_0"]
+        thrust_mag = ctrl["norm_force"][:]
 
     # フェーズの検出
     phases = detect_phases(thrust_mag, time)
