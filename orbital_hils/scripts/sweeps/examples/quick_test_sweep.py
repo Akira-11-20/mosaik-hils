@@ -16,10 +16,10 @@ from scripts.sweeps.run_parameter_sweep import ParameterSweepConfig, run_sweep
 # スイープパラメータの定義（小規模テスト用）
 sweep_params = {
     "PLANT_TIME_CONSTANT": [10.0, 20.0],  # 2値のみ
-    "SIMULATION_TIME": [50.0],            # 50秒の短いシミュレーション
-    "TIME_RESOLUTION": [1.0],             # 1秒刻み
-    "MINIMAL_DATA_MODE": [True],          # データ量削減
-    "AUTO_VISUALIZE": [False],            # 可視化無効
+    "SIMULATION_TIME": [50.0],  # 50秒の短いシミュレーション
+    "TIME_RESOLUTION": [1.0],  # 1秒刻み
+    "MINIMAL_DATA_MODE": [True],  # データ量削減
+    "AUTO_VISUALIZE": [False],  # 可視化無効
 }
 
 # スイープ設定の作成
@@ -32,6 +32,7 @@ config = ParameterSweepConfig(
 
 if __name__ == "__main__":
     import sys
+
     dry_run = "--dry-run" in sys.argv
 
     if dry_run:

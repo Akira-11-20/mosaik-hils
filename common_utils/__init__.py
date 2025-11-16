@@ -7,13 +7,13 @@ This package provides shared utilities for:
 
 # Import functions for easy access
 try:
-    from .plot_utils import plot_execution_graph_with_data_only, plot_dataflow_graph_custom
+    from .plot_utils import plot_dataflow_graph_custom, plot_execution_graph_with_data_only
 except ImportError:
     plot_execution_graph_with_data_only = None
     plot_dataflow_graph_custom = None
 
 try:
-    from .event_logger import EventLogger, DataTag
+    from .event_logger import DataTag, EventLogger
 except ImportError:
     EventLogger = None
     DataTag = None

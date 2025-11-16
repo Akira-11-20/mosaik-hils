@@ -1,4 +1,5 @@
 """Test config override approach"""
+
 import sys
 from pathlib import Path
 
@@ -9,7 +10,7 @@ from config.orbital_parameters import load_config_from_env
 # Test: Load config and override max_thrust
 config = load_config_from_env()
 
-print(f"Before override:")
+print("Before override:")
 print(f"  max_thrust = {config.spacecraft.max_thrust} N")
 print(f"  mass = {config.spacecraft.mass} kg")
 
@@ -17,7 +18,7 @@ print(f"  mass = {config.spacecraft.mass} kg")
 config.spacecraft.max_thrust = 100.0
 config.spacecraft.mass = 1000.0
 
-print(f"\nAfter override:")
+print("\nAfter override:")
 print(f"  max_thrust = {config.spacecraft.max_thrust} N")
 print(f"  mass = {config.spacecraft.mass} kg")
 

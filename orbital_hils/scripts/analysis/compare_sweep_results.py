@@ -122,12 +122,14 @@ def find_sweep_results(sweep_dir: Path) -> List[Dict]:
             index = 0
             label = dir_name
 
-        results.append({
-            "index": index,
-            "label": label,
-            "path": h5_file,
-            "dir": subdir,
-        })
+        results.append(
+            {
+                "index": index,
+                "label": label,
+                "path": h5_file,
+                "dir": subdir,
+            }
+        )
 
     return results
 
@@ -158,17 +160,17 @@ def plot_altitude_thrust_comparison(results: List[Dict], output_path: Path):
     ax1.set_ylabel("Altitude [km]")
     ax1.set_title("Altitude Comparison")
     ax1.grid(True, alpha=0.3)
-    ax1.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    ax1.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
 
     # 推力グラフ設定
     ax2.set_xlabel("Time [min]")
     ax2.set_ylabel("Thrust [N]")
     ax2.set_title("Thrust Comparison")
     ax2.grid(True, alpha=0.3)
-    ax2.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    ax2.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
 
     plt.tight_layout()
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close()
 
     print(f"✅ Saved: {output_path}")
@@ -183,7 +185,7 @@ def plot_3d_trajectory_comparison(results: List[Dict], output_path: Path):
         output_path: 出力ファイルパス
     """
     fig = plt.figure(figsize=(14, 10))
-    ax = fig.add_subplot(111, projection='3d')
+    ax = fig.add_subplot(111, projection="3d")
 
     # 地球を描画
     u = np.linspace(0, 2 * np.pi, 50)
@@ -192,7 +194,7 @@ def plot_3d_trajectory_comparison(results: List[Dict], output_path: Path):
     x_earth = R_earth * np.outer(np.cos(u), np.sin(v))
     y_earth = R_earth * np.outer(np.sin(u), np.sin(v))
     z_earth = R_earth * np.outer(np.ones(np.size(u)), np.cos(v))
-    ax.plot_surface(x_earth, y_earth, z_earth, color='lightblue', alpha=0.3)
+    ax.plot_surface(x_earth, y_earth, z_earth, color="lightblue", alpha=0.3)
 
     # 軌道プロット
     for i, result in enumerate(results):
@@ -203,31 +205,31 @@ def plot_3d_trajectory_comparison(results: List[Dict], output_path: Path):
             "z": data["position_z"] / 1e3,
         }
 
-        ax.plot(pos_km["x"], pos_km["y"], pos_km["z"],
-                label=result["label"], alpha=0.7, linewidth=1.5)
+        ax.plot(pos_km["x"], pos_km["y"], pos_km["z"], label=result["label"], alpha=0.7, linewidth=1.5)
 
         # 開始点
-        ax.scatter(pos_km["x"][0], pos_km["y"][0], pos_km["z"][0],
-                   s=100, marker='o', alpha=0.8)
+        ax.scatter(pos_km["x"][0], pos_km["y"][0], pos_km["z"][0], s=100, marker="o", alpha=0.8)
 
     ax.set_xlabel("X [km]")
     ax.set_ylabel("Y [km]")
     ax.set_zlabel("Z [km]")
     ax.set_title("3D Orbital Trajectory Comparison")
-    ax.legend(bbox_to_anchor=(1.15, 1), loc='upper left')
+    ax.legend(bbox_to_anchor=(1.15, 1), loc="upper left")
 
     # アスペクト比を等しくする
-    max_range = np.array([
-        max(abs(data["position_x"])) / 1e3,
-        max(abs(data["position_y"])) / 1e3,
-        max(abs(data["position_z"])) / 1e3,
-    ]).max()
+    max_range = np.array(
+        [
+            max(abs(data["position_x"])) / 1e3,
+            max(abs(data["position_y"])) / 1e3,
+            max(abs(data["position_z"])) / 1e3,
+        ]
+    ).max()
     ax.set_xlim([-max_range, max_range])
     ax.set_ylim([-max_range, max_range])
     ax.set_zlim([-max_range, max_range])
 
     plt.tight_layout()
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close()
 
     print(f"✅ Saved: {output_path}")
@@ -258,13 +260,17 @@ def generate_interactive_html(results: List[Dict], output_path: Path):
     y_earth = R_earth * np.outer(np.sin(u), np.sin(v))
     z_earth = R_earth * np.outer(np.ones(np.size(u)), np.cos(v))
 
-    fig.add_trace(go.Surface(
-        x=x_earth, y=y_earth, z=z_earth,
-        colorscale='Blues',
-        showscale=False,
-        opacity=0.3,
-        name='Earth',
-    ))
+    fig.add_trace(
+        go.Surface(
+            x=x_earth,
+            y=y_earth,
+            z=z_earth,
+            colorscale="Blues",
+            showscale=False,
+            opacity=0.3,
+            name="Earth",
+        )
+    )
 
     # 軌道プロット
     for result in results:
@@ -275,25 +281,29 @@ def generate_interactive_html(results: List[Dict], output_path: Path):
             "z": data["position_z"] / 1e3,
         }
 
-        fig.add_trace(go.Scatter3d(
-            x=pos_km["x"],
-            y=pos_km["y"],
-            z=pos_km["z"],
-            mode='lines',
-            name=result["label"],
-            line=dict(width=3),
-        ))
+        fig.add_trace(
+            go.Scatter3d(
+                x=pos_km["x"],
+                y=pos_km["y"],
+                z=pos_km["z"],
+                mode="lines",
+                name=result["label"],
+                line=dict(width=3),
+            )
+        )
 
         # 開始点
-        fig.add_trace(go.Scatter3d(
-            x=[pos_km["x"][0]],
-            y=[pos_km["y"][0]],
-            z=[pos_km["z"][0]],
-            mode='markers',
-            name=f"{result['label']} (start)",
-            marker=dict(size=8),
-            showlegend=False,
-        ))
+        fig.add_trace(
+            go.Scatter3d(
+                x=[pos_km["x"][0]],
+                y=[pos_km["y"][0]],
+                z=[pos_km["z"][0]],
+                mode="markers",
+                name=f"{result['label']} (start)",
+                marker=dict(size=8),
+                showlegend=False,
+            )
+        )
 
     fig.update_layout(
         title="3D Orbital Trajectory Comparison (Interactive)",
@@ -301,7 +311,7 @@ def generate_interactive_html(results: List[Dict], output_path: Path):
             xaxis_title="X [km]",
             yaxis_title="Y [km]",
             zaxis_title="Z [km]",
-            aspectmode='cube',
+            aspectmode="cube",
         ),
         height=800,
     )
@@ -365,7 +375,7 @@ def plot_phase_comparison(results: List[Dict], output_path: Path):
     axes[1, 1].legend()
 
     plt.tight_layout()
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close()
 
     print(f"✅ Saved: {output_path}")

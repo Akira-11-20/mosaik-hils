@@ -32,6 +32,7 @@ config = ParameterSweepConfig(
 
 if __name__ == "__main__":
     import sys
+
     dry_run = "--dry-run" in sys.argv
 
     if dry_run:
