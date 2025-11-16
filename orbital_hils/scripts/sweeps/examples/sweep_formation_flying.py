@@ -94,7 +94,9 @@ sweep_params_full_study = {
 
 if __name__ == "__main__":
     # 実行するスイープを選択（ここを変更）
-    sweep_choice = "control_type"  # オプション: control_type, plant_lag, inverse_comp, gain_tuning, offset_gain, full_study
+    sweep_choice = (
+        "control_type"  # オプション: control_type, plant_lag, inverse_comp, gain_tuning, offset_gain, full_study
+    )
 
     sweep_params_map = {
         "control_type": (sweep_params_control_type, "Formation: Control Type & Offset Comparison"),

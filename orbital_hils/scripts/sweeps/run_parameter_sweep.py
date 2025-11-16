@@ -408,7 +408,7 @@ if __name__ == "__main__":
         "SIMULATION_TIME": [100.0],  # Short simulation for quick test
     }
 
-    sweep_params= sweep_params_example2
+    sweep_params = sweep_params_example2
     # スイープ設定の作成
     config = ParameterSweepConfig(
         sweep_params=sweep_params,

@@ -427,9 +427,7 @@ class HCWThrustModel(ThrustModel):
             return np.zeros(3)
 
         # ECI座標系 → LVLH座標系への変換
-        rel_pos_lvlh, rel_vel_lvlh = self._eci_to_lvlh(
-            deputy_position, deputy_velocity, chief_position, chief_velocity
-        )
+        rel_pos_lvlh, rel_vel_lvlh = self._eci_to_lvlh(deputy_position, deputy_velocity, chief_position, chief_velocity)
 
         # 平均運動の計算（Chief衛星の軌道から）
         r_chief = np.linalg.norm(chief_position)

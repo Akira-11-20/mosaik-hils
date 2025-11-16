@@ -265,10 +265,7 @@ class OrbitalControllerSimulator(mosaik_api.Simulator):
             # HCWモデルの場合、Chief位置・速度を引数として渡す
             if isinstance(thrust_model, HCWThrustModel):
                 thrust_command = thrust_model.calculate_thrust(
-                    position, velocity,
-                    chief_position=chief_position,
-                    chief_velocity=chief_velocity,
-                    time=current_time
+                    position, velocity, chief_position=chief_position, chief_velocity=chief_velocity, time=current_time
                 )
             else:
                 thrust_command = thrust_model.calculate_thrust(position, velocity, time=current_time)

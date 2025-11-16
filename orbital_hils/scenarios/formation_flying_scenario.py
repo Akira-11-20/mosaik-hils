@@ -159,8 +159,8 @@ class FormationFlyingScenario:
                 mu=self.config.orbit.mu,
                 controller_type="hcw",
             )
-            print(f"  Controller: HCW Formation Flying")
-            print(f"  Target relative position (LVLH): [0, 0, 0] m")
+            print("  Controller: HCW Formation Flying")
+            print("  Target relative position (LVLH): [0, 0, 0] m")
             print(f"  Max thrust: {max_thrust} N")
         else:
             # 従来のPD制御
@@ -171,7 +171,7 @@ class FormationFlyingScenario:
                 max_thrust=max_thrust,
                 controller_type="pd",
             )
-            print(f"  Controller: PD Control")
+            print("  Controller: PD Control")
             print(f"  Target position: {position_base / 1e3} km")
             print(f"  Target velocity: {velocity_base} m/s")
             print(f"  Max thrust: {max_thrust} N")
@@ -238,13 +238,10 @@ class FormationFlyingScenario:
             time_resolution=self.config.time_resolution,
             step_size=self.config.step_size,
         )
-        self.collector = collector_sim.Collector(
-            output_dir=str(self.output_dir),
-            minimal_mode=minimal_data_mode
-        )
+        self.collector = collector_sim.Collector(output_dir=str(self.output_dir), minimal_mode=minimal_data_mode)
 
         print("  ✅ All entities created")
-        print(f"\n  📊 Formation Configuration:")
+        print("\n  📊 Formation Configuration:")
         print(f"    Chaser initial offset: [{formation_offset_x}, {formation_offset_y}, {formation_offset_z}] m")
         print(f"    Control gain: {control_gain}")
         print(f"    Plant time constant: {plant_time_constant} s")

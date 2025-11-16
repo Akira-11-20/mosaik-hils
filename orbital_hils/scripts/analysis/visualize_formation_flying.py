@@ -259,7 +259,7 @@ def plot_formation_flying(data, output_dir):
 
     plt.tight_layout()
     fig.savefig(output_dir / "formation_3d_orbits.png", dpi=300, bbox_inches="tight")
-    print(f"  ✅ Saved: formation_3d_orbits.png")
+    print("  ✅ Saved: formation_3d_orbits.png")
     plt.close(fig)
 
     # ========================================
@@ -291,7 +291,7 @@ def plot_formation_flying(data, output_dir):
 
     plt.tight_layout()
     fig.savefig(output_dir / "formation_relative_position.png", dpi=300, bbox_inches="tight")
-    print(f"  ✅ Saved: formation_relative_position.png")
+    print("  ✅ Saved: formation_relative_position.png")
     plt.close(fig)
 
     # ========================================
@@ -323,7 +323,7 @@ def plot_formation_flying(data, output_dir):
 
     plt.tight_layout()
     fig.savefig(output_dir / "formation_relative_velocity.png", dpi=300, bbox_inches="tight")
-    print(f"  ✅ Saved: formation_relative_velocity.png")
+    print("  ✅ Saved: formation_relative_velocity.png")
     plt.close(fig)
 
     # ========================================
@@ -363,7 +363,7 @@ def plot_formation_flying(data, output_dir):
 
     plt.tight_layout()
     fig.savefig(output_dir / "formation_thrust.png", dpi=300, bbox_inches="tight")
-    print(f"  ✅ Saved: formation_thrust.png")
+    print("  ✅ Saved: formation_thrust.png")
     plt.close(fig)
 
     # ========================================
@@ -381,7 +381,7 @@ def plot_formation_flying(data, output_dir):
 
     plt.tight_layout()
     fig.savefig(output_dir / "formation_altitude.png", dpi=300, bbox_inches="tight")
-    print(f"  ✅ Saved: formation_altitude.png")
+    print("  ✅ Saved: formation_altitude.png")
     plt.close(fig)
 
     # ========================================
@@ -434,7 +434,7 @@ def plot_formation_flying(data, output_dir):
 
     plt.tight_layout()
     fig.savefig(output_dir / "formation_relative_3d.png", dpi=300, bbox_inches="tight")
-    print(f"  ✅ Saved: formation_relative_3d.png")
+    print("  ✅ Saved: formation_relative_3d.png")
     plt.close(fig)
 
     # ========================================
@@ -519,7 +519,7 @@ def plot_formation_flying(data, output_dir):
     # HTML保存
     html_path = output_dir / "formation_relative_3d_interactive.html"
     fig_plotly.write_html(html_path)
-    print(f"  ✅ Saved: formation_relative_3d_interactive.html")
+    print("  ✅ Saved: formation_relative_3d_interactive.html")
 
 
 def main():
@@ -530,12 +530,12 @@ def main():
     h5_file = Path(args.h5_file)
     output_dir = h5_file.parent
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("Formation Flying Visualization")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
     print(f"Input: {h5_file}")
     print(f"Output: {output_dir}")
-    print(f"{'='*70}\n")
+    print(f"{'=' * 70}\n")
 
     # データ読み込み
     print("📊 Loading formation flying data...")
@@ -546,9 +546,9 @@ def main():
     print("\n📈 Generating plots...")
     plot_formation_flying(data, output_dir)
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("✅ Visualization completed")
-    print(f"{'='*70}\n")
+    print(f"{'=' * 70}\n")
 
 
 if __name__ == "__main__":
