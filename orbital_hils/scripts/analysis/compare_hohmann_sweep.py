@@ -209,22 +209,10 @@ def plot_orbital_elements_comparison(results: List[Dict], output_path: Path):
         alpha = 1.0 if is_baseline else 0.7
 
         # Semi-major axis
-        axes[0].plot(
-            time_min,
-            data["semi_major_axis"] / 1e3,
-            label=result["label"],
-            alpha=alpha,
-            linewidth=linewidth
-        )
+        axes[0].plot(time_min, data["semi_major_axis"] / 1e3, label=result["label"], alpha=alpha, linewidth=linewidth)
 
         # Eccentricity
-        axes[1].plot(
-            time_min,
-            data["eccentricity"],
-            label=result["label"],
-            alpha=alpha,
-            linewidth=linewidth
-        )
+        axes[1].plot(time_min, data["eccentricity"], label=result["label"], alpha=alpha, linewidth=linewidth)
 
         # Specific energy
         axes[2].plot(
@@ -232,14 +220,12 @@ def plot_orbital_elements_comparison(results: List[Dict], output_path: Path):
             data["specific_energy"] / 1e6,  # MJ/kg
             label=result["label"],
             alpha=alpha,
-            linewidth=linewidth
+            linewidth=linewidth,
         )
 
     # グラフ設定
     axes[0].set_ylabel("Semi-major Axis [km]", fontsize=12)
-    axes[0].set_title(
-        "Hohmann Transfer: Orbital Elements Comparison", fontsize=14, fontweight="bold"
-    )
+    axes[0].set_title("Hohmann Transfer: Orbital Elements Comparison", fontsize=14, fontweight="bold")
     axes[0].grid(True, alpha=0.3)
     axes[0].legend(bbox_to_anchor=(1.05, 1), loc="upper left", fontsize=10)
 
@@ -313,8 +299,8 @@ def plot_baseline_difference(results: List[Dict], output_dir: Path):
             print(f"⚠️  Time mismatch for {result['label']}, skipping")
 
     # ゼロラインを追加
-    ax1.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5, label='Baseline')
-    ax2.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5, label='Baseline')
+    ax1.axhline(y=0, color="black", linestyle="--", linewidth=1, alpha=0.5, label="Baseline")
+    ax2.axhline(y=0, color="black", linestyle="--", linewidth=1, alpha=0.5, label="Baseline")
 
     # グラフ設定
     ax1.set_ylabel("Δ Altitude [km]", fontsize=12)
@@ -365,7 +351,7 @@ def plot_baseline_difference(results: List[Dict], output_dir: Path):
 
     # ゼロラインを追加
     for ax in axes:
-        ax.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5, label='Baseline')
+        ax.axhline(y=0, color="black", linestyle="--", linewidth=1, alpha=0.5, label="Baseline")
 
     # グラフ設定
     axes[0].set_ylabel("Δ Semi-major Axis [km]", fontsize=12)
@@ -395,9 +381,7 @@ def plot_baseline_difference(results: List[Dict], output_dir: Path):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Hohmann Transfer Sweep Comparison Visualization"
-    )
+    parser = argparse.ArgumentParser(description="Hohmann Transfer Sweep Comparison Visualization")
     parser.add_argument("sweep_dir", type=str, help="スイープディレクトリのパス")
     parser.add_argument(
         "--indices",

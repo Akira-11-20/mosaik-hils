@@ -122,7 +122,11 @@ class ParameterSweepConfig:
                 }
                 # スイープパラメータの最初の値をデフォルトとして使用（ベースライン用）
                 for key in self.sweep_params.keys():
-                    if key not in baseline_config and key not in ["PLANT_TIME_CONSTANT", "PLANT_NOISE_STD", "INVERSE_COMPENSATION"]:
+                    if key not in baseline_config and key not in [
+                        "PLANT_TIME_CONSTANT",
+                        "PLANT_NOISE_STD",
+                        "INVERSE_COMPENSATION",
+                    ]:
                         baseline_config[key] = self.sweep_params[key][0]
 
             # ベースラインラベルを追加

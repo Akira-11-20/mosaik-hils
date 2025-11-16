@@ -69,9 +69,7 @@ def load_formation_data(h5_path: Path) -> Dict:
         data["rel_pos_x"] = data["chaser_pos_x"] - data["target_pos_x"]
         data["rel_pos_y"] = data["chaser_pos_y"] - data["target_pos_y"]
         data["rel_pos_z"] = data["chaser_pos_z"] - data["target_pos_z"]
-        data["rel_distance"] = np.sqrt(
-            data["rel_pos_x"] ** 2 + data["rel_pos_y"] ** 2 + data["rel_pos_z"] ** 2
-        )
+        data["rel_distance"] = np.sqrt(data["rel_pos_x"] ** 2 + data["rel_pos_y"] ** 2 + data["rel_pos_z"] ** 2)
 
         # 推力データ（Chaser環境への入力force）
         try:
@@ -253,9 +251,7 @@ def plot_relative_position_comparison(results: List[Dict], output_path: Path):
 
     # グラフ設定
     axes[0].set_ylabel("Relative X [m]", fontsize=12)
-    axes[0].set_title(
-        "Formation Flying: Relative Position Comparison", fontsize=14, fontweight="bold"
-    )
+    axes[0].set_title("Formation Flying: Relative Position Comparison", fontsize=14, fontweight="bold")
     axes[0].grid(True, alpha=0.3)
     axes[0].legend(bbox_to_anchor=(1.05, 1), loc="upper left", fontsize=10)
 
@@ -578,8 +574,8 @@ def plot_baseline_difference(results: List[Dict], output_dir: Path):
             print(f"⚠️  Time mismatch for {result['label']}, skipping")
 
     # ゼロラインを追加
-    ax1.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5, label='Baseline')
-    ax2.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5, label='Baseline')
+    ax1.axhline(y=0, color="black", linestyle="--", linewidth=1, alpha=0.5, label="Baseline")
+    ax2.axhline(y=0, color="black", linestyle="--", linewidth=1, alpha=0.5, label="Baseline")
 
     # グラフ設定
     ax1.set_ylabel("Δ Relative Distance [m]", fontsize=12)
@@ -627,7 +623,7 @@ def plot_baseline_difference(results: List[Dict], output_dir: Path):
 
     # ゼロラインを追加
     for ax in axes:
-        ax.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5, label='Baseline')
+        ax.axhline(y=0, color="black", linestyle="--", linewidth=1, alpha=0.5, label="Baseline")
 
     # グラフ設定
     axes[0].set_ylabel("Δ Relative X [m]", fontsize=12)
@@ -704,14 +700,10 @@ def plot_altitude_comparison(results: List[Dict], output_path: Path):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Compare formation flying sweep simulation results"
-    )
+    parser = argparse.ArgumentParser(description="Compare formation flying sweep simulation results")
     parser.add_argument("sweep_dir", type=str, help="Sweep directory path")
     parser.add_argument("--indices", nargs="+", type=int, help="Specific indices to compare")
-    parser.add_argument(
-        "--output-dir", type=str, help="Output directory (default: sweep_dir/comparison)"
-    )
+    parser.add_argument("--output-dir", type=str, help="Output directory (default: sweep_dir/comparison)")
 
     args = parser.parse_args()
 
