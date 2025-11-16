@@ -7,6 +7,7 @@ Orbital HILS Simulation - Main Entry Point
 - zero: 自由軌道運動（デフォルト）
 - pd: PD制御
 - hohmann: ホーマン遷移制御
+- formation: 編隊飛行（2機の衛星）
 
 使用方法:
     cd /home/akira/mosaik-hils/orbital_hils
@@ -20,6 +21,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from config.orbital_parameters import get_env_param, load_config_from_env
+from scenarios.formation_flying_scenario import FormationFlyingScenario
 from scenarios.hohmann_scenario import HohmannScenario
 from scenarios.orbital_scenario import OrbitalScenario
 
@@ -52,6 +54,11 @@ def main():
         print("🚀 Hohmann Transfer Scenario Selected")
         print()
         scenario = HohmannScenario(config=config)
+    elif controller_type == "formation":
+        print("🛰️  Formation Flying Scenario Selected (2 spacecraft)")
+        print("   Chaser (controlled) + Target (free orbit)")
+        print()
+        scenario = FormationFlyingScenario(config=config)
     elif controller_type == "pd":
         print("🎯 PD Control Scenario Selected")
         print("   (Using base OrbitalScenario with PD controller)")
@@ -74,16 +81,29 @@ def main():
     if controller_type == "hohmann":
         print("💡 Hohmann transfer plots (PNG & HTML) were auto-generated!")
         print()
+    elif controller_type == "formation":
+        print("💡 Formation flying plots were auto-generated!")
+        print()
 
     print("Next steps:")
     print("  1. Visualize results:")
-    print(f"     uv run python scripts/analysis/visualize_orbital_results.py {output_dir / 'hils_data.h5'}")
+    if controller_type == "formation":
+        print(f"     uv run python scripts/analysis/visualize_formation_flying.py {output_dir / 'hils_data.h5'}")
+    else:
+        print(f"     uv run python scripts/analysis/visualize_orbital_results.py {output_dir / 'hils_data.h5'}")
     print("  2. Interactive 3D plot:")
     print(f"     uv run python scripts/analysis/visualize_orbital_interactive.py {output_dir / 'hils_data.h5'}")
     if controller_type == "hohmann":
         print("  3. Phase-colored plots (already generated):")
         print(f"     {output_dir}/orbital_3d_trajectory_phases.png")
         print(f"     {output_dir}/orbital_3d_trajectory_phases_interactive.html")
+    elif controller_type == "formation":
+        print("  3. Formation plots (already generated):")
+        print(f"     {output_dir}/formation_3d_orbits.png")
+        print(f"     {output_dir}/formation_relative_position.png")
+        print(f"     {output_dir}/formation_relative_3d.png")
+        print("  4. Interactive 3D relative position:")
+        print(f"     {output_dir}/formation_relative_3d_interactive.html")
     print("=" * 70)
 
 

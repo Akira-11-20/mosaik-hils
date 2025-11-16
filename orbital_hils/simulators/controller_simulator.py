@@ -15,7 +15,7 @@ import numpy as np
 # プロジェクトルートをパスに追加
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from models.thrust_model import HohmannThrustModel, PDThrustModel, ThrustModel
+from models.thrust_model import HCWThrustModel, HohmannThrustModel, PDThrustModel, ThrustModel
 
 meta = {
     "type": "time-based",
@@ -24,6 +24,7 @@ meta = {
             "public": True,
             "params": [
                 "target_position",  # 目標位置 [x, y, z] [m]
+                "target_velocity",  # 目標速度 [vx, vy, vz] [m/s] (PD制御用)
                 "control_gain",  # 制御ゲイン
                 "controller_type",  # 制御タイプ: "zero", "pd", "hohmann"
                 "mu",  # 重力定数（ホーマン遷移用）
@@ -42,6 +43,13 @@ meta = {
                 "velocity_x",
                 "velocity_y",
                 "velocity_z",
+                # 入力（from Chief/Target - HCW用）
+                "chief_position_x",
+                "chief_position_y",
+                "chief_position_z",
+                "chief_velocity_x",
+                "chief_velocity_y",
+                "chief_velocity_z",
                 # 出力（to OrbitalPlant）
                 "thrust_command_x",
                 "thrust_command_y",
@@ -90,6 +98,7 @@ class OrbitalControllerSimulator(mosaik_api.Simulator):
         num,
         model,
         target_position=None,
+        target_velocity=None,
         control_gain=1.0,
         controller_type="zero",
         mu=3.986004418e14,
@@ -107,6 +116,7 @@ class OrbitalControllerSimulator(mosaik_api.Simulator):
             num: 作成数
             model: モデル名
             target_position: 目標位置 [x, y, z] [m]
+            target_velocity: 目標速度 [vx, vy, vz] [m/s] (PD制御用)
             control_gain: 制御ゲイン
             controller_type: 制御タイプ ("zero", "pd", "hohmann")
             mu: 重力定数 [m³/s²]
@@ -147,12 +157,35 @@ class OrbitalControllerSimulator(mosaik_api.Simulator):
                 # PD制御モデル
                 thrust_model = PDThrustModel(
                     target_position=target_position,
+                    target_velocity=target_velocity,
                     kp=control_gain * 1e-3,
                     kd=control_gain * 1e-2,
                     max_thrust=max_thrust,
                 )
                 print(f"[OrbitalControllerSim] Created {eid} with PD control:")
                 print(f"  Target position: {target_position} m")
+                print(f"  Target velocity: {target_velocity} m/s")
+                print(f"  Control gain: {control_gain}")
+
+            elif controller_type == "hcw":
+                # HCW編隊飛行制御
+                # target_positionは相対位置として使用
+                thrust_model = HCWThrustModel(
+                    target_relative_position=target_position if target_position else [0, 0, 0],
+                    target_relative_velocity=target_velocity if target_velocity else [0, 0, 0],
+                    chief_position=None,  # シナリオで設定
+                    chief_velocity=None,  # シナリオで設定
+                    mu=mu,
+                    kp_x=control_gain * 0.001,
+                    kp_y=control_gain * 0.001,
+                    kp_z=control_gain * 0.001,
+                    kd_x=control_gain * 0.01,
+                    kd_y=control_gain * 0.01,
+                    kd_z=control_gain * 0.01,
+                    max_thrust=max_thrust,
+                )
+                print(f"[OrbitalControllerSim] Created {eid} with HCW control:")
+                print(f"  Target relative position (LVLH): {target_position} m")
                 print(f"  Control gain: {control_gain}")
 
             else:
@@ -187,28 +220,59 @@ class OrbitalControllerSimulator(mosaik_api.Simulator):
             # 入力: 位置・速度の受信
             position = np.zeros(3)
             velocity = np.zeros(3)
+            chief_position = None
+            chief_velocity = None
 
             if eid in inputs:
-                # 位置
+                # Deputy（自機）の位置
                 for axis, attr in enumerate(["position_x", "position_y", "position_z"]):
                     if attr in inputs[eid]:
                         value = list(inputs[eid][attr].values())[0]
                         position[axis] = value if value is not None else 0.0
 
-                # 速度
+                # Deputy（自機）の速度
                 for axis, attr in enumerate(["velocity_x", "velocity_y", "velocity_z"]):
                     if attr in inputs[eid]:
                         value = list(inputs[eid][attr].values())[0]
                         velocity[axis] = value if value is not None else 0.0
 
+                # Chief（目標機）の位置（HCW用）
+                chief_pos_attrs = ["chief_position_x", "chief_position_y", "chief_position_z"]
+                if any(attr in inputs[eid] for attr in chief_pos_attrs):
+                    chief_position = np.zeros(3)
+                    for axis, attr in enumerate(chief_pos_attrs):
+                        if attr in inputs[eid]:
+                            value = list(inputs[eid][attr].values())[0]
+                            chief_position[axis] = value if value is not None else 0.0
+
+                # Chief（目標機）の速度（HCW用）
+                chief_vel_attrs = ["chief_velocity_x", "chief_velocity_y", "chief_velocity_z"]
+                if any(attr in inputs[eid] for attr in chief_vel_attrs):
+                    chief_velocity = np.zeros(3)
+                    for axis, attr in enumerate(chief_vel_attrs):
+                        if attr in inputs[eid]:
+                            value = list(inputs[eid][attr].values())[0]
+                            chief_velocity[axis] = value if value is not None else 0.0
+
             # 状態を更新
             entity["position"] = position
             entity["velocity"] = velocity
 
-            # 推力指令の計算（時刻を渡す）
+            # 推力指令の計算
             thrust_model = entity["thrust_model"]
             current_time = time * self.time_resolution  # 時間単位を秒に変換
-            thrust_command = thrust_model.calculate_thrust(position, velocity, time=current_time)
+
+            # HCWモデルの場合、Chief位置・速度を引数として渡す
+            if isinstance(thrust_model, HCWThrustModel):
+                thrust_command = thrust_model.calculate_thrust(
+                    position, velocity,
+                    chief_position=chief_position,
+                    chief_velocity=chief_velocity,
+                    time=current_time
+                )
+            else:
+                thrust_command = thrust_model.calculate_thrust(position, velocity, time=current_time)
+
             entity["thrust_command"] = thrust_command
 
         return time + self.step_size
