@@ -22,13 +22,14 @@ from itertools import product
 from pathlib import Path
 from typing import Any, Dict, List
 
-from config.orbital_parameters import load_config_from_env
-from scenarios.hohmann_scenario import HohmannScenario
-from scenarios.orbital_scenario import OrbitalScenario
-
-# Add project root to path
+# Add project root to path BEFORE imports
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
+
+from config.orbital_parameters import load_config_from_env
+from scenarios.formation_flying_scenario import FormationFlyingScenario
+from scenarios.hohmann_scenario import HohmannScenario
+from scenarios.orbital_scenario import OrbitalScenario
 
 
 class ParameterSweepConfig:
@@ -268,6 +269,8 @@ def run_sweep(sweep_config: ParameterSweepConfig, dry_run: bool = False):
             controller_type = config.get("CONTROLLER_TYPE", os.environ.get("CONTROLLER_TYPE", "zero"))
             if controller_type == "hohmann":
                 scenario = HohmannScenario(config=orbital_config)
+            elif controller_type == "formation":
+                scenario = FormationFlyingScenario(config=orbital_config)
             else:
                 scenario = OrbitalScenario(config=orbital_config)
             result_dir = scenario.run()
@@ -396,7 +399,7 @@ if __name__ == "__main__":
         "INVERSE_COMPENSATION": [True, False],
         "INVERSE_COMPENSATION_GAIN": [100.0],
         "PLANT_TIME_CONSTANT": [100.0],
-        "CONTROLLER_TYPE": ["hohmann"],
+        "CONTROLLER_TYPE": ["formation"],
     }
 
     # Example 3: Controller gain sweep
@@ -405,10 +408,7 @@ if __name__ == "__main__":
         "SIMULATION_TIME": [100.0],  # Short simulation for quick test
     }
 
-    # 使用するスイープパラメータを選択
-    # ここを変更してスイープ内容をカスタマイズ
-    sweep_params = sweep_params_example2
-
+    sweep_params= sweep_params_example2
     # スイープ設定の作成
     config = ParameterSweepConfig(
         sweep_params=sweep_params,
