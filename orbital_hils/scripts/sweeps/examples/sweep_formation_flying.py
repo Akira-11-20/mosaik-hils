@@ -120,6 +120,7 @@ if __name__ == "__main__":
         base_env_file=".env",
         output_base_dir="results_sweep",
         description=description,
+        include_baseline=True,  # PLANT_TIME_CONSTANT=0のベースラインを追加
     )
 
     # コマンドライン引数チェック

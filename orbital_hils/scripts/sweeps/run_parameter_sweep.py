@@ -41,6 +41,8 @@ class ParameterSweepConfig:
         base_env_file: str = ".env",
         output_base_dir: str = "results_sweep",
         description: str = "Parameter Sweep",
+        include_baseline: bool = False,
+        baseline_params: Dict[str, Any] = None,
     ):
         """
         初期化
@@ -51,11 +53,15 @@ class ParameterSweepConfig:
             base_env_file: ベースとなる.envファイルのパス
             output_base_dir: 結果出力のベースディレクトリ
             description: スイープの説明
+            include_baseline: Trueの場合、PLANT_TIME_CONSTANT=0のベースラインを追加
+            baseline_params: ベースラインのパラメータ（指定しない場合は自動生成）
         """
         self.sweep_params = sweep_params
         self.base_env_file = base_env_file
         self.output_base_dir = output_base_dir
         self.description = description
+        self.include_baseline = include_baseline
+        self.baseline_params = baseline_params
 
         # ベース.envファイルの読み込み
         self.base_env = self._load_env_file(base_env_file)
@@ -100,12 +106,34 @@ class ParameterSweepConfig:
         Returns:
             設定の辞書のリスト
         """
+        configs = []
+
+        # ベースライン設定を追加（最初に実行）
+        if self.include_baseline:
+            if self.baseline_params is not None:
+                # ユーザー指定のベースライン
+                baseline_config = self.baseline_params.copy()
+            else:
+                # デフォルトのベースライン: PLANT_TIME_CONSTANT=0, INVERSE_COMPENSATION=False
+                baseline_config = {
+                    "PLANT_TIME_CONSTANT": 0.0,
+                    "PLANT_NOISE_STD": 0.0,
+                    "INVERSE_COMPENSATION": False,
+                }
+                # スイープパラメータの最初の値をデフォルトとして使用（ベースライン用）
+                for key in self.sweep_params.keys():
+                    if key not in baseline_config and key not in ["PLANT_TIME_CONSTANT", "PLANT_NOISE_STD", "INVERSE_COMPENSATION"]:
+                        baseline_config[key] = self.sweep_params[key][0]
+
+            # ベースラインラベルを追加
+            baseline_config["_is_baseline"] = True
+            configs.append(baseline_config)
+
         # スイープするパラメータ名と値のリストを取得
         param_names = list(self.sweep_params.keys())
         param_values = list(self.sweep_params.values())
 
         # 全ての組み合わせを生成
-        configs = []
         for values in product(*param_values):
             config = dict(zip(param_names, values))
             configs.append(config)
@@ -127,6 +155,9 @@ class ParameterSweepConfig:
 
         # スイープパラメータで上書き
         for key, value in config.items():
+            # 内部フラグはスキップ
+            if key.startswith("_"):
+                continue
             env[key] = str(value)
 
         return env
@@ -141,8 +172,15 @@ class ParameterSweepConfig:
         Returns:
             ラベル文字列
         """
+        # ベースラインの場合は特別なラベル
+        if config.get("_is_baseline", False):
+            return "baseline_tau=0.0"
+
         parts = []
         for key, value in config.items():
+            # 内部フラグはスキップ
+            if key.startswith("_"):
+                continue
             # キー名を短縮（例: PLANT_TIME_CONSTANT -> tau）
             short_key = self._shorten_key(key)
             parts.append(f"{short_key}={value}")
@@ -205,9 +243,12 @@ def run_sweep(sweep_config: ParameterSweepConfig, dry_run: bool = False):
         print("🔍 Dry run mode - showing configurations without execution:\n")
         for i, config in enumerate(sweep_config.configs, 1):
             label = sweep_config.get_config_label(config)
-            print(f"{i}. {label}")
+            is_baseline = config.get("_is_baseline", False)
+            baseline_marker = " [BASELINE]" if is_baseline else ""
+            print(f"{i}. {label}{baseline_marker}")
             for key, value in config.items():
-                print(f"     {key} = {value}")
+                if not key.startswith("_"):  # 内部フラグは表示しない
+                    print(f"     {key} = {value}")
             print()
         return
 
@@ -228,6 +269,9 @@ def run_sweep(sweep_config: ParameterSweepConfig, dry_run: bool = False):
             # 1. スイープパラメータを環境変数に設定
             #    (シナリオがget_env_param()で読み込むパラメータ用)
             for key, value in config.items():
+                # 内部フラグはスキップ
+                if key.startswith("_"):
+                    continue
                 os.environ[key] = str(value)
 
             # 2. ベース設定を.envから読み込み（環境変数が優先される）
@@ -235,6 +279,9 @@ def run_sweep(sweep_config: ParameterSweepConfig, dry_run: bool = False):
 
             # 3. OrbitalSimulationConfigの属性を直接上書き
             for key, value in config.items():
+                # 内部フラグはスキップ
+                if key.startswith("_"):
+                    continue
                 # Spacecraft parameters
                 if key == "SPACECRAFT_MASS":
                     orbital_config.spacecraft.mass = float(value)
@@ -359,7 +406,54 @@ def run_sweep(sweep_config: ParameterSweepConfig, dry_run: bool = False):
         try:
             import subprocess
 
-            # 比較可視化スクリプトを実行
+            # CONTROLLER_TYPEを確認（最初の成功したシミュレーションから取得）
+            controller_type = None
+            for r in results:
+                if r["status"] == "success":
+                    controller_type = r["config"].get("CONTROLLER_TYPE", os.environ.get("CONTROLLER_TYPE", "zero"))
+                    break
+
+            # Formation flying の場合は専用の比較スクリプトを実行
+            if controller_type == "formation":
+                print("\n🚀 Formation Flying mode detected - generating formation-specific comparisons...")
+
+                result = subprocess.run(
+                    [
+                        "python",
+                        str(project_root / "scripts/analysis/compare_formation_sweep.py"),
+                        str(sweep_dir),
+                    ],
+                    capture_output=True,
+                    text=True,
+                    cwd=str(project_root),
+                )
+
+                if result.returncode == 0:
+                    print("✅ Formation flying comparison visualizations generated")
+                else:
+                    print(f"⚠️  Formation visualization failed: {result.stderr}")
+
+            # Hohmann transfer の場合は専用の比較スクリプトを実行
+            elif controller_type == "hohmann":
+                print("\n🚀 Hohmann Transfer mode detected - generating hohmann-specific comparisons...")
+
+                result = subprocess.run(
+                    [
+                        "python",
+                        str(project_root / "scripts/analysis/compare_hohmann_sweep.py"),
+                        str(sweep_dir),
+                    ],
+                    capture_output=True,
+                    text=True,
+                    cwd=str(project_root),
+                )
+
+                if result.returncode == 0:
+                    print("✅ Hohmann transfer comparison visualizations generated")
+                else:
+                    print(f"⚠️  Hohmann visualization failed: {result.stderr}")
+
+            # 通常の比較可視化スクリプトも実行
             result = subprocess.run(
                 [
                     "python",
@@ -373,9 +467,9 @@ def run_sweep(sweep_config: ParameterSweepConfig, dry_run: bool = False):
             )
 
             if result.returncode == 0:
-                print("✅ Comparison visualizations generated")
+                print("✅ General comparison visualizations generated")
             else:
-                print(f"⚠️  Visualization failed: {result.stderr}")
+                print(f"⚠️  General visualization failed: {result.stderr}")
 
         except Exception as e:
             print(f"⚠️  Could not generate visualizations: {e}")
@@ -399,7 +493,7 @@ if __name__ == "__main__":
         "INVERSE_COMPENSATION": [True, False],
         "INVERSE_COMPENSATION_GAIN": [100.0],
         "PLANT_TIME_CONSTANT": [100.0],
-        "CONTROLLER_TYPE": ["formation"],
+        "CONTROLLER_TYPE": ["hohmann"],
     }
 
     # Example 3: Controller gain sweep
@@ -415,6 +509,7 @@ if __name__ == "__main__":
         base_env_file=".env",
         output_base_dir="results_sweep",
         description="Orbital HILS Parameter Sweep",
+        include_baseline=True,  # PLANT_TIME_CONSTANT=0のベースラインを追加
     )
 
     # コマンドライン引数をチェック

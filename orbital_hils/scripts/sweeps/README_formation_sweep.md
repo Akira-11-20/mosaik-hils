@@ -5,6 +5,10 @@
 Formation Flying（編隊飛行）シミュレーションにおけるパラメータスイープを実行するためのガイドです。
 既存の `run_parameter_sweep.py` を使用して、様々な制御パラメータや初期条件の影響を評価できます。
 
+**重要な機能**:
+- **自動ベースライン生成**: `PLANT_TIME_CONSTANT=0.0`（理想的な応答）のベースラインシミュレーションが自動的に追加されます
+- これにより、Inverse compensationの効果を正確に評価できます（ベースラインとの比較）
+
 ## クイックスタート
 
 ```bash
@@ -121,8 +125,23 @@ results_sweep/YYYYMMDD-HHMMSS_sweep/
 
 成功したシミュレーションが2つ以上ある場合、自動的に比較プロットが生成されます：
 
+**重要**: ベースライン（`PLANT_TIME_CONSTANT=0.0`）は太い線で強調表示されます。
+これにより、Inverse compensationの効果を視覚的に評価できます。
+
+**Formation flying専用の比較**（自動生成）:
+- `formation_relative_3d_comparison.png` - 相対位置の3D比較（PNG）
+- `formation_relative_3d_interactive.html` - 相対位置の3Dインタラクティブ比較（HTML）
+- `formation_relative_position_comparison.png` - 相対位置（X, Y, Z）の時系列比較
+- `formation_distance_thrust_comparison.png` - 相対距離と推力の比較
+- `formation_altitude_comparison.png` - Chaser/Target高度の比較
+- `formation_baseline_difference.png` - **ベースラインとの差分**（相対距離と推力）
+- `formation_baseline_position_difference.png` - **ベースラインとの差分**（相対位置 X, Y, Z）
+
 ```bash
-# 手動で比較を実行する場合
+# 手動でFormation flying専用比較を実行する場合
+uv run python scripts/analysis/compare_formation_sweep.py results_sweep/YYYYMMDD-HHMMSS_sweep/
+
+# 手動で一般的な比較を実行する場合
 uv run python scripts/analysis/compare_sweep_results.py results_sweep/YYYYMMDD-HHMMSS_sweep/
 ```
 

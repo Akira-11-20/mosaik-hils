@@ -28,6 +28,7 @@ config = ParameterSweepConfig(
     base_env_file=".env",
     output_base_dir="results_sweep",
     description="Plant Dynamics Parameter Sweep",
+    include_baseline=True,  # PLANT_TIME_CONSTANT=0のベースラインを追加
 )
 
 if __name__ == "__main__":
