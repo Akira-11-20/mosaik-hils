@@ -1188,6 +1188,25 @@ wheels = [
 ]
 
 [[package]]
+name = "mosaik-hdf5"
+version = "0.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "h5py" },
+    { name = "mosaik-api" },
+    { name = "networkx", version = "3.2.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "networkx", version = "3.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
+    { name = "networkx", version = "3.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
+    { name = "numpy", version = "2.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c8/43/4079967ed1a6d495e434240b0a6d9c88f99a30046292ab015310ac2fd9fe/mosaik-hdf5-0.4.tar.gz", hash = "sha256:050ba63b62958f41f8eb936c7247264958da8155bba436e848d65c3f7f946744", size = 16256, upload-time = "2021-06-08T12:48:53.823Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/73/43/f644a75eb96c89223ebf4671df8a630a82c9760f2bfafc5d33574cb76387/mosaik_hdf5-0.4-py2.py3-none-any.whl", hash = "sha256:6797d9d6204ce2029c70ee575e99620de626efd5562c5a3a187993c76e4a56ff", size = 15905, upload-time = "2021-06-08T12:48:52.532Z" },
+]
+
+[[package]]
 name = "mosaik-hils"
 version = "0.1.0"
 source = { virtual = "." }
@@ -1201,6 +1220,7 @@ dependencies = [
     { name = "mosaik" },
     { name = "mosaik-api" },
     { name = "mosaik-csv" },
+    { name = "mosaik-hdf5" },
     { name = "mosaik-web" },
     { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
@@ -1223,6 +1243,7 @@ requires-dist = [
     { name = "mosaik", specifier = ">=3.5.0" },
     { name = "mosaik-api" },
     { name = "mosaik-csv" },
+    { name = "mosaik-hdf5", specifier = ">=0.4" },
     { name = "mosaik-web" },
     { name = "numpy", specifier = ">=2.0.2" },
     { name = "pandas" },

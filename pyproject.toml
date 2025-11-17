@@ -21,6 +21,7 @@ dependencies = [
     "plotly>=6.3.1",
     "seaborn>=0.13.2",
     "lamberthub>=0.1",
+    "mosaik-hdf5>=0.4",
 ]
 
 [tool.ruff]
