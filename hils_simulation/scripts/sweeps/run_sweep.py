@@ -5,7 +5,49 @@ This script demonstrates various plant parameter sweep scenarios:
 - Time constant variation (τ)
 - Individual variability (std)
 - Time-varying noise
+- Dynamic time constant models (linear, thermal, hybrid, etc.)
+- Adaptive inverse compensation with dynamic tau models
 - Combined effects with communication delays and inverse compensation
+
+Example configurations:
+
+1. Constant tau sweep (default):
+   USE_PLANT_MODEL = False
+   PLANT_TAU_MODEL_TYPE = None
+   USE_ADAPTIVE_COMP = False
+
+2. Linear tau model with fixed gain compensation:
+   USE_PLANT_MODEL = True
+   PLANT_TAU_MODEL_TYPE = "linear"
+   PLANT_TAU_MODEL_PARAMS = {"sensitivity": 0.1}
+   USE_ADAPTIVE_COMP = False
+
+3. Linear tau model with adaptive compensation:
+   USE_PLANT_MODEL = True
+   PLANT_TAU_MODEL_TYPE = "linear"
+   PLANT_TAU_MODEL_PARAMS = {"sensitivity": 0.1}
+   USE_ADAPTIVE_COMP = True
+   INVERSE_COMP_TAU_TO_GAIN_RATIO = 0.1
+   INVERSE_COMP_TAU_MODEL_TYPE = "linear"
+   INVERSE_COMP_TAU_MODEL_PARAMS = {"sensitivity": 0.1}
+
+4. Hybrid thermal model with adaptive compensation:
+   USE_PLANT_MODEL = True
+   PLANT_TAU_MODEL_TYPE = "hybrid"
+   PLANT_TAU_MODEL_PARAMS = {
+       "thrust_sensitivity": 0.25,
+       "heating_rate": 0.001,
+       "cooling_rate": 0.01,
+       "thermal_sensitivity": 0.04
+   }
+   USE_ADAPTIVE_COMP = True
+   INVERSE_COMP_TAU_MODEL_TYPE = "hybrid"
+   INVERSE_COMP_TAU_MODEL_PARAMS = {
+       "thrust_sensitivity": 0.25,
+       "heating_rate": 0.001,
+       "cooling_rate": 0.01,
+       "thermal_sensitivity": 0.04
+   }
 """
 
 import sys
@@ -49,7 +91,71 @@ time_constants = [
 # Define whether to test with/without inverse compensation
 test_inverse_comp = [True]
 
-comp_positions = ["pre", "post"]
+comp_positions = ["post"]
+
+# ============================================================================
+# Plant Time Constant Model Configuration
+# ============================================================================
+# Enable dynamic plant model (plant_simulator_with_model.py)
+# Set to True to use advanced tau models, False to use constant tau
+USE_PLANT_MODEL = True
+
+# Time constant model type
+# Options: "constant", "linear", "saturation", "thermal", "hybrid", "stochastic"
+PLANT_TAU_MODEL_TYPE = "linear"  # Set to None to use default from .env
+
+# Time constant model parameters (JSON dict)
+# Examples:
+#   - linear: {"sensitivity": 0.1}
+#   - hybrid: {"thrust_sensitivity": 0.25, "heating_rate": 0.001, "cooling_rate": 0.01, "thermal_sensitivity": 0.04}
+#   - thermal: {"heating_rate": 0.001, "cooling_rate": 0.01, "thermal_sensitivity": 0.05}
+PLANT_TAU_MODEL_PARAMS = {"sensitivity": 0.1}  # Set to None to use default from .env
+
+# Example: Enable linear model with sensitivity
+# USE_PLANT_MODEL = True
+# PLANT_TAU_MODEL_TYPE = "linear"
+# PLANT_TAU_MODEL_PARAMS = {"sensitivity": 0.1}
+
+# Example: Enable hybrid thermal model
+# USE_PLANT_MODEL = True
+# PLANT_TAU_MODEL_TYPE = "hybrid"
+# PLANT_TAU_MODEL_PARAMS = {
+#     "thrust_sensitivity": 0.25,
+#     "heating_rate": 0.001,
+#     "cooling_rate": 0.01,
+#     "thermal_sensitivity": 0.04
+# }
+
+# ============================================================================
+# Inverse Compensator Adaptive Configuration
+# ============================================================================
+# Enable adaptive compensation (compensator gain adapts to plant tau model)
+# When True, the compensator will use the same tau model as the plant
+USE_ADAPTIVE_COMP = False
+
+# Tau to gain conversion ratio (gain = tau * ratio)
+# Used when USE_ADAPTIVE_COMP = True
+INVERSE_COMP_TAU_TO_GAIN_RATIO = None  # Set to None to use default from .env (e.g., 0.1)
+
+# Base time constant for compensator [ms]
+# Used when USE_ADAPTIVE_COMP = True
+INVERSE_COMP_BASE_TAU = None  # Set to None to use plant time constant
+
+# Compensator tau model type
+# Options: "constant" (fixed gain), "linear", "hybrid", etc.
+# If None, will match PLANT_TAU_MODEL_TYPE when USE_ADAPTIVE_COMP = True
+INVERSE_COMP_TAU_MODEL_TYPE = None
+
+# Compensator tau model parameters (JSON dict)
+# If None, will match PLANT_TAU_MODEL_PARAMS when USE_ADAPTIVE_COMP = True
+INVERSE_COMP_TAU_MODEL_PARAMS = None
+
+# Example: Enable adaptive compensation with linear model
+# USE_ADAPTIVE_COMP = True
+# INVERSE_COMP_TAU_TO_GAIN_RATIO = 0.1
+# INVERSE_COMP_BASE_TAU = 100.0
+# INVERSE_COMP_TAU_MODEL_TYPE = "linear"  # Match plant model
+# INVERSE_COMP_TAU_MODEL_PARAMS = {"sensitivity": 0.1}  # Match plant params
 
 # Generate all combinations using itertools.product
 configs = []
@@ -70,6 +176,16 @@ for time_constant, use_inverse, comp_position in product(
             plant_enable_lag=True,
             use_inverse_comp=use_inverse,
             comp_position=comp_position,  # Set compensator position to "pre" (before plant)
+            # Plant model configuration
+            use_plant_model=USE_PLANT_MODEL,
+            plant_tau_model_type=PLANT_TAU_MODEL_TYPE,
+            plant_tau_model_params=PLANT_TAU_MODEL_PARAMS,
+            # Inverse compensator adaptive configuration
+            use_adaptive_comp=USE_ADAPTIVE_COMP,
+            comp_tau_to_gain_ratio=INVERSE_COMP_TAU_TO_GAIN_RATIO,
+            comp_base_tau=INVERSE_COMP_BASE_TAU if INVERSE_COMP_BASE_TAU is not None else time_constant[0],
+            comp_tau_model_type=INVERSE_COMP_TAU_MODEL_TYPE,
+            comp_tau_model_params=INVERSE_COMP_TAU_MODEL_PARAMS,
         )
     )
 
@@ -83,6 +199,10 @@ baseline_config = DelayConfig(
     plant_enable_lag=False,
     use_inverse_comp=False,
     label="baseline_rt",
+    # Baseline doesn't use plant model (keeps it simple)
+    use_plant_model=False,
+    plant_tau_model_type=None,
+    plant_tau_model_params=None,
 )
 
 # Add baseline to configs (will be run first)
@@ -110,9 +230,34 @@ for i, config in enumerate(configs, 1):
         print(f"   Plant τ noise: {config.plant_time_constant_noise}ms (time-varying)")
     if config.plant_enable_lag is not None:
         print(f"   Plant lag enabled: {config.plant_enable_lag}")
+    # Display plant model information
+    if config.use_plant_model:
+        print("   Plant model: ENABLED")
+        if config.plant_tau_model_type:
+            print(f"   Plant τ model type: {config.plant_tau_model_type}")
+        if config.plant_tau_model_params:
+            import json
+
+            params_str = json.dumps(config.plant_tau_model_params)
+            print(f"   Plant τ model params: {params_str}")
     print(f"   Inverse compensation: {config.use_inverse_comp}")
-    if config.use_inverse_comp and config.comp_gain is not None:
-        print(f"   Compensation gain: {config.comp_gain}")
+    if config.use_inverse_comp:
+        if config.comp_gain is not None:
+            print(f"   Compensation gain: {config.comp_gain}")
+        if config.comp_position is not None:
+            print(f"   Compensation position: {config.comp_position}")
+        # Display adaptive compensation information
+        if config.use_adaptive_comp:
+            print("   Adaptive compensation: ENABLED")
+            if config.comp_tau_to_gain_ratio is not None:
+                print(f"   Tau-to-gain ratio: {config.comp_tau_to_gain_ratio}")
+            if config.comp_tau_model_type:
+                print(f"   Comp τ model type: {config.comp_tau_model_type}")
+            if config.comp_tau_model_params:
+                import json
+
+                params_str = json.dumps(config.comp_tau_model_params)
+                print(f"   Comp τ model params: {params_str}")
     print()
 
 print("=" * 70)

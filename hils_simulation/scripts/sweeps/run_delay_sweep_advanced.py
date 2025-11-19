@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from config.parameters import SimulationParameters
-from scenarios import HILSScenario, InverseCompScenario
+from scenarios import HILSScenario, InverseCompScenario, InverseCompDualFeedbackScenario
 
 
 class DelayConfig:
@@ -37,6 +37,7 @@ class DelayConfig:
         # NEW: Adaptive inverse compensation parameters
         use_adaptive_comp: bool = False,
         comp_tau_to_gain_ratio: Optional[float] = None,
+        comp_base_tau: Optional[float] = None,  # Base tau for compensator
         comp_tau_model_type: Optional[str] = None,
         comp_tau_model_params: Optional[Dict[str, Any]] = None,
         comp_position: Optional[str] = None,  # "pre" or "post"
@@ -57,6 +58,7 @@ class DelayConfig:
             plant_tau_model_params: Time constant model parameters for plant (dict)
             use_adaptive_comp: Enable adaptive inverse compensation (automatically calculates gain from tau)
             comp_tau_to_gain_ratio: Ratio to convert tau to gain for adaptive compensation
+            comp_base_tau: Base time constant for compensator in milliseconds (if None, uses plant_time_constant)
             comp_tau_model_type: Time constant model type for compensator (should match plant)
             comp_tau_model_params: Time constant model parameters for compensator (should match plant)
             comp_position: Inverse compensator position - "pre" (before plant) or "post" (after plant)
@@ -77,6 +79,7 @@ class DelayConfig:
         # Adaptive compensation parameters
         self.use_adaptive_comp = use_adaptive_comp
         self.comp_tau_to_gain_ratio = comp_tau_to_gain_ratio
+        self.comp_base_tau = comp_base_tau
         self.comp_tau_model_type = comp_tau_model_type
         self.comp_tau_model_params = comp_tau_model_params or {}
         self.comp_position = comp_position
@@ -266,21 +269,42 @@ def run_simulation(config: DelayConfig, sweep_dir: Optional[Path] = None) -> Dic
                     params.inverse_comp.tau_model_params = config.comp_tau_model_params
                 else:
                     params.inverse_comp.tau_model_params = config.plant_tau_model_params
-                # Set base_tau to match plant
-                params.inverse_comp.base_tau = params.plant.time_constant
+                # Set base_tau
+                if config.comp_base_tau is not None:
+                    params.inverse_comp.base_tau = config.comp_base_tau
+                else:
+                    params.inverse_comp.base_tau = params.plant.time_constant
             else:
                 # Fixed gain mode (traditional)
                 if config.comp_gain is not None:
                     params.inverse_comp.gain = config.comp_gain
+                # Set base_tau even in fixed gain mode (for reference/logging)
+                if config.comp_base_tau is not None:
+                    params.inverse_comp.base_tau = config.comp_base_tau
+                elif config.plant_time_constant is not None:
+                    params.inverse_comp.base_tau = config.plant_time_constant
+                else:
+                    params.inverse_comp.base_tau = params.plant.time_constant
         else:
             # Explicitly disable inverse compensation when use_inverse_comp=False
             params.inverse_comp.enabled = False
 
-        # Select scenario based on inverse compensation flag
+        # Select scenario based on inverse compensation flag and plant model type
         # Use minimal_data_mode=True for faster sweeps (only collect time, position, velocity)
         if config.use_inverse_comp:
-            scenario = InverseCompScenario(params, minimal_data_mode=False)
-            scenario_type = "InverseComp"
+            # Check if using dynamic plant model (non-constant tau)
+            needs_dual_feedback = (
+                config.use_plant_model
+                and config.plant_tau_model_type is not None
+                and config.plant_tau_model_type != "constant"
+            )
+
+            if needs_dual_feedback:
+                scenario = InverseCompDualFeedbackScenario(params, minimal_data_mode=False)
+                scenario_type = "InverseCompDualFeedback"
+            else:
+                scenario = InverseCompScenario(params, minimal_data_mode=False)
+                scenario_type = "InverseComp"
         else:
             scenario = HILSScenario(params, minimal_data_mode=False)
             scenario_type = "HILS"

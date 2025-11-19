@@ -379,3 +379,18 @@ def print_summary_statistics_v2(scenarios, baseline_data, baseline_config, basel
 def plot_position_trajectories(scenarios, baseline_data, baseline_config, output_dir):
     """Plot position trajectories for all scenarios"""
     fig, ax = plt.subplots(figsize=(12, 6))
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Compare delay-tau sweep results")
+    parser.add_argument("sweep_dir", type=str, help="Path to sweep directory")
+    args = parser.parse_args()
+
+    sweep_dir = Path(args.sweep_dir)
+    if not sweep_dir.exists():
+        print(f"❌ Error: Directory not found: {sweep_dir}")
+        sys.exit(1)
+
+    create_comparison_plots(sweep_dir)
