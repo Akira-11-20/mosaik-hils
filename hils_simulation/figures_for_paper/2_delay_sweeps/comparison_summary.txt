@@ -1,0 +1,55 @@
+================================================================================
+DELAY SWEEP COMPARISON: SUMMARY STATISTICS
+================================================================================
+
+RT Baseline:
+  Directory: 20251119-215847_baseline_rt
+  Final Position: 5.085549 m
+  Final Velocity: -0.035854 m/s
+--------------------------------------------------------------------------------
+
+CMD Delay = 50ms:
+  Directory: 20251119-215919_cmd50ms_sense0ms_nocomp_tau0ms_linear_nolag
+  Position vs RT:
+    RMSE: 0.040287 m
+    MAE:  0.016668 m
+    Max Deviation: 0.212406 m
+  Velocity vs RT:
+    RMSE: 0.378079 m/s
+    MAE:  0.115892 m/s
+    Max Deviation: 2.874409 m/s
+
+CMD Delay = 100ms:
+  Directory: 20251119-220001_cmd100ms_sense0ms_nocomp_tau0ms_linear_nolag
+  Position vs RT:
+    RMSE: 0.130807 m
+    MAE:  0.050918 m
+    Max Deviation: 0.597088 m
+  Velocity vs RT:
+    RMSE: 1.174230 m/s
+    MAE:  0.432062 m/s
+    Max Deviation: 5.493502 m/s
+
+CMD Delay = 150ms:
+  Directory: 20251119-220049_cmd150ms_sense0ms_nocomp_tau0ms_linear_nolag
+  Position vs RT:
+    RMSE: 0.513368 m
+    MAE:  0.413095 m
+    Max Deviation: 1.326591 m
+  Velocity vs RT:
+    RMSE: 4.264140 m/s
+    MAE:  3.492142 m/s
+    Max Deviation: 10.092097 m/s
+
+CMD Delay = 200ms:
+  Directory: 20251119-220146_cmd200ms_sense0ms_nocomp_tau0ms_linear_nolag
+  Position vs RT:
+    RMSE: 24.275268 m
+    MAE:  14.847807 m
+    Max Deviation: 83.899786 m
+  Velocity vs RT:
+    RMSE: 174.593272 m/s
+    MAE:  106.060972 m/s
+    Max Deviation: 717.140914 m/s
+
+================================================================================

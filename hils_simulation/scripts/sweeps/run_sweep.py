@@ -66,10 +66,10 @@ from scripts.sweeps.run_delay_sweep_advanced import DelayConfig, print_summary, 
 
 # Define time constant and compensation gain pairs
 # command_delay = [
-#     (10.0, 1),
-#     (20.0, 2),
-#     (30.0, 3),
-#     (40.0, 4),
+#     (50.0, 1),
+#     (100.0, 2),
+#     (150.0, 3),
+#     (200.0, 4),
 # ]
 
 # Format: (time_constant_ms, corresponding_compensation_gain)
@@ -97,19 +97,21 @@ comp_positions = ["post"]
 # Plant Time Constant Model Configuration
 # ============================================================================
 # Enable dynamic plant model (plant_simulator_with_model.py)
-# Set to True to use advanced tau models, False to use constant tau
-USE_PLANT_MODEL = True
+# Set to True to use advanced tau models, False to use constant tau (sweep each value)
+# IMPORTANT: For tau sweep, set this to False so each tau value in the sweep is used
+USE_PLANT_MODEL = False
 
 # Time constant model type
 # Options: "constant", "linear", "saturation", "thermal", "hybrid", "stochastic"
-PLANT_TAU_MODEL_TYPE = "linear"  # Set to None to use default from .env
+PLANT_TAU_MODEL_TYPE = "constant"  # Set to None to use default from .env
 
 # Time constant model parameters (JSON dict)
 # Examples:
+#   - constant: {} or None (no parameters needed)
 #   - linear: {"sensitivity": 0.1}
 #   - hybrid: {"thrust_sensitivity": 0.25, "heating_rate": 0.001, "cooling_rate": 0.01, "thermal_sensitivity": 0.04}
 #   - thermal: {"heating_rate": 0.001, "cooling_rate": 0.01, "thermal_sensitivity": 0.05}
-PLANT_TAU_MODEL_PARAMS = {"sensitivity": 0.1}  # Set to None to use default from .env
+PLANT_TAU_MODEL_PARAMS = None  # Set to None for constant model (no parameters needed)
 
 # Example: Enable linear model with sensitivity
 # USE_PLANT_MODEL = True
@@ -159,8 +161,8 @@ INVERSE_COMP_TAU_MODEL_PARAMS = None
 
 # Generate all combinations using itertools.product
 configs = []
-for time_constant, use_inverse, comp_position in product(
-    time_constants, test_inverse_comp, comp_positions
+for use_inverse, comp_position, time_constant in product(
+    test_inverse_comp, comp_positions, time_constants
 ):  # product( #, (tau, gain), noise, use_inv
     # command_delay,
     # time_constants,
@@ -173,7 +175,7 @@ for time_constant, use_inverse, comp_position in product(
             plant_time_constant=time_constant[0],
             plant_time_constant_noise=0,
             comp_gain=time_constant[1],
-            plant_enable_lag=True,
+            plant_enable_lag=True,  # Enable first-order lag
             use_inverse_comp=use_inverse,
             comp_position=comp_position,  # Set compensator position to "pre" (before plant)
             # Plant model configuration
@@ -183,7 +185,7 @@ for time_constant, use_inverse, comp_position in product(
             # Inverse compensator adaptive configuration
             use_adaptive_comp=USE_ADAPTIVE_COMP,
             comp_tau_to_gain_ratio=INVERSE_COMP_TAU_TO_GAIN_RATIO,
-            comp_base_tau=INVERSE_COMP_BASE_TAU if INVERSE_COMP_BASE_TAU is not None else time_constant[0],
+            comp_base_tau=INVERSE_COMP_BASE_TAU if INVERSE_COMP_BASE_TAU is not None else 0,
             comp_tau_model_type=INVERSE_COMP_TAU_MODEL_TYPE,
             comp_tau_model_params=INVERSE_COMP_TAU_MODEL_PARAMS,
         )

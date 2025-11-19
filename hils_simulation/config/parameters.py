@@ -15,13 +15,13 @@ from typing import Optional
 from dotenv import load_dotenv
 
 
-def get_env_float(key: str, default: float) -> float:
+def get_env_float(key: str, default: Optional[float]) -> Optional[float]:
     """
     Get float value from environment variable.
 
     Args:
         key: Environment variable name
-        default: Default value if not found
+        default: Default value if not found (can be None)
 
     Returns:
         Float value from environment or default
@@ -162,6 +162,16 @@ class PlantParams:
         except (json.JSONDecodeError, ValueError):
             tau_model_params = {}
 
+        # Try PLANT_MIN_THRUST first, fall back to MIN_THRUST for backward compatibility
+        min_thrust = get_env_float("PLANT_MIN_THRUST", None)
+        if min_thrust is None:
+            min_thrust = get_env_float("MIN_THRUST", -100.0)
+
+        # Try PLANT_MAX_THRUST first, fall back to MAX_THRUST for backward compatibility
+        max_thrust = get_env_float("PLANT_MAX_THRUST", None)
+        if max_thrust is None:
+            max_thrust = get_env_float("MAX_THRUST", 100.0)
+
         return cls(
             time_constant=get_env_float("PLANT_TIME_CONSTANT", 50.0),
             time_constant_std=get_env_float("PLANT_TIME_CONSTANT_STD", 0.0),
@@ -169,8 +179,8 @@ class PlantParams:
             enable_lag=get_env_bool("PLANT_ENABLE_LAG", True),
             tau_model_type=os.getenv("PLANT_TAU_MODEL_TYPE", "constant"),
             tau_model_params=tau_model_params,
-            min_thrust=get_env_float("PLANT_MIN_THRUST", -100.0),
-            max_thrust=get_env_float("PLANT_MAX_THRUST", 100.0),
+            min_thrust=min_thrust,
+            max_thrust=max_thrust,
         )
 
 

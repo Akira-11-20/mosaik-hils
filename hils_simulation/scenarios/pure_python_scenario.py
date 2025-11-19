@@ -200,17 +200,20 @@ class PurePythonScenario(BaseScenario):
         env_period_steps = self.params.env_sim_period_steps
 
         thrust = 0.0
-        next_thrust = 0.0  # For time-shifted behavior (like Mosaik)
+        prev_thrust = 0.0  # For time-shifted behavior (like Mosaik)
         log_interval_steps = int(1.0 / time_resolution)  # Log every 1 second
 
         for step in range(self.params.simulation_steps):
             time_s = step * time_resolution
             time_ms = time_s * 1000
 
-            # Apply thrust from previous control computation (time-shifted like Mosaik)
-            thrust = next_thrust
+            # Apply thrust from PREVIOUS control period (time-shifted like Mosaik)
+            # In Mosaik: Controller@step0 → time_shifted → Plant@step100 → Env@step100
+            # This replicates the delay: thrust computed at step N-100 is applied at step N
+            if step % control_period_steps == 0 and step >= control_period_steps:
+                thrust = prev_thrust
 
-            # Update spacecraft dynamics at env_sim_period FIRST (to match Mosaik execution order)
+            # Update spacecraft dynamics (to match Mosaik execution order)
             # Actual period = env_period_steps × time_resolution
             if step % env_period_steps == 0:
                 # Integrate for dt = env_period_steps × time_resolution
@@ -218,24 +221,27 @@ class PurePythonScenario(BaseScenario):
                 self.spacecraft.step(dt, thrust)
 
             # Compute control at specified period AFTER physics update
+            # Controller sees the updated state from Env
             if step % control_period_steps == 0:
-                next_thrust = self.controller.compute_control(self.spacecraft.position, self.spacecraft.velocity)
-                self.plant.measure(next_thrust)
+                prev_thrust = self.controller.compute_control(self.spacecraft.position, self.spacecraft.velocity)
+                self.plant.measure(prev_thrust)
 
                 # Periodic logging
                 if step % log_interval_steps == 0:
                     print(
-                        f"[t={time_ms:.0f}ms] pos={self.spacecraft.position:.3f}m, vel={self.spacecraft.velocity:.3f}m/s, error={self.controller.error:.3f}m, thrust={thrust:.3f}N"
+                        f"[t={time_ms:.0f}ms] pos={self.spacecraft.position:.3f}m, vel={self.spacecraft.velocity:.3f}m/s, error={self.controller.error:.3f}m, thrust={prev_thrust:.3f}N"
                     )
 
-            # Record data (AFTER physics update to match Mosaik DataCollector behavior)
+            # Record data (AFTER all updates to match Mosaik DataCollector behavior)
+            # NOTE: Record prev_thrust (what controller outputs) not thrust (what is applied)
+            # This matches Mosaik's behavior where DataCollector records the command output
             self.data["time_s"].append(time_s)
             self.data["time_ms"].append(time_ms)
             self.data["position_Spacecraft"].append(self.spacecraft.position)
             self.data["velocity_Spacecraft"].append(self.spacecraft.velocity)
             self.data["acceleration_Spacecraft"].append(self.spacecraft.acceleration)
             self.data["force_Spacecraft"].append(self.spacecraft.force)
-            self.data["command_Controller_thrust"].append(thrust)
+            self.data["command_Controller_thrust"].append(prev_thrust)  # Record command output, not applied thrust
             self.data["error_Controller"].append(self.controller.error)
             self.data["integral_Controller"].append(self.controller.integral)
             self.data["measured_thrust_Plant"].append(self.plant.measured_thrust)

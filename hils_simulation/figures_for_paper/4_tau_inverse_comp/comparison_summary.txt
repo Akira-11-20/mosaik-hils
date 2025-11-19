@@ -1,0 +1,55 @@
+================================================================================
+TAU SWEEP COMPARISON: SUMMARY STATISTICS
+================================================================================
+
+RT Baseline:
+  Directory: 20251119-225738_baseline_rt
+  Final Position: 5.085549 m
+  Final Velocity: -0.035854 m/s
+--------------------------------------------------------------------------------
+
+Plant Tau = 50.0ms:
+  Directory: 20251119-225811_delay0ms_post_comp_tau50ms
+  Position vs RT:
+    RMSE: 0.000000 m
+    MAE:  0.000000 m
+    Max Deviation: 0.000000 m
+  Velocity vs RT:
+    RMSE: 0.000000 m/s
+    MAE:  0.000000 m/s
+    Max Deviation: 0.000000 m/s
+
+Plant Tau = 100.0ms:
+  Directory: 20251119-225847_delay0ms_post_comp_tau100ms
+  Position vs RT:
+    RMSE: 0.000000 m
+    MAE:  0.000000 m
+    Max Deviation: 0.000000 m
+  Velocity vs RT:
+    RMSE: 0.000000 m/s
+    MAE:  0.000000 m/s
+    Max Deviation: 0.000000 m/s
+
+Plant Tau = 150.0ms:
+  Directory: 20251119-225923_delay0ms_post_comp_tau150ms
+  Position vs RT:
+    RMSE: 0.000000 m
+    MAE:  0.000000 m
+    Max Deviation: 0.000000 m
+  Velocity vs RT:
+    RMSE: 0.000000 m/s
+    MAE:  0.000000 m/s
+    Max Deviation: 0.000000 m/s
+
+Plant Tau = 200.0ms:
+  Directory: 20251119-230000_delay0ms_post_comp_tau200ms
+  Position vs RT:
+    RMSE: 0.000000 m
+    MAE:  0.000000 m
+    Max Deviation: 0.000000 m
+  Velocity vs RT:
+    RMSE: 0.000000 m/s
+    MAE:  0.000000 m/s
+    Max Deviation: 0.000000 m/s
+
+================================================================================
