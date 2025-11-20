@@ -66,10 +66,11 @@ from scripts.sweeps.run_delay_sweep_advanced import DelayConfig, print_summary, 
 
 # Define time constant and compensation gain pairs
 # command_delay = [
-#     (50.0, 1),
-#     (100.0, 2),
-#     (150.0, 3),
-#     (200.0, 4),
+#     (10.0, 1),
+#     (20.0, 2),
+#     (30.0, 3),
+#     (40.0, 4),
+#     (0.0, 5),
 # ]
 
 # Format: (time_constant_ms, corresponding_compensation_gain)
@@ -91,7 +92,7 @@ time_constants = [
 # Define whether to test with/without inverse compensation
 test_inverse_comp = [True]
 
-comp_positions = ["post"]
+comp_positions = ["pre"]  # Compensation position: "pre" or "post"
 
 # ============================================================================
 # Plant Time Constant Model Configuration
@@ -99,7 +100,7 @@ comp_positions = ["post"]
 # Enable dynamic plant model (plant_simulator_with_model.py)
 # Set to True to use advanced tau models, False to use constant tau (sweep each value)
 # IMPORTANT: For tau sweep, set this to False so each tau value in the sweep is used
-USE_PLANT_MODEL = True
+USE_PLANT_MODEL = False
 
 # Time constant model type
 # Options: "constant", "linear", "saturation", "thermal", "hybrid", "stochastic"

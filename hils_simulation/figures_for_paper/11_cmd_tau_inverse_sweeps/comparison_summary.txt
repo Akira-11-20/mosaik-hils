@@ -1,0 +1,200 @@
+================================================================================
+CMD DELAY + LINEAR TAU + LINEAR MODEL INVERSE COMPENSATION SWEEP COMPARISON
+================================================================================
+
+RT Baseline:
+  Directory: 20251120-161944_baseline_rt
+  Final Position: 5.085549 m
+  Final Velocity: -0.035854 m/s
+--------------------------------------------------------------------------------
+
+
+τ = 50.0ms scenarios:
+--------------------------------------------------------------------------------
+
+  Cmd=10.0ms, τ=50.0ms:
+    Directory: 20251120-162017_cmd10ms_sense0ms_post_comp_tau50ms_linear
+    Position vs RT:
+      RMSE: 0.007578 m
+      MAE:  0.003492 m
+      Max Deviation: 0.035239 m
+    Velocity vs RT:
+      RMSE: 0.056837 m/s
+      MAE:  0.019669 m/s
+      Max Deviation: 0.379705 m/s
+
+  Cmd=20.0ms, τ=50.0ms:
+    Directory: 20251120-162055_cmd20ms_sense0ms_post_comp_tau50ms_linear
+    Position vs RT:
+      RMSE: 0.008189 m
+      MAE:  0.003741 m
+      Max Deviation: 0.038604 m
+    Velocity vs RT:
+      RMSE: 0.084129 m/s
+      MAE:  0.026336 m/s
+      Max Deviation: 0.753285 m/s
+
+  Cmd=30.0ms, τ=50.0ms:
+    Directory: 20251120-162133_cmd30ms_sense0ms_post_comp_tau50ms_linear
+    Position vs RT:
+      RMSE: 0.010327 m
+      MAE:  0.004566 m
+      Max Deviation: 0.046787 m
+    Velocity vs RT:
+      RMSE: 0.147546 m/s
+      MAE:  0.039933 m/s
+      Max Deviation: 1.510973 m/s
+
+  Cmd=40.0ms, τ=50.0ms:
+    Directory: 20251120-162215_cmd40ms_sense0ms_post_comp_tau50ms_linear
+    Position vs RT:
+      RMSE: 0.014040 m
+      MAE:  0.005825 m
+      Max Deviation: 0.070611 m
+    Velocity vs RT:
+      RMSE: 0.233131 m/s
+      MAE:  0.058535 m/s
+      Max Deviation: 2.218316 m/s
+
+τ = 100.0ms scenarios:
+--------------------------------------------------------------------------------
+
+  Cmd=10.0ms, τ=100.0ms:
+    Directory: 20251120-162257_cmd10ms_sense0ms_post_comp_tau100ms_linear
+    Position vs RT:
+      RMSE: 0.006827 m
+      MAE:  0.003296 m
+      Max Deviation: 0.029632 m
+    Velocity vs RT:
+      RMSE: 0.044455 m/s
+      MAE:  0.016940 m/s
+      Max Deviation: 0.250765 m/s
+
+  Cmd=20.0ms, τ=100.0ms:
+    Directory: 20251120-162338_cmd20ms_sense0ms_post_comp_tau100ms_linear
+    Position vs RT:
+      RMSE: 0.008308 m
+      MAE:  0.003928 m
+      Max Deviation: 0.036516 m
+    Velocity vs RT:
+      RMSE: 0.083740 m/s
+      MAE:  0.027649 m/s
+      Max Deviation: 0.753285 m/s
+
+  Cmd=30.0ms, τ=100.0ms:
+    Directory: 20251120-162420_cmd30ms_sense0ms_post_comp_tau100ms_linear
+    Position vs RT:
+      RMSE: 0.012294 m
+      MAE:  0.005456 m
+      Max Deviation: 0.051430 m
+    Velocity vs RT:
+      RMSE: 0.159132 m/s
+      MAE:  0.046549 m/s
+      Max Deviation: 1.510973 m/s
+
+  Cmd=40.0ms, τ=100.0ms:
+    Directory: 20251120-162504_cmd40ms_sense0ms_post_comp_tau100ms_linear
+    Position vs RT:
+      RMSE: 0.017968 m
+      MAE:  0.007447 m
+      Max Deviation: 0.090117 m
+    Velocity vs RT:
+      RMSE: 0.252640 m/s
+      MAE:  0.070283 m/s
+      Max Deviation: 2.218316 m/s
+
+τ = 150.0ms scenarios:
+--------------------------------------------------------------------------------
+
+  Cmd=10.0ms, τ=150.0ms:
+    Directory: 20251120-162548_cmd10ms_sense0ms_post_comp_tau150ms_linear
+    Position vs RT:
+      RMSE: 0.006114 m
+      MAE:  0.003057 m
+      Max Deviation: 0.025334 m
+    Velocity vs RT:
+      RMSE: 0.036260 m/s
+      MAE:  0.014605 m/s
+      Max Deviation: 0.189664 m/s
+
+  Cmd=20.0ms, τ=150.0ms:
+    Directory: 20251120-162625_cmd20ms_sense0ms_post_comp_tau150ms_linear
+    Position vs RT:
+      RMSE: 0.008387 m
+      MAE:  0.004056 m
+      Max Deviation: 0.034621 m
+    Velocity vs RT:
+      RMSE: 0.083472 m/s
+      MAE:  0.028063 m/s
+      Max Deviation: 0.753285 m/s
+
+  Cmd=30.0ms, τ=150.0ms:
+    Directory: 20251120-162706_cmd30ms_sense0ms_post_comp_tau150ms_linear
+    Position vs RT:
+      RMSE: 0.013660 m
+      MAE:  0.006115 m
+      Max Deviation: 0.059139 m
+    Velocity vs RT:
+      RMSE: 0.164646 m/s
+      MAE:  0.049953 m/s
+      Max Deviation: 1.510973 m/s
+
+  Cmd=40.0ms, τ=150.0ms:
+    Directory: 20251120-162748_cmd40ms_sense0ms_post_comp_tau150ms_linear
+    Position vs RT:
+      RMSE: 0.020533 m
+      MAE:  0.008620 m
+      Max Deviation: 0.101428 m
+    Velocity vs RT:
+      RMSE: 0.261569 m/s
+      MAE:  0.076444 m/s
+      Max Deviation: 2.218316 m/s
+
+τ = 200.0ms scenarios:
+--------------------------------------------------------------------------------
+
+  Cmd=10.0ms, τ=200.0ms:
+    Directory: 20251120-162829_cmd10ms_sense0ms_post_comp_tau200ms_linear
+    Position vs RT:
+      RMSE: 0.005498 m
+      MAE:  0.002817 m
+      Max Deviation: 0.022102 m
+    Velocity vs RT:
+      RMSE: 0.030479 m/s
+      MAE:  0.012710 m/s
+      Max Deviation: 0.153084 m/s
+
+  Cmd=20.0ms, τ=200.0ms:
+    Directory: 20251120-162907_cmd20ms_sense0ms_post_comp_tau200ms_linear
+    Position vs RT:
+      RMSE: 0.008441 m
+      MAE:  0.004132 m
+      Max Deviation: 0.033055 m
+    Velocity vs RT:
+      RMSE: 0.083269 m/s
+      MAE:  0.028116 m/s
+      Max Deviation: 0.753285 m/s
+
+  Cmd=30.0ms, τ=200.0ms:
+    Directory: 20251120-162947_cmd30ms_sense0ms_post_comp_tau200ms_linear
+    Position vs RT:
+      RMSE: 0.014611 m
+      MAE:  0.006585 m
+      Max Deviation: 0.064370 m
+    Velocity vs RT:
+      RMSE: 0.167626 m/s
+      MAE:  0.051848 m/s
+      Max Deviation: 1.510973 m/s
+
+  Cmd=40.0ms, τ=200.0ms:
+    Directory: 20251120-163027_cmd40ms_sense0ms_post_comp_tau200ms_linear
+    Position vs RT:
+      RMSE: 0.022276 m
+      MAE:  0.009459 m
+      Max Deviation: 0.109004 m
+    Velocity vs RT:
+      RMSE: 0.266256 m/s
+      MAE:  0.079990 m/s
+      Max Deviation: 2.218316 m/s
+
+================================================================================

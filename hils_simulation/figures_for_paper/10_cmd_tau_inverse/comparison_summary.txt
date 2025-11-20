@@ -1,0 +1,55 @@
+================================================================================
+CMD DELAY + LINEAR TAU + LINEAR MODEL INVERSE COMPENSATION COMPARISON
+================================================================================
+
+RT Baseline:
+  Directory: 20251120-161030_baseline_rt
+  Final Position: 5.085549 m
+  Final Velocity: -0.035854 m/s
+--------------------------------------------------------------------------------
+
+Command Delay = 10.0ms (Linear τ + Linear Inverse Comp):
+  Directory: 20251120-161103_cmd10ms_sense0ms_post_comp_tau100ms_linear
+  Position vs RT:
+    RMSE: 0.006827 m
+    MAE:  0.003296 m
+    Max Deviation: 0.029632 m
+  Velocity vs RT:
+    RMSE: 0.044455 m/s
+    MAE:  0.016940 m/s
+    Max Deviation: 0.250765 m/s
+
+Command Delay = 20.0ms (Linear τ + Linear Inverse Comp):
+  Directory: 20251120-161139_cmd20ms_sense0ms_post_comp_tau100ms_linear
+  Position vs RT:
+    RMSE: 0.008308 m
+    MAE:  0.003928 m
+    Max Deviation: 0.036516 m
+  Velocity vs RT:
+    RMSE: 0.083740 m/s
+    MAE:  0.027649 m/s
+    Max Deviation: 0.753285 m/s
+
+Command Delay = 30.0ms (Linear τ + Linear Inverse Comp):
+  Directory: 20251120-161219_cmd30ms_sense0ms_post_comp_tau100ms_linear
+  Position vs RT:
+    RMSE: 0.012294 m
+    MAE:  0.005456 m
+    Max Deviation: 0.051430 m
+  Velocity vs RT:
+    RMSE: 0.159132 m/s
+    MAE:  0.046549 m/s
+    Max Deviation: 1.510973 m/s
+
+Command Delay = 40.0ms (Linear τ + Linear Inverse Comp):
+  Directory: 20251120-161301_cmd40ms_sense0ms_post_comp_tau100ms_linear
+  Position vs RT:
+    RMSE: 0.017968 m
+    MAE:  0.007447 m
+    Max Deviation: 0.090117 m
+  Velocity vs RT:
+    RMSE: 0.252640 m/s
+    MAE:  0.070283 m/s
+    Max Deviation: 2.218316 m/s
+
+================================================================================

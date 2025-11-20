@@ -1,0 +1,33 @@
+================================================================================
+CMD DELAY + LINEAR TAU (NO COMPENSATION) COMPARISON
+================================================================================
+
+RT Baseline:
+  Directory: 20251120-162321_baseline_rt
+  Final Position: 5.085549 m
+  Final Velocity: -0.035854 m/s
+--------------------------------------------------------------------------------
+
+Command Delay = 0.0ms (Linear τ, No Compensation):
+  Directory: 20251120-162438_delay0ms_nocomp_tau100ms_linear
+  Position vs RT:
+    RMSE: 0.097484 m
+    MAE:  0.043558 m
+    Max Deviation: 0.399186 m
+  Velocity vs RT:
+    RMSE: 0.677309 m/s
+    MAE:  0.269101 m/s
+    Max Deviation: 2.874027 m/s
+
+Command Delay = 40.0ms (Linear τ, No Compensation):
+  Directory: 20251120-162355_cmd40ms_sense0ms_nocomp_tau100ms_linear
+  Position vs RT:
+    RMSE: 0.163456 m
+    MAE:  0.075158 m
+    Max Deviation: 0.612567 m
+  Velocity vs RT:
+    RMSE: 1.159196 m/s
+    MAE:  0.515881 m/s
+    Max Deviation: 4.244785 m/s
+
+================================================================================
