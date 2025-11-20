@@ -1,0 +1,99 @@
+================================================================================
+LINEAR TAU MODEL SWEEP COMPARISON: SUMMARY STATISTICS
+================================================================================
+
+RT Baseline:
+  Directory: 20251120-165202_baseline_rt
+  Final Position: 5.085549 m
+  Final Velocity: -0.035854 m/s
+--------------------------------------------------------------------------------
+
+Plant Tau = 50.0ms (Linear Model):
+  Directory: 20251120-165615_delay0ms_pre_comp_tau50ms_linear
+  Position vs RT:
+    RMSE: 0.081370 m
+    MAE:  0.054120 m
+    Max Deviation: 0.260756 m
+  Velocity vs RT:
+    RMSE: 0.286818 m/s
+    MAE:  0.118595 m/s
+    Max Deviation: 1.677591 m/s
+
+Plant Tau = 100.0ms (Linear Model):
+  Directory: 20251120-165652_delay0ms_pre_comp_tau100ms_linear
+  Position vs RT:
+    RMSE: 0.186585 m
+    MAE:  0.126855 m
+    Max Deviation: 0.574789 m
+  Velocity vs RT:
+    RMSE: 0.578458 m/s
+    MAE:  0.263337 m/s
+    Max Deviation: 2.860757 m/s
+
+Plant Tau = 150.0ms (Linear Model):
+  Directory: 20251120-165728_delay0ms_pre_comp_tau150ms_linear
+  Position vs RT:
+    RMSE: 0.283932 m
+    MAE:  0.197722 m
+    Max Deviation: 0.837125 m
+  Velocity vs RT:
+    RMSE: 0.797468 m/s
+    MAE:  0.386761 m/s
+    Max Deviation: 3.585028 m/s
+
+Plant Tau = 200.0ms (Linear Model):
+  Directory: 20251120-165804_delay0ms_pre_comp_tau200ms_linear
+  Position vs RT:
+    RMSE: 0.373531 m
+    MAE:  0.265923 m
+    Max Deviation: 1.058281 m
+  Velocity vs RT:
+    RMSE: 0.968705 m/s
+    MAE:  0.492704 m/s
+    Max Deviation: 4.091910 m/s
+
+Plant Tau = 50.0ms (Linear Model):
+  Directory: 20251120-165235_delay0ms_post_comp_tau50ms_linear
+  Position vs RT:
+    RMSE: 0.000000 m
+    MAE:  0.000000 m
+    Max Deviation: 0.000000 m
+  Velocity vs RT:
+    RMSE: 0.000000 m/s
+    MAE:  0.000000 m/s
+    Max Deviation: 0.000000 m/s
+
+Plant Tau = 100.0ms (Linear Model):
+  Directory: 20251120-165311_delay0ms_post_comp_tau100ms_linear
+  Position vs RT:
+    RMSE: 0.000000 m
+    MAE:  0.000000 m
+    Max Deviation: 0.000000 m
+  Velocity vs RT:
+    RMSE: 0.000000 m/s
+    MAE:  0.000000 m/s
+    Max Deviation: 0.000000 m/s
+
+Plant Tau = 150.0ms (Linear Model):
+  Directory: 20251120-165344_delay0ms_post_comp_tau150ms_linear
+  Position vs RT:
+    RMSE: 0.000000 m
+    MAE:  0.000000 m
+    Max Deviation: 0.000000 m
+  Velocity vs RT:
+    RMSE: 0.000000 m/s
+    MAE:  0.000000 m/s
+    Max Deviation: 0.000000 m/s
+
+Plant Tau = 200.0ms (Linear Model):
+  Directory: 20251120-165420_delay0ms_post_comp_tau200ms_linear
+  Position vs RT:
+    RMSE: 0.000000 m
+    MAE:  0.000000 m
+    Max Deviation: 0.000000 m
+  Velocity vs RT:
+    RMSE: 0.000000 m/s
+    MAE:  0.000000 m/s
+    Max Deviation: 0.000000 m/s
+
+================================================================================

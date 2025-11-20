@@ -92,7 +92,7 @@ time_constants = [
 # Define whether to test with/without inverse compensation
 test_inverse_comp = [True]
 
-comp_positions = ["pre"]  # Compensation position: "pre" or "post"
+comp_positions = ["pre", "post"]  # Compensation position: "pre" or "post"
 
 # ============================================================================
 # Plant Time Constant Model Configuration
