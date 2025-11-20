@@ -1,0 +1,55 @@
+================================================================================
+LINEAR TAU + LINEAR MODEL INVERSE COMP SWEEP: SUMMARY STATISTICS
+================================================================================
+
+RT Baseline:
+  Directory: 20251120-153047_baseline_rt
+  Final Position: 5.085549 m
+  Final Velocity: -0.035854 m/s
+--------------------------------------------------------------------------------
+
+Plant Tau = 50.0ms (Linear + Linear Model Inverse):
+  Directory: 20251120-153120_delay0ms_post_comp_tau50ms_linear
+  Position vs RT:
+    RMSE: 0.000000 m
+    MAE:  0.000000 m
+    Max Deviation: 0.000000 m
+  Velocity vs RT:
+    RMSE: 0.000000 m/s
+    MAE:  0.000000 m/s
+    Max Deviation: 0.000000 m/s
+
+Plant Tau = 100.0ms (Linear + Linear Model Inverse):
+  Directory: 20251120-153155_delay0ms_post_comp_tau100ms_linear
+  Position vs RT:
+    RMSE: 0.000000 m
+    MAE:  0.000000 m
+    Max Deviation: 0.000000 m
+  Velocity vs RT:
+    RMSE: 0.000000 m/s
+    MAE:  0.000000 m/s
+    Max Deviation: 0.000000 m/s
+
+Plant Tau = 150.0ms (Linear + Linear Model Inverse):
+  Directory: 20251120-153232_delay0ms_post_comp_tau150ms_linear
+  Position vs RT:
+    RMSE: 0.000000 m
+    MAE:  0.000000 m
+    Max Deviation: 0.000000 m
+  Velocity vs RT:
+    RMSE: 0.000000 m/s
+    MAE:  0.000000 m/s
+    Max Deviation: 0.000000 m/s
+
+Plant Tau = 200.0ms (Linear + Linear Model Inverse):
+  Directory: 20251120-153310_delay0ms_post_comp_tau200ms_linear
+  Position vs RT:
+    RMSE: 0.000000 m
+    MAE:  0.000000 m
+    Max Deviation: 0.000000 m
+  Velocity vs RT:
+    RMSE: 0.000000 m/s
+    MAE:  0.000000 m/s
+    Max Deviation: 0.000000 m/s
+
+================================================================================

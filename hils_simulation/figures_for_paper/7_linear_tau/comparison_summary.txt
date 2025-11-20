@@ -1,0 +1,55 @@
+================================================================================
+LINEAR TAU MODEL SWEEP COMPARISON: SUMMARY STATISTICS
+================================================================================
+
+RT Baseline:
+  Directory: 20251120-145747_baseline_rt
+  Final Position: 5.085549 m
+  Final Velocity: -0.035854 m/s
+--------------------------------------------------------------------------------
+
+Plant Tau = 50.0ms (Linear Model):
+  Directory: 20251120-145820_delay0ms_nocomp_tau50ms_linear
+  Position vs RT:
+    RMSE: 0.036385 m
+    MAE:  0.016206 m
+    Max Deviation: 0.168659 m
+  Velocity vs RT:
+    RMSE: 0.290238 m/s
+    MAE:  0.102012 m/s
+    Max Deviation: 1.667526 m/s
+
+Plant Tau = 100.0ms (Linear Model):
+  Directory: 20251120-145854_delay0ms_nocomp_tau100ms_linear
+  Position vs RT:
+    RMSE: 0.096507 m
+    MAE:  0.043171 m
+    Max Deviation: 0.392638 m
+  Velocity vs RT:
+    RMSE: 0.671083 m/s
+    MAE:  0.266974 m/s
+    Max Deviation: 2.840463 m/s
+
+Plant Tau = 150.0ms (Linear Model):
+  Directory: 20251120-145927_delay0ms_nocomp_tau150ms_linear
+  Position vs RT:
+    RMSE: 0.170070 m
+    MAE:  0.084607 m
+    Max Deviation: 0.589058 m
+  Velocity vs RT:
+    RMSE: 1.058850 m/s
+    MAE:  0.506360 m/s
+    Max Deviation: 3.588758 m/s
+
+Plant Tau = 200.0ms (Linear Model):
+  Directory: 20251120-150001_delay0ms_nocomp_tau200ms_linear
+  Position vs RT:
+    RMSE: 0.260035 m
+    MAE:  0.149866 m
+    Max Deviation: 0.765029 m
+  Velocity vs RT:
+    RMSE: 1.476205 m/s
+    MAE:  0.848262 m/s
+    Max Deviation: 4.535079 m/s
+
+================================================================================

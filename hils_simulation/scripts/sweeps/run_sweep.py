@@ -74,13 +74,10 @@ from scripts.sweeps.run_delay_sweep_advanced import DelayConfig, print_summary, 
 
 # Format: (time_constant_ms, corresponding_compensation_gain)
 time_constants = [
-    (100, 7),
-    (100, 8),
-    (100, 9),
+    (50, 5),
     (100, 10),
-    (100, 11),
-    (100, 12),
-    (100, 13),
+    (150, 15),
+    (200, 20),
 ]
 
 # Define noise levels to test
@@ -102,11 +99,11 @@ comp_positions = ["post"]
 # Enable dynamic plant model (plant_simulator_with_model.py)
 # Set to True to use advanced tau models, False to use constant tau (sweep each value)
 # IMPORTANT: For tau sweep, set this to False so each tau value in the sweep is used
-USE_PLANT_MODEL = False
+USE_PLANT_MODEL = True
 
 # Time constant model type
 # Options: "constant", "linear", "saturation", "thermal", "hybrid", "stochastic"
-PLANT_TAU_MODEL_TYPE = "constant"  # Set to None to use default from .env
+PLANT_TAU_MODEL_TYPE = "linear"  # Set to None to use default from .env
 
 # Time constant model parameters (JSON dict)
 # Examples:
@@ -114,7 +111,7 @@ PLANT_TAU_MODEL_TYPE = "constant"  # Set to None to use default from .env
 #   - linear: {"sensitivity": 0.1}
 #   - hybrid: {"thrust_sensitivity": 0.25, "heating_rate": 0.001, "cooling_rate": 0.01, "thermal_sensitivity": 0.04}
 #   - thermal: {"heating_rate": 0.001, "cooling_rate": 0.01, "thermal_sensitivity": 0.05}
-PLANT_TAU_MODEL_PARAMS = None  # Set to None for constant model (no parameters needed)
+PLANT_TAU_MODEL_PARAMS = {"sensitivity": 1}  # Set to None for constant model (no parameters needed)
 
 # Example: Enable linear model with sensitivity
 # USE_PLANT_MODEL = True
@@ -188,7 +185,7 @@ for use_inverse, comp_position, time_constant in product(
             # Inverse compensator adaptive configuration
             use_adaptive_comp=USE_ADAPTIVE_COMP,
             comp_tau_to_gain_ratio=INVERSE_COMP_TAU_TO_GAIN_RATIO,
-            comp_base_tau=INVERSE_COMP_BASE_TAU if INVERSE_COMP_BASE_TAU is not None else 0,
+            comp_base_tau=INVERSE_COMP_BASE_TAU if INVERSE_COMP_BASE_TAU is not None else time_constant[0],
             comp_tau_model_type=INVERSE_COMP_TAU_MODEL_TYPE,
             comp_tau_model_params=INVERSE_COMP_TAU_MODEL_PARAMS,
         )
