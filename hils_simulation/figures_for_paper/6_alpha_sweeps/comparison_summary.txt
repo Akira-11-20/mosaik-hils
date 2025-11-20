@@ -1,0 +1,88 @@
+================================================================================
+COMPENSATION GAIN (ALPHA) SWEEP COMPARISON: SUMMARY STATISTICS
+================================================================================
+
+RT Baseline:
+  Directory: 20251120-143626_baseline_rt
+  Final Position: 5.085549 m
+  Final Velocity: -0.035854 m/s
+--------------------------------------------------------------------------------
+
+Compensation Gain α = 7:
+  Directory: 20251120-143659_delay0ms_post_comp_tau100ms
+  Position vs RT:
+    RMSE: 0.023860 m
+    MAE:  0.011270 m
+    Max Deviation: 0.102922 m
+  Velocity vs RT:
+    RMSE: 0.158680 m/s
+    MAE:  0.061260 m/s
+    Max Deviation: 0.821489 m/s
+
+Compensation Gain α = 8:
+  Directory: 20251120-143736_delay0ms_post_comp_tau100ms
+  Position vs RT:
+    RMSE: 0.015268 m
+    MAE:  0.007259 m
+    Max Deviation: 0.066040 m
+  Velocity vs RT:
+    RMSE: 0.100953 m/s
+    MAE:  0.038842 m/s
+    Max Deviation: 0.535267 m/s
+
+Compensation Gain α = 9:
+  Directory: 20251120-143812_delay0ms_post_comp_tau100ms
+  Position vs RT:
+    RMSE: 0.007342 m
+    MAE:  0.003511 m
+    Max Deviation: 0.031817 m
+  Velocity vs RT:
+    RMSE: 0.048284 m/s
+    MAE:  0.018517 m/s
+    Max Deviation: 0.261533 m/s
+
+Compensation Gain α = 10:
+  Directory: 20251120-143846_delay0ms_post_comp_tau100ms
+  Position vs RT:
+    RMSE: 0.000000 m
+    MAE:  0.000000 m
+    Max Deviation: 0.000000 m
+  Velocity vs RT:
+    RMSE: 0.000000 m/s
+    MAE:  0.000000 m/s
+    Max Deviation: 0.000000 m/s
+
+Compensation Gain α = 11:
+  Directory: 20251120-143922_delay0ms_post_comp_tau100ms
+  Position vs RT:
+    RMSE: 0.006827 m
+    MAE:  0.003296 m
+    Max Deviation: 0.029632 m
+  Velocity vs RT:
+    RMSE: 0.044455 m/s
+    MAE:  0.016940 m/s
+    Max Deviation: 0.250765 m/s
+
+Compensation Gain α = 12:
+  Directory: 20251120-143959_delay0ms_post_comp_tau100ms
+  Position vs RT:
+    RMSE: 0.013197 m
+    MAE:  0.006396 m
+    Max Deviation: 0.057279 m
+  Velocity vs RT:
+    RMSE: 0.085541 m/s
+    MAE:  0.032492 m/s
+    Max Deviation: 0.492417 m/s
+
+Compensation Gain α = 13:
+  Directory: 20251120-144035_delay0ms_post_comp_tau100ms
+  Position vs RT:
+    RMSE: 0.019158 m
+    MAE:  0.009319 m
+    Max Deviation: 0.083114 m
+  Velocity vs RT:
+    RMSE: 0.123646 m/s
+    MAE:  0.046815 m/s
+    Max Deviation: 0.725095 m/s
+
+================================================================================

@@ -13,11 +13,9 @@ COLOR_PALETTE = [
     "#2ca02c",  # Green
     "#d62728",  # Red
     "#9467bd",  # Purple
-    "#8c564b",  # Brown
-    "#e377c2",  # Pink
-    "#7f7f7f",  # Gray
-    "#bcbd22",  # Yellow-green
-    "#17becf",  # Cyan
+    "#FFD700",  # Gold (was Brown - more distinct)
+    "#FF1493",  # Deep Pink (was Pink - more vivid)
+    "#00CED1",  # Dark Turquoise (was Gray - more colorful)
 ]
 
 # Baseline (RT) styling
