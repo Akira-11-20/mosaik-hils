@@ -2,6 +2,7 @@
 Simple 1D Plant Simulator
 Outputs a constant target value
 """
+
 import mosaik_api_v3 as mosaik_api
 
 
@@ -29,19 +30,21 @@ class PlantSimulator(mosaik_api.Simulator):
     """Mosaik simulator for simple plant"""
 
     def __init__(self):
-        super().__init__({
-            'models': {
-                'SimplePlant': {
-                    'public': True,
-                    'params': ['target'],
-                    'attrs': ['target_output'],
+        super().__init__(
+            {
+                "models": {
+                    "SimplePlant": {
+                        "public": True,
+                        "params": ["target"],
+                        "attrs": ["target_output"],
+                    },
                 },
-            },
-        })
+            }
+        )
         self.sid = None
         self.time_resolution = None
         self.entities = {}
-        self.eid_prefix = 'Plant_'
+        self.eid_prefix = "Plant_"
 
     def init(self, sid, time_resolution=1.0, **sim_params):
         self.sid = sid
@@ -52,15 +55,13 @@ class PlantSimulator(mosaik_api.Simulator):
         entities = []
 
         for _ in range(num):
-            eid = f'{self.eid_prefix}{len(self.entities)}'
+            eid = f"{self.eid_prefix}{len(self.entities)}"
 
             # Create plant instance with target value
-            plant = SimplePlant(
-                target=model_params.get('target', 10.0)
-            )
+            plant = SimplePlant(target=model_params.get("target", 10.0))
 
             self.entities[eid] = plant
-            entities.append({'eid': eid, 'type': model})
+            entities.append({"eid": eid, "type": model})
 
         return entities
 
@@ -82,11 +83,11 @@ class PlantSimulator(mosaik_api.Simulator):
             plant = self.entities[eid]
 
             for attr in attrs:
-                if attr == 'target_output':
+                if attr == "target_output":
                     data[eid][attr] = plant.target
 
         return data
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     mosaik_api.start_simulation(PlantSimulator())

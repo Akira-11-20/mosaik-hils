@@ -2,6 +2,7 @@
 Inverse Compensator Simulator
 Applies compensation gain to current position
 """
+
 import mosaik_api_v3 as mosaik_api
 
 
@@ -63,19 +64,21 @@ class InverseCompensatorSimulator(mosaik_api.Simulator):
     """Mosaik simulator for inverse compensator"""
 
     def __init__(self):
-        super().__init__({
-            'models': {
-                'InverseCompensator': {
-                    'public': True,
-                    'params': ['comp_gain', 'dt'],
-                    'attrs': ['position', 'output'],
+        super().__init__(
+            {
+                "models": {
+                    "InverseCompensator": {
+                        "public": True,
+                        "params": ["comp_gain", "dt"],
+                        "attrs": ["position", "output"],
+                    },
                 },
-            },
-        })
+            }
+        )
         self.sid = None
         self.time_resolution = None
         self.entities = {}
-        self.eid_prefix = 'InverseComp_'
+        self.eid_prefix = "InverseComp_"
 
     def init(self, sid, time_resolution=1.0, **sim_params):
         self.sid = sid
@@ -86,16 +89,15 @@ class InverseCompensatorSimulator(mosaik_api.Simulator):
         entities = []
 
         for _ in range(num):
-            eid = f'{self.eid_prefix}{len(self.entities)}'
+            eid = f"{self.eid_prefix}{len(self.entities)}"
 
             # Create compensator instance
             compensator = InverseCompensator(
-                comp_gain=model_params.get('comp_gain', 1.0),
-                dt=model_params.get('dt', 0.01)
+                comp_gain=model_params.get("comp_gain", 1.0), dt=model_params.get("dt", 0.01)
             )
 
             self.entities[eid] = compensator
-            entities.append({'eid': eid, 'type': model})
+            entities.append({"eid": eid, "type": model})
 
         return entities
 
@@ -106,13 +108,13 @@ class InverseCompensatorSimulator(mosaik_api.Simulator):
 
             # Get current position
             position = 0.0
-            if 'position' in entity_inputs:
-                values = list(entity_inputs['position'].values())
+            if "position" in entity_inputs:
+                values = list(entity_inputs["position"].values())
                 if values:
                     position = values[0]
-            self.position = 10-position
+            self.position = 10 - position
             # Apply compensation
-            compensator.step(10-position)
+            compensator.step(10 - position)
 
         return int(time + self.time_resolution)
 
@@ -125,13 +127,13 @@ class InverseCompensatorSimulator(mosaik_api.Simulator):
             compensator = self.entities[eid]
 
             for attr in attrs:
-                if attr == 'output':
+                if attr == "output":
                     data[eid][attr] = compensator.output
-                elif attr == 'position':
+                elif attr == "position":
                     data[eid][attr] = self.position
 
         return data
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     mosaik_api.start_simulation(InverseCompensatorSimulator())

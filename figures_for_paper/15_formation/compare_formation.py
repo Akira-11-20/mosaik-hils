@@ -20,29 +20,34 @@ from pathlib import Path
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
-from mpl_toolkits.mplot3d import Axes3D
 
 # Add parent directory to path for plot_config
 sys.path.insert(0, str(Path(__file__).parent.parent))
 try:
     from plot_config import (
-        COLOR_PALETTE,
-        BASELINE_STYLE,
         BASELINE_DEVIATION_STYLE,
-        SCENARIO_STYLE,
-        FONT_SETTINGS,
+        BASELINE_STYLE,
+        COLOR_PALETTE,
         FIGURE_SETTINGS,
+        FONT_SETTINGS,
         GRID_SETTINGS,
+        SCENARIO_STYLE,
     )
 except ImportError:
     # Fallback if plot_config doesn't exist
-    COLOR_PALETTE = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd']
-    BASELINE_STYLE = {'color': 'black', 'linewidth': 2.5, 'linestyle': '--', 'alpha': 0.8, 'label': 'Baseline (τ=0)'}
-    BASELINE_DEVIATION_STYLE = {'color': 'black', 'linewidth': 1, 'linestyle': '--', 'alpha': 0.5, 'label': 'Baseline'}
-    SCENARIO_STYLE = {'linewidth': 1.8, 'alpha': 0.7}
-    FONT_SETTINGS = {'label_size': 12, 'label_weight': 'normal', 'title_size': 14, 'title_weight': 'bold', 'legend_size': 10}
-    FIGURE_SETTINGS = {'dpi': 300, 'bbox_inches': 'tight'}
-    GRID_SETTINGS = {'alpha': 0.3}
+    COLOR_PALETTE = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"]
+    BASELINE_STYLE = {"color": "black", "linewidth": 2.5, "linestyle": "--", "alpha": 0.8, "label": "Baseline (τ=0)"}
+    BASELINE_DEVIATION_STYLE = {"color": "black", "linewidth": 1, "linestyle": "--", "alpha": 0.5, "label": "Baseline"}
+    SCENARIO_STYLE = {"linewidth": 1.8, "alpha": 0.7}
+    FONT_SETTINGS = {
+        "label_size": 12,
+        "label_weight": "normal",
+        "title_size": 14,
+        "title_weight": "bold",
+        "legend_size": 10,
+    }
+    FIGURE_SETTINGS = {"dpi": 300, "bbox_inches": "tight"}
+    GRID_SETTINGS = {"alpha": 0.3}
 
 
 def load_formation_data(result_dir: Path):
@@ -90,9 +95,7 @@ def load_formation_data(result_dir: Path):
         data["rel_pos_x"] = data["chaser_pos_x"] - data["target_pos_x"]
         data["rel_pos_y"] = data["chaser_pos_y"] - data["target_pos_y"]
         data["rel_pos_z"] = data["chaser_pos_z"] - data["target_pos_z"]
-        data["rel_distance"] = np.sqrt(
-            data["rel_pos_x"] ** 2 + data["rel_pos_y"] ** 2 + data["rel_pos_z"] ** 2
-        )
+        data["rel_distance"] = np.sqrt(data["rel_pos_x"] ** 2 + data["rel_pos_y"] ** 2 + data["rel_pos_z"] ** 2)
 
         # Load thrust data from environment (applied force)
         try:
@@ -193,7 +196,7 @@ def calculate_error_metrics(reference: np.ndarray, test: np.ndarray):
 def plot_3d_relative_trajectories(scenarios, baseline_data, output_dir):
     """Create 3D plot of relative position trajectories"""
     fig = plt.figure(figsize=(12, 10))
-    ax = fig.add_subplot(111, projection='3d')
+    ax = fig.add_subplot(111, projection="3d")
 
     # Plot baseline
     if baseline_data is not None:
@@ -270,7 +273,9 @@ def plot_3d_relative_trajectories(scenarios, baseline_data, output_dir):
 
     # Plot target position (origin)
     ax.scatter(
-        0, 0, 0,
+        0,
+        0,
+        0,
         color="gold",
         s=400,
         marker="*",
@@ -283,8 +288,12 @@ def plot_3d_relative_trajectories(scenarios, baseline_data, output_dir):
     ax.set_xlabel("Relative X [m]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_ylabel("Relative Y [m]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_zlabel("Relative Z [m]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_title("3D Relative Position Trajectories (Formation Flying)", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"])
-    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc='upper left')
+    ax.set_title(
+        "3D Relative Position Trajectories (Formation Flying)",
+        fontsize=FONT_SETTINGS["title_size"],
+        fontweight=FONT_SETTINGS["title_weight"],
+    )
+    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc="upper left")
     ax.grid(True, alpha=0.3)
 
     # Set equal aspect ratio
@@ -344,9 +353,15 @@ def plot_relative_distance_thrust(scenarios, baseline_data, output_dir):
         )
 
     ax.set_xlabel("Time [min]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_ylabel("Relative Distance [m]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_title("(a) Relative Distance (Chaser-Target)", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"])
-    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc='best')
+    ax.set_ylabel(
+        "Relative Distance [m]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"]
+    )
+    ax.set_title(
+        "(a) Relative Distance (Chaser-Target)",
+        fontsize=FONT_SETTINGS["title_size"],
+        fontweight=FONT_SETTINGS["title_weight"],
+    )
+    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc="best")
     ax.grid(True, **GRID_SETTINGS)
 
     # === Row 2: Relative Distance Deviation from Baseline ===
@@ -371,8 +386,12 @@ def plot_relative_distance_thrust(scenarios, baseline_data, output_dir):
 
     ax.set_xlabel("Time [min]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_ylabel("Distance Error [m]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_title("(b) Relative Distance Deviation from Baseline", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"])
-    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc='best')
+    ax.set_title(
+        "(b) Relative Distance Deviation from Baseline",
+        fontsize=FONT_SETTINGS["title_size"],
+        fontweight=FONT_SETTINGS["title_weight"],
+    )
+    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc="best")
     ax.grid(True, **GRID_SETTINGS)
 
     # === Row 3: Relative Distance Deviation from Baseline (Time >= 60 min) ===
@@ -408,8 +427,12 @@ def plot_relative_distance_thrust(scenarios, baseline_data, output_dir):
 
     ax.set_xlabel("Time [min]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_ylabel("Distance Error [m]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_title("(c) Relative Distance Deviation from Baseline (Time ≥ 60 min)", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"])
-    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc='best')
+    ax.set_title(
+        "(c) Relative Distance Deviation from Baseline (Time ≥ 60 min)",
+        fontsize=FONT_SETTINGS["title_size"],
+        fontweight=FONT_SETTINGS["title_weight"],
+    )
+    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc="best")
     ax.grid(True, **GRID_SETTINGS)
 
     # === Row 4: Thrust Magnitude ===
@@ -446,7 +469,7 @@ def plot_relative_distance_thrust(scenarios, baseline_data, output_dir):
     ax.set_xlabel("Time [min]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_ylabel("Thrust [N]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_title("(d) Thrust Magnitude", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"])
-    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc='best')
+    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc="best")
     ax.grid(True, **GRID_SETTINGS)
 
     # === Row 5: Thrust Deviation from Baseline ===
@@ -472,8 +495,12 @@ def plot_relative_distance_thrust(scenarios, baseline_data, output_dir):
 
     ax.set_xlabel("Time [min]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_ylabel("Thrust Error [N]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_title("(e) Thrust Deviation from Baseline", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"])
-    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc='best')
+    ax.set_title(
+        "(e) Thrust Deviation from Baseline",
+        fontsize=FONT_SETTINGS["title_size"],
+        fontweight=FONT_SETTINGS["title_weight"],
+    )
+    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc="best")
     ax.grid(True, **GRID_SETTINGS)
 
     plt.tight_layout()
@@ -572,7 +599,8 @@ def plot_relative_trajectories_2d(scenarios, baseline_data, output_dir):
 
         # Plot target position (origin)
         ax.scatter(
-            0, 0,
+            0,
+            0,
             color="gold",
             s=400,
             marker="*",
@@ -584,12 +612,16 @@ def plot_relative_trajectories_2d(scenarios, baseline_data, output_dir):
 
         ax.set_xlabel(x_label, fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
         ax.set_ylabel(y_label, fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-        ax.set_title(f"({chr(97 + ax_idx)}) {title}", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"])
+        ax.set_title(
+            f"({chr(97 + ax_idx)}) {title}",
+            fontsize=FONT_SETTINGS["title_size"],
+            fontweight=FONT_SETTINGS["title_weight"],
+        )
         ax.grid(True, **GRID_SETTINGS)
-        ax.set_aspect('equal', adjustable='box')
+        ax.set_aspect("equal", adjustable="box")
 
         if ax_idx == 0:
-            ax.legend(fontsize=FONT_SETTINGS["legend_size"] - 1, loc='best')
+            ax.legend(fontsize=FONT_SETTINGS["legend_size"] - 1, loc="best")
 
     plt.tight_layout()
     output_file = output_dir / "formation_relative_2d_planes.png"
@@ -643,41 +675,37 @@ def transform_to_rtn(data):
 
     for i in range(n_points):
         # Target position and velocity (reference frame)
-        target_pos = np.array([
-            data["target_pos_x"][i],
-            data["target_pos_y"][i],
-            data["target_pos_z"][i]
-        ])
+        target_pos = np.array([data["target_pos_x"][i], data["target_pos_y"][i], data["target_pos_z"][i]])
 
         # Use chaser velocity for RTN frame (or could use target velocity)
         # For formation flying, target velocity is more appropriate as reference
         target_vel = np.zeros(3)  # We don't have target velocity stored
         # Estimate velocity from position derivative (if needed)
         if i < n_points - 1:
-            dt = data["time_s"][i+1] - data["time_s"][i]
-            target_vel = np.array([
-                (data["target_pos_x"][i+1] - data["target_pos_x"][i]) / dt,
-                (data["target_pos_y"][i+1] - data["target_pos_y"][i]) / dt,
-                (data["target_pos_z"][i+1] - data["target_pos_z"][i]) / dt
-            ])
+            dt = data["time_s"][i + 1] - data["time_s"][i]
+            target_vel = np.array(
+                [
+                    (data["target_pos_x"][i + 1] - data["target_pos_x"][i]) / dt,
+                    (data["target_pos_y"][i + 1] - data["target_pos_y"][i]) / dt,
+                    (data["target_pos_z"][i + 1] - data["target_pos_z"][i]) / dt,
+                ]
+            )
         elif i > 0:
-            dt = data["time_s"][i] - data["time_s"][i-1]
-            target_vel = np.array([
-                (data["target_pos_x"][i] - data["target_pos_x"][i-1]) / dt,
-                (data["target_pos_y"][i] - data["target_pos_y"][i-1]) / dt,
-                (data["target_pos_z"][i] - data["target_pos_z"][i-1]) / dt
-            ])
+            dt = data["time_s"][i] - data["time_s"][i - 1]
+            target_vel = np.array(
+                [
+                    (data["target_pos_x"][i] - data["target_pos_x"][i - 1]) / dt,
+                    (data["target_pos_y"][i] - data["target_pos_y"][i - 1]) / dt,
+                    (data["target_pos_z"][i] - data["target_pos_z"][i - 1]) / dt,
+                ]
+            )
 
         # Get RTN transformation matrix
         if np.linalg.norm(target_pos) > 0 and np.linalg.norm(target_vel) > 0:
             R_eci_to_rtn = compute_rtn_frame(target_pos, target_vel)
 
             # Relative position in ECI
-            rel_pos_eci = np.array([
-                data["rel_pos_x"][i],
-                data["rel_pos_y"][i],
-                data["rel_pos_z"][i]
-            ])
+            rel_pos_eci = np.array([data["rel_pos_x"][i], data["rel_pos_y"][i], data["rel_pos_z"][i]])
 
             # Transform to RTN
             rel_pos_rtn = R_eci_to_rtn @ rel_pos_eci
@@ -780,7 +808,8 @@ def plot_relative_trajectories_rtn(scenarios, baseline_data, output_dir):
 
     # Plot target position (origin)
     ax.scatter(
-        0, 0,
+        0,
+        0,
         color="gold",
         s=400,
         marker="*",
@@ -792,10 +821,14 @@ def plot_relative_trajectories_rtn(scenarios, baseline_data, output_dir):
 
     ax.set_xlabel("Radial (R) [m]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_ylabel("Along-track (T) [m]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_title("RT Plane (In-plane) - Formation Flying Relative Motion", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"])
+    ax.set_title(
+        "RT Plane (In-plane) - Formation Flying Relative Motion",
+        fontsize=FONT_SETTINGS["title_size"],
+        fontweight=FONT_SETTINGS["title_weight"],
+    )
     ax.grid(True, **GRID_SETTINGS)
-    ax.set_aspect('equal', adjustable='box')
-    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc='best')
+    ax.set_aspect("equal", adjustable="box")
+    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc="best")
 
     plt.tight_layout()
     output_file = output_dir / "formation_relative_rt_plane.png"
@@ -892,7 +925,8 @@ def plot_relative_trajectories_rtn_zoomed(scenarios, baseline_data, output_dir):
 
     # Plot target position (origin)
     ax.scatter(
-        0, 0,
+        0,
+        0,
         color="gold",
         s=500,
         marker="*",
@@ -908,10 +942,14 @@ def plot_relative_trajectories_rtn_zoomed(scenarios, baseline_data, output_dir):
 
     ax.set_xlabel("Radial (R) [m]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_ylabel("Along-track (T) [m]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_title("RT Plane (Zoomed 25m × 25m) - Formation Flying Relative Motion", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"])
+    ax.set_title(
+        "RT Plane (Zoomed 25m × 25m) - Formation Flying Relative Motion",
+        fontsize=FONT_SETTINGS["title_size"],
+        fontweight=FONT_SETTINGS["title_weight"],
+    )
     ax.grid(True, **GRID_SETTINGS)
-    ax.set_aspect('equal', adjustable='box')
-    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc='best')
+    ax.set_aspect("equal", adjustable="box")
+    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc="best")
 
     plt.tight_layout()
     output_file = output_dir / "formation_relative_rt_plane_zoomed.png"
@@ -953,7 +991,7 @@ def plot_altitude_comparison(scenarios, baseline_data, output_dir):
     ax.set_xlabel("Time [min]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_ylabel("Altitude [km]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_title("(a) Chaser Altitude", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"])
-    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc='best')
+    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc="best")
     ax.grid(True, **GRID_SETTINGS)
 
     # === Row 2: Altitude Deviation from Baseline ===
@@ -978,8 +1016,12 @@ def plot_altitude_comparison(scenarios, baseline_data, output_dir):
 
     ax.set_xlabel("Time [min]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_ylabel("Altitude Error [km]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_title("(b) Chaser Altitude Deviation from Baseline", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"])
-    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc='best')
+    ax.set_title(
+        "(b) Chaser Altitude Deviation from Baseline",
+        fontsize=FONT_SETTINGS["title_size"],
+        fontweight=FONT_SETTINGS["title_weight"],
+    )
+    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc="best")
     ax.grid(True, **GRID_SETTINGS)
 
     plt.tight_layout()
@@ -1023,10 +1065,16 @@ def print_summary_statistics(scenarios, baseline_data, output_dir):
     # Prepare CSV data
     csv_data = []
     csv_headers = [
-        "Tau[s]", "InvComp", "Gain",
-        "RelDist_RMSE[m]", "RelDist_MAE[m]", "RelDist_MaxErr[m]",
-        "RelX_RMSE[m]", "RelY_RMSE[m]", "RelZ_RMSE[m]",
-        "Thrust_RMSE[N]"
+        "Tau[s]",
+        "InvComp",
+        "Gain",
+        "RelDist_RMSE[m]",
+        "RelDist_MAE[m]",
+        "RelDist_MaxErr[m]",
+        "RelX_RMSE[m]",
+        "RelY_RMSE[m]",
+        "RelZ_RMSE[m]",
+        "Thrust_RMSE[N]",
     ]
 
     for scenario in scenarios:
@@ -1045,18 +1093,20 @@ def print_summary_statistics(scenarios, baseline_data, output_dir):
         else:
             thrust_metrics = {"rmse": 0.0}
 
-        csv_data.append([
-            f"{params['tau']:.0f}",
-            str(params['inv_comp']),
-            f"{params['gain']:.0f}",
-            f"{dist_metrics['rmse']:.6f}",
-            f"{dist_metrics['mae']:.6f}",
-            f"{dist_metrics['max_error']:.6f}",
-            f"{x_metrics['rmse']:.6f}",
-            f"{y_metrics['rmse']:.6f}",
-            f"{z_metrics['rmse']:.6f}",
-            f"{thrust_metrics['rmse']:.6f}",
-        ])
+        csv_data.append(
+            [
+                f"{params['tau']:.0f}",
+                str(params["inv_comp"]),
+                f"{params['gain']:.0f}",
+                f"{dist_metrics['rmse']:.6f}",
+                f"{dist_metrics['mae']:.6f}",
+                f"{dist_metrics['max_error']:.6f}",
+                f"{x_metrics['rmse']:.6f}",
+                f"{y_metrics['rmse']:.6f}",
+                f"{z_metrics['rmse']:.6f}",
+                f"{thrust_metrics['rmse']:.6f}",
+            ]
+        )
 
         scenario_info = [
             f"\nScenario: τ={params['tau']:.0f}s, Inv={params['inv_comp']}, gain={params['gain']:.0f}",
@@ -1122,13 +1172,15 @@ def main():
                 baseline_data = data
                 print(f"✅ Loaded baseline: {dir_name}")
             else:
-                scenarios.append({
-                    "name": dir_name,
-                    "params": params,
-                    "data": data,
-                    "config": config,
-                    "dir": subdir,
-                })
+                scenarios.append(
+                    {
+                        "name": dir_name,
+                        "params": params,
+                        "data": data,
+                        "config": config,
+                        "dir": subdir,
+                    }
+                )
                 print(f"✅ Loaded: {dir_name}")
 
         except Exception as e:

@@ -11,7 +11,6 @@ each containing a hils_data.h5 file.
 """
 
 import json
-import sys
 from pathlib import Path
 
 import h5py
@@ -155,48 +154,46 @@ def create_comparison_plot(mosaik_data, pure_data, mosaik_label, pure_label, out
 
     # --- Row 1: Position Trajectories ---
     ax = axes[0]
-    ax.plot(time_mosaik, mosaik_data["position"][:min_len], 'b-', linewidth=2, label="Mosaik", alpha=0.8)
-    ax.plot(time_pure, pure_data["position"][:min_len], 'r--', linewidth=2, label="Pure Python", alpha=0.8)
-    ax.set_xlabel("Time [s]", fontsize=12, fontweight='bold')
-    ax.set_ylabel("Position [m]", fontsize=12, fontweight='bold')
-    ax.set_title("(a) Position Trajectories", fontsize=14, fontweight='bold')
+    ax.plot(time_mosaik, mosaik_data["position"][:min_len], "b-", linewidth=2, label="Mosaik", alpha=0.8)
+    ax.plot(time_pure, pure_data["position"][:min_len], "r--", linewidth=2, label="Pure Python", alpha=0.8)
+    ax.set_xlabel("Time [s]", fontsize=12, fontweight="bold")
+    ax.set_ylabel("Position [m]", fontsize=12, fontweight="bold")
+    ax.set_title("(a) Position Trajectories", fontsize=14, fontweight="bold")
     ax.grid(True, alpha=0.3)
-    ax.legend(loc='best', fontsize=11)
+    ax.legend(loc="best", fontsize=11)
 
     # --- Row 2: Position Difference ---
     ax = axes[1]
-    ax.plot(time_ref, pos_metrics["error_signal"], 'g-', linewidth=1.5, alpha=0.8)
-    ax.axhline(y=0, color='k', linestyle='--', linewidth=1, alpha=0.5)
-    ax.set_xlabel("Time [s]", fontsize=12, fontweight='bold')
-    ax.set_ylabel("Position Error [m]", fontsize=12, fontweight='bold')
-    ax.set_title(f"(b) Position Difference (Pure - Mosaik)",
-                 fontsize=14, fontweight='bold')
+    ax.plot(time_ref, pos_metrics["error_signal"], "g-", linewidth=1.5, alpha=0.8)
+    ax.axhline(y=0, color="k", linestyle="--", linewidth=1, alpha=0.5)
+    ax.set_xlabel("Time [s]", fontsize=12, fontweight="bold")
+    ax.set_ylabel("Position Error [m]", fontsize=12, fontweight="bold")
+    ax.set_title("(b) Position Difference (Pure - Mosaik)", fontsize=14, fontweight="bold")
     ax.set_ylim(-1e-15, 1e-15)  # Fix y-axis to 10^-16 order
     ax.grid(True, alpha=0.3)
 
     # --- Row 3: Velocity Trajectories ---
     ax = axes[2]
-    ax.plot(time_mosaik, mosaik_data["velocity"][:min_len], 'b-', linewidth=2, label="Mosaik", alpha=0.8)
-    ax.plot(time_pure, pure_data["velocity"][:min_len], 'r--', linewidth=2, label="Pure Python", alpha=0.8)
-    ax.set_xlabel("Time [s]", fontsize=12, fontweight='bold')
-    ax.set_ylabel("Velocity [m/s]", fontsize=12, fontweight='bold')
-    ax.set_title("(c) Velocity Trajectories", fontsize=14, fontweight='bold')
+    ax.plot(time_mosaik, mosaik_data["velocity"][:min_len], "b-", linewidth=2, label="Mosaik", alpha=0.8)
+    ax.plot(time_pure, pure_data["velocity"][:min_len], "r--", linewidth=2, label="Pure Python", alpha=0.8)
+    ax.set_xlabel("Time [s]", fontsize=12, fontweight="bold")
+    ax.set_ylabel("Velocity [m/s]", fontsize=12, fontweight="bold")
+    ax.set_title("(c) Velocity Trajectories", fontsize=14, fontweight="bold")
     ax.grid(True, alpha=0.3)
-    ax.legend(loc='best', fontsize=11)
+    ax.legend(loc="best", fontsize=11)
 
     # --- Row 4: Velocity Difference ---
     ax = axes[3]
-    ax.plot(time_ref, vel_metrics["error_signal"], 'purple', linewidth=1.5, alpha=0.8)
-    ax.axhline(y=0, color='k', linestyle='--', linewidth=1, alpha=0.5)
-    ax.set_xlabel("Time [s]", fontsize=12, fontweight='bold')
-    ax.set_ylabel("Velocity Error [m/s]", fontsize=12, fontweight='bold')
-    ax.set_title(f"(d) Velocity Difference (Pure - Mosaik)",
-                 fontsize=14, fontweight='bold')
- # Fix y-axis to 10^-16 order
+    ax.plot(time_ref, vel_metrics["error_signal"], "purple", linewidth=1.5, alpha=0.8)
+    ax.axhline(y=0, color="k", linestyle="--", linewidth=1, alpha=0.5)
+    ax.set_xlabel("Time [s]", fontsize=12, fontweight="bold")
+    ax.set_ylabel("Velocity Error [m/s]", fontsize=12, fontweight="bold")
+    ax.set_title("(d) Velocity Difference (Pure - Mosaik)", fontsize=14, fontweight="bold")
+    # Fix y-axis to 10^-16 order
     ax.grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close()
 
     print(f"Comparison plot saved: {output_path}")
@@ -264,11 +261,7 @@ def main():
     output_path = script_dir / "mosaik_vs_pure_comparison.png"
 
     pos_metrics, vel_metrics = create_comparison_plot(
-        mosaik_data,
-        pure_data,
-        f"Mosaik ({mosaik_dir.name})",
-        f"Pure Python ({pure_dir.name})",
-        output_path
+        mosaik_data, pure_data, f"Mosaik ({mosaik_dir.name})", f"Pure Python ({pure_dir.name})", output_path
     )
 
     # Print summary

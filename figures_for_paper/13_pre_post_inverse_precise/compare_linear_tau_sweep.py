@@ -133,13 +133,15 @@ def plot_comparison(scenarios, baseline_data, output_file, title_suffix=""):
         deviation = scenario["data"]["position"][:min_len] - baseline_data["position"][:min_len]
         ax.plot(scenario["data"]["time_s"][:min_len], deviation, **style, linestyle=linesty)
     ax.set_xlabel("Time [s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_ylabel("Position Deviation [m]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
+    ax.set_ylabel(
+        "Position Deviation [m]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"]
+    )
     ax.set_title(
         f"(b) Position Deviation from RT Baseline{title_suffix}",
         fontsize=FONT_SETTINGS["title_size"],
         fontweight=FONT_SETTINGS["title_weight"],
     )
-    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc='upper right')
+    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc="upper right")
     ax.grid(True, alpha=GRID_SETTINGS["alpha"])
 
     # Row 3: Velocity Trajectory
@@ -178,13 +180,15 @@ def plot_comparison(scenarios, baseline_data, output_file, title_suffix=""):
         deviation = scenario["data"]["velocity"][:min_len] - baseline_data["velocity"][:min_len]
         ax.plot(scenario["data"]["time_s"][:min_len], deviation, **style, linestyle=linesty)
     ax.set_xlabel("Time [s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_ylabel("Velocity Deviation [m/s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
+    ax.set_ylabel(
+        "Velocity Deviation [m/s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"]
+    )
     ax.set_title(
         f"(d) Velocity Deviation from RT Baseline{title_suffix}",
         fontsize=FONT_SETTINGS["title_size"],
         fontweight=FONT_SETTINGS["title_weight"],
     )
-    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc='upper right')
+    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc="upper right")
     ax.grid(True, alpha=GRID_SETTINGS["alpha"])
 
     plt.tight_layout()
@@ -204,6 +208,7 @@ def plot_comparison_post_only(scenarios, baseline_data, output_file, title_suffi
 
     # 既存の関数をそのまま再利用
     plot_comparison(post_scenarios, baseline_data, output_file, title_suffix)
+
 
 def main():
     # Define base directory

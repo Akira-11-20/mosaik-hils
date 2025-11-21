@@ -25,7 +25,6 @@ from plot_config import (
     FIGURE_SETTINGS,
     FONT_SETTINGS,
     GRID_SETTINGS,
-    get_scenario_style,
 )
 
 
@@ -101,7 +100,7 @@ def get_tau_color_and_style(tau, cmd_delay):
     """
     # Color mapping for each cmd delay (4 distinct colors)
     cmd_colors = {
-        10.0: "#1f77b4",   # Blue
+        10.0: "#1f77b4",  # Blue
         20.0: "#ff7f0e",  # Orange
         30.0: "#2ca02c",  # Green
         40.0: "#d62728",  # Red
@@ -109,10 +108,10 @@ def get_tau_color_and_style(tau, cmd_delay):
 
     # Line style mapping for each tau value
     tau_styles = {
-        50.0: "-",      # Solid
-        100.0: "--",    # Dashed
-        150.0: "-.",    # Dash-dot
-        200.0: ":",     # Dotted
+        50.0: "-",  # Solid
+        100.0: "--",  # Dashed
+        150.0: "-.",  # Dash-dot
+        200.0: ":",  # Dotted
     }
 
     return {
@@ -129,7 +128,7 @@ def plot_rmse_vs_tau(scenarios, output_file):
 
     # Color mapping for each cmd delay
     cmd_colors = {
-        10.0: "#1f77b4",   # Blue
+        10.0: "#1f77b4",  # Blue
         20.0: "#ff7f0e",  # Orange
         30.0: "#2ca02c",  # Green
         40.0: "#d62728",  # Red
@@ -146,24 +145,30 @@ def plot_rmse_vs_tau(scenarios, output_file):
 
         for tau in tau_values:
             # Find scenario with this tau and cmd_delay
-            scenario = next((s for s in scenarios
-                           if s["tau"] == tau and s["cmd_delay"] == cmd_delay), None)
+            scenario = next((s for s in scenarios if s["tau"] == tau and s["cmd_delay"] == cmd_delay), None)
             if scenario:
                 tau_list.append(tau)
                 pos_rmse_list.append(scenario["metrics"]["pos_rmse"])
 
-        ax1.plot(tau_list, pos_rmse_list,
-                marker='o', linewidth=2, markersize=6,
-                color=cmd_colors[cmd_delay],
-                label=f"Cmd={int(cmd_delay)}ms")
+        ax1.plot(
+            tau_list,
+            pos_rmse_list,
+            marker="o",
+            linewidth=2,
+            markersize=6,
+            color=cmd_colors[cmd_delay],
+            label=f"Cmd={int(cmd_delay)}ms",
+        )
 
-    ax1.set_xlabel("Time Constant τ [ms]", fontsize=FONT_SETTINGS["label_size"],
-                   fontweight=FONT_SETTINGS["label_weight"])
-    ax1.set_ylabel("Position RMSE [m]", fontsize=FONT_SETTINGS["label_size"],
-                   fontweight=FONT_SETTINGS["label_weight"])
-    ax1.set_title("(a) Position RMSE vs Time Constant",
-                  fontsize=FONT_SETTINGS["title_size"],
-                  fontweight=FONT_SETTINGS["title_weight"])
+    ax1.set_xlabel(
+        "Time Constant τ [ms]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"]
+    )
+    ax1.set_ylabel("Position RMSE [m]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
+    ax1.set_title(
+        "(a) Position RMSE vs Time Constant",
+        fontsize=FONT_SETTINGS["title_size"],
+        fontweight=FONT_SETTINGS["title_weight"],
+    )
     ax1.legend(fontsize=10)
     ax1.grid(True, alpha=GRID_SETTINGS["alpha"])
 
@@ -174,24 +179,32 @@ def plot_rmse_vs_tau(scenarios, output_file):
 
         for tau in tau_values:
             # Find scenario with this tau and cmd_delay
-            scenario = next((s for s in scenarios
-                           if s["tau"] == tau and s["cmd_delay"] == cmd_delay), None)
+            scenario = next((s for s in scenarios if s["tau"] == tau and s["cmd_delay"] == cmd_delay), None)
             if scenario:
                 tau_list.append(tau)
                 vel_rmse_list.append(scenario["metrics"]["vel_rmse"])
 
-        ax2.plot(tau_list, vel_rmse_list,
-                marker='o', linewidth=2, markersize=6,
-                color=cmd_colors[cmd_delay],
-                label=f"Cmd={int(cmd_delay)}ms")
+        ax2.plot(
+            tau_list,
+            vel_rmse_list,
+            marker="o",
+            linewidth=2,
+            markersize=6,
+            color=cmd_colors[cmd_delay],
+            label=f"Cmd={int(cmd_delay)}ms",
+        )
 
-    ax2.set_xlabel("Time Constant τ [ms]", fontsize=FONT_SETTINGS["label_size"],
-                   fontweight=FONT_SETTINGS["label_weight"])
-    ax2.set_ylabel("Velocity RMSE [m/s]", fontsize=FONT_SETTINGS["label_size"],
-                   fontweight=FONT_SETTINGS["label_weight"])
-    ax2.set_title("(b) Velocity RMSE vs Time Constant",
-                  fontsize=FONT_SETTINGS["title_size"],
-                  fontweight=FONT_SETTINGS["title_weight"])
+    ax2.set_xlabel(
+        "Time Constant τ [ms]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"]
+    )
+    ax2.set_ylabel(
+        "Velocity RMSE [m/s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"]
+    )
+    ax2.set_title(
+        "(b) Velocity RMSE vs Time Constant",
+        fontsize=FONT_SETTINGS["title_size"],
+        fontweight=FONT_SETTINGS["title_weight"],
+    )
     ax2.legend(fontsize=10)
     ax2.grid(True, alpha=GRID_SETTINGS["alpha"])
 
@@ -216,8 +229,7 @@ def plot_comparison(scenarios, baseline_data, output_file, title_suffix=""):
         )
     for scenario in scenarios:
         style = get_tau_color_and_style(scenario["tau"], scenario["cmd_delay"])
-        ax.plot(scenario["data"]["time_s"], scenario["data"]["position"],
-                label=scenario["label"], **style)
+        ax.plot(scenario["data"]["time_s"], scenario["data"]["position"], label=scenario["label"], **style)
     ax.set_xlabel("Time [s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_ylabel("Position [m]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_title(
@@ -238,16 +250,17 @@ def plot_comparison(scenarios, baseline_data, output_file, title_suffix=""):
         style = get_tau_color_and_style(scenario["tau"], scenario["cmd_delay"])
         min_len = min(len(scenario["data"]["position"]), len(baseline_data["position"]))
         deviation = scenario["data"]["position"][:min_len] - baseline_data["position"][:min_len]
-        ax.plot(scenario["data"]["time_s"][:min_len], deviation,
-                label=scenario["label"], **style)
+        ax.plot(scenario["data"]["time_s"][:min_len], deviation, label=scenario["label"], **style)
     ax.set_xlabel("Time [s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_ylabel("Position Deviation [m]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
+    ax.set_ylabel(
+        "Position Deviation [m]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"]
+    )
     ax.set_title(
         f"(b) Position Deviation from RT Baseline{title_suffix}",
         fontsize=FONT_SETTINGS["title_size"],
         fontweight=FONT_SETTINGS["title_weight"],
     )
-    ax.legend(fontsize=8, loc='upper right', ncol=2)
+    ax.legend(fontsize=8, loc="upper right", ncol=2)
     ax.grid(True, alpha=GRID_SETTINGS["alpha"])
 
     # Row 3: Velocity Trajectory
@@ -261,8 +274,7 @@ def plot_comparison(scenarios, baseline_data, output_file, title_suffix=""):
         )
     for scenario in scenarios:
         style = get_tau_color_and_style(scenario["tau"], scenario["cmd_delay"])
-        ax.plot(scenario["data"]["time_s"], scenario["data"]["velocity"],
-                label=scenario["label"], **style)
+        ax.plot(scenario["data"]["time_s"], scenario["data"]["velocity"], label=scenario["label"], **style)
     ax.set_xlabel("Time [s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_ylabel("Velocity [m/s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_title(
@@ -283,16 +295,17 @@ def plot_comparison(scenarios, baseline_data, output_file, title_suffix=""):
         style = get_tau_color_and_style(scenario["tau"], scenario["cmd_delay"])
         min_len = min(len(scenario["data"]["velocity"]), len(baseline_data["velocity"]))
         deviation = scenario["data"]["velocity"][:min_len] - baseline_data["velocity"][:min_len]
-        ax.plot(scenario["data"]["time_s"][:min_len], deviation,
-                label=scenario["label"], **style)
+        ax.plot(scenario["data"]["time_s"][:min_len], deviation, label=scenario["label"], **style)
     ax.set_xlabel("Time [s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_ylabel("Velocity Deviation [m/s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
+    ax.set_ylabel(
+        "Velocity Deviation [m/s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"]
+    )
     ax.set_title(
         f"(d) Velocity Deviation from RT Baseline{title_suffix}",
         fontsize=FONT_SETTINGS["title_size"],
         fontweight=FONT_SETTINGS["title_weight"],
     )
-    ax.legend(fontsize=8, loc='upper right', ncol=2)
+    ax.legend(fontsize=8, loc="upper right", ncol=2)
     ax.grid(True, alpha=GRID_SETTINGS["alpha"])
 
     plt.tight_layout()
@@ -349,9 +362,9 @@ def main():
     all_scenarios = []
 
     for tau in tau_values:
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print(f"Processing τ = {tau}ms scenarios")
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
 
         for scenario_info in scenario_dirs[tau]:
             dir_path = scenario_info["dir"]
@@ -380,9 +393,9 @@ def main():
             print(f"  Velocity Max Error: {metrics['vel_max_error']:.6f} m/s")
 
     # Generate single comparison plot with all scenarios
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("Generating combined comparison plot...")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
     plot_comparison(
         all_scenarios,
         baseline_data,
@@ -391,13 +404,13 @@ def main():
     )
 
     # Generate RMSE vs tau plot
-    print(f"\nGenerating RMSE vs tau plot...")
+    print("\nGenerating RMSE vs tau plot...")
     plot_rmse_vs_tau(all_scenarios, base_dir / "rmse_vs_tau.png")
 
     # Save summary statistics
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("Saving summary statistics...")
-    print("="*70)
+    print("=" * 70)
 
     summary_file = base_dir / "comparison_summary.txt"
     with open(summary_file, "w") as f:
@@ -433,7 +446,9 @@ def main():
     # Save metrics to CSV
     csv_file = base_dir / "comparison_metrics.csv"
     with open(csv_file, "w") as f:
-        f.write("Tau[ms],Cmd_Delay[ms],Pos_RMSE[m],Pos_MAE[m],Pos_MaxErr[m],Vel_RMSE[m/s],Vel_MAE[m/s],Vel_MaxErr[m/s]\n")
+        f.write(
+            "Tau[ms],Cmd_Delay[ms],Pos_RMSE[m],Pos_MAE[m],Pos_MaxErr[m],Vel_RMSE[m/s],Vel_MAE[m/s],Vel_MaxErr[m/s]\n"
+        )
         for scenario in all_scenarios:
             f.write(
                 f"{scenario['tau']:.0f},"

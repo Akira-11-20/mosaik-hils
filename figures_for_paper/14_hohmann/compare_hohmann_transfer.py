@@ -19,20 +19,17 @@ from pathlib import Path
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
-from mpl_toolkits.mplot3d import Axes3D
 
 # Add parent directory to path for plot_config
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from plot_config import (
-    COLOR_PALETTE,
-    BASELINE_STYLE,
     BASELINE_DEVIATION_STYLE,
-    SCENARIO_STYLE,
-    FONT_SETTINGS,
+    BASELINE_STYLE,
+    COLOR_PALETTE,
     FIGURE_SETTINGS,
+    FONT_SETTINGS,
     GRID_SETTINGS,
-    get_scenario_color,
-    get_scenario_style,
+    SCENARIO_STYLE,
 )
 
 
@@ -188,7 +185,7 @@ def calculate_error_metrics(reference: np.ndarray, test: np.ndarray):
 def plot_3d_trajectories(scenarios, baseline_data, output_dir):
     """Create 3D plot of orbital trajectories"""
     fig = plt.figure(figsize=(12, 10))
-    ax = fig.add_subplot(111, projection='3d')
+    ax = fig.add_subplot(111, projection="3d")
 
     # Plot baseline
     if baseline_data is not None:
@@ -232,20 +229,29 @@ def plot_3d_trajectories(scenarios, baseline_data, output_dir):
     x = EARTH_RADIUS * np.outer(np.cos(u), np.sin(v))
     y = EARTH_RADIUS * np.outer(np.sin(u), np.sin(v))
     z = EARTH_RADIUS * np.outer(np.ones(np.size(u)), np.cos(v))
-    ax.plot_surface(x, y, z, color='blue', alpha=0.3)
+    ax.plot_surface(x, y, z, color="blue", alpha=0.3)
 
     ax.set_xlabel("X [km]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_ylabel("Y [km]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_zlabel("Z [km]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_title("3D Orbital Trajectories (Hohmann Transfer)", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"])
+    ax.set_title(
+        "3D Orbital Trajectories (Hohmann Transfer)",
+        fontsize=FONT_SETTINGS["title_size"],
+        fontweight=FONT_SETTINGS["title_weight"],
+    )
     ax.legend(fontsize=FONT_SETTINGS["legend_size"])
 
     # Set equal aspect ratio
-    max_range = np.array([
-        data["position_x"].max() - data["position_x"].min(),
-        data["position_y"].max() - data["position_y"].min(),
-        data["position_z"].max() - data["position_z"].min()
-    ]).max() / 2.0
+    max_range = (
+        np.array(
+            [
+                data["position_x"].max() - data["position_x"].min(),
+                data["position_y"].max() - data["position_y"].min(),
+                data["position_z"].max() - data["position_z"].min(),
+            ]
+        ).max()
+        / 2.0
+    )
 
     mid_x = (data["position_x"].max() + data["position_x"].min()) * 0.5
     mid_y = (data["position_y"].max() + data["position_y"].min()) * 0.5
@@ -294,8 +300,12 @@ def plot_thrust_comparison(scenarios, baseline_data, output_dir):
 
     ax.set_xlabel("Time [s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_ylabel("Applied Force [N]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_title("(a) Applied Force Magnitude (on Spacecraft)", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"])
-    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc='best')
+    ax.set_title(
+        "(a) Applied Force Magnitude (on Spacecraft)",
+        fontsize=FONT_SETTINGS["title_size"],
+        fontweight=FONT_SETTINGS["title_weight"],
+    )
+    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc="best")
     ax.grid(True, **GRID_SETTINGS)
 
     # === Row 2: Applied Force Deviation from Baseline ===
@@ -320,8 +330,12 @@ def plot_thrust_comparison(scenarios, baseline_data, output_dir):
 
     ax.set_xlabel("Time [s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_ylabel("Force Error [N]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_title("(b) Applied Force Deviation from Baseline", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"])
-    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc='best')
+    ax.set_title(
+        "(b) Applied Force Deviation from Baseline",
+        fontsize=FONT_SETTINGS["title_size"],
+        fontweight=FONT_SETTINGS["title_weight"],
+    )
+    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc="best")
     ax.grid(True, **GRID_SETTINGS)
 
     plt.tight_layout()
@@ -344,7 +358,7 @@ def plot_comprehensive_comparison(scenarios, baseline_data, output_dir):
     if baseline_data is not None:
         ax.plot(
             baseline_data["time_s"],
-            baseline_data["altitude"]/1000,  # Convert to km
+            baseline_data["altitude"] / 1000,  # Convert to km
             **BASELINE_STYLE,
         )
 
@@ -355,7 +369,7 @@ def plot_comprehensive_comparison(scenarios, baseline_data, output_dir):
         label = f"τ={params['tau']:.0f}s, Inv={params['inv_comp']}, gain={params['gain']:.0f}"
         ax.plot(
             data["time_s"],
-            data["altitude"]/1000,  # Convert to km
+            data["altitude"] / 1000,  # Convert to km
             label=label,
             color=scenario_colors[i],
             **SCENARIO_STYLE,
@@ -364,7 +378,7 @@ def plot_comprehensive_comparison(scenarios, baseline_data, output_dir):
     ax.set_xlabel("Time [s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_ylabel("Altitude [km]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_title("(a) Altitude", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"])
-    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc='best')
+    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc="best")
     ax.grid(True, **GRID_SETTINGS)
 
     # === Row 2: Altitude Deviation from Baseline (Full Time Range) ===
@@ -376,7 +390,7 @@ def plot_comprehensive_comparison(scenarios, baseline_data, output_dir):
         for i, scenario in enumerate(scenarios):
             data = scenario["data"]
             params = scenario["params"]
-            alt_diff = (data["altitude"] - baseline_data["altitude"])/1000  # Convert to km
+            alt_diff = (data["altitude"] - baseline_data["altitude"]) / 1000  # Convert to km
 
             label = f"τ={params['tau']:.0f}s, Inv={params['inv_comp']}, gain={params['gain']:.0f}"
             ax.plot(
@@ -389,8 +403,12 @@ def plot_comprehensive_comparison(scenarios, baseline_data, output_dir):
 
     ax.set_xlabel("Time [s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_ylabel("Altitude Error [km]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_title("(b) Altitude Deviation from Baseline", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"])
-    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc='best')
+    ax.set_title(
+        "(b) Altitude Deviation from Baseline",
+        fontsize=FONT_SETTINGS["title_size"],
+        fontweight=FONT_SETTINGS["title_weight"],
+    )
+    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc="best")
     ax.grid(True, **GRID_SETTINGS)
 
     # === Row 3: Altitude Zoom (Time >= 4000s) ===
@@ -400,7 +418,7 @@ def plot_comprehensive_comparison(scenarios, baseline_data, output_dir):
         time_mask = baseline_data["time_s"] >= 4000
         ax.plot(
             baseline_data["time_s"][time_mask],
-            baseline_data["altitude"][time_mask]/1000,  # Convert to km
+            baseline_data["altitude"][time_mask] / 1000,  # Convert to km
             **BASELINE_STYLE,
         )
 
@@ -414,7 +432,7 @@ def plot_comprehensive_comparison(scenarios, baseline_data, output_dir):
         label = f"τ={params['tau']:.0f}s, Inv={params['inv_comp']}, gain={params['gain']:.0f}"
         ax.plot(
             data["time_s"][time_mask],
-            data["altitude"][time_mask]/1000,  # Convert to km
+            data["altitude"][time_mask] / 1000,  # Convert to km
             label=label,
             color=scenario_colors[i],
             **SCENARIO_STYLE,
@@ -422,8 +440,12 @@ def plot_comprehensive_comparison(scenarios, baseline_data, output_dir):
 
     ax.set_xlabel("Time [s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_ylabel("Altitude [km]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_title("(c) Altitude (Time ≥ 4000s, Zoomed)", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"])
-    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc='best')
+    ax.set_title(
+        "(c) Altitude (Time ≥ 4000s, Zoomed)",
+        fontsize=FONT_SETTINGS["title_size"],
+        fontweight=FONT_SETTINGS["title_weight"],
+    )
+    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc="best")
     ax.grid(True, **GRID_SETTINGS)
 
     # === Row 4: Velocity Norm ===
@@ -449,9 +471,11 @@ def plot_comprehensive_comparison(scenarios, baseline_data, output_dir):
         )
 
     ax.set_xlabel("Time [s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_ylabel("Velocity Norm [km/s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
+    ax.set_ylabel(
+        "Velocity Norm [km/s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"]
+    )
     ax.set_title("(d) Orbital Velocity", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"])
-    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc='best')
+    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc="best")
     ax.grid(True, **GRID_SETTINGS)
 
     # === Row 5: Velocity Deviation from Baseline ===
@@ -475,9 +499,15 @@ def plot_comprehensive_comparison(scenarios, baseline_data, output_dir):
             )
 
     ax.set_xlabel("Time [s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_ylabel("Velocity Error [km/s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_title("(e) Velocity Deviation from Baseline", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"])
-    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc='best')
+    ax.set_ylabel(
+        "Velocity Error [km/s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"]
+    )
+    ax.set_title(
+        "(e) Velocity Deviation from Baseline",
+        fontsize=FONT_SETTINGS["title_size"],
+        fontweight=FONT_SETTINGS["title_weight"],
+    )
+    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc="best")
     ax.grid(True, **GRID_SETTINGS)
 
     # # === Row 5: Semi-major Axis ===
@@ -576,10 +606,17 @@ def print_summary_statistics(scenarios, baseline_data, output_dir):
     # Prepare CSV data
     csv_data = []
     csv_headers = [
-        "Tau[ms]", "InvComp", "Gain",
-        "Alt_RMSE[km]", "Alt_MAE[km]", "Alt_MaxErr[km]",
-        "Vel_RMSE[km/s]", "Vel_MAE[km/s]", "Vel_MaxErr[km/s]",
-        "SMA_RMSE[km]", "Ecc_RMSE"
+        "Tau[ms]",
+        "InvComp",
+        "Gain",
+        "Alt_RMSE[km]",
+        "Alt_MAE[km]",
+        "Alt_MaxErr[km]",
+        "Vel_RMSE[km/s]",
+        "Vel_MAE[km/s]",
+        "Vel_MaxErr[km/s]",
+        "SMA_RMSE[km]",
+        "Ecc_RMSE",
     ]
 
     for scenario in scenarios:
@@ -592,19 +629,21 @@ def print_summary_statistics(scenarios, baseline_data, output_dir):
         sma_metrics = calculate_error_metrics(baseline_data["semi_major_axis"], data["semi_major_axis"])
         ecc_metrics = calculate_error_metrics(baseline_data["eccentricity"], data["eccentricity"])
 
-        csv_data.append([
-            f"{params['tau']:.0f}",
-            str(params['inv_comp']),
-            f"{params['gain']:.0f}",
-            f"{alt_metrics['rmse']:.6f}",
-            f"{alt_metrics['mae']:.6f}",
-            f"{alt_metrics['max_error']:.6f}",
-            f"{vel_metrics['rmse']:.6f}",
-            f"{vel_metrics['mae']:.6f}",
-            f"{vel_metrics['max_error']:.6f}",
-            f"{sma_metrics['rmse']:.6f}",
-            f"{ecc_metrics['rmse']:.6f}",
-        ])
+        csv_data.append(
+            [
+                f"{params['tau']:.0f}",
+                str(params["inv_comp"]),
+                f"{params['gain']:.0f}",
+                f"{alt_metrics['rmse']:.6f}",
+                f"{alt_metrics['mae']:.6f}",
+                f"{alt_metrics['max_error']:.6f}",
+                f"{vel_metrics['rmse']:.6f}",
+                f"{vel_metrics['mae']:.6f}",
+                f"{vel_metrics['max_error']:.6f}",
+                f"{sma_metrics['rmse']:.6f}",
+                f"{ecc_metrics['rmse']:.6f}",
+            ]
+        )
 
         scenario_info = [
             f"\nScenario: τ={params['tau']:.0f}ms, Inv={params['inv_comp']}, gain={params['gain']:.0f}",
@@ -671,13 +710,15 @@ def main():
                 baseline_data = data
                 print(f"✅ Loaded baseline: {dir_name}")
             else:
-                scenarios.append({
-                    "name": dir_name,
-                    "params": params,
-                    "data": data,
-                    "config": config,
-                    "dir": subdir,
-                })
+                scenarios.append(
+                    {
+                        "name": dir_name,
+                        "params": params,
+                        "data": data,
+                        "config": config,
+                        "dir": subdir,
+                    }
+                )
                 print(f"✅ Loaded: {dir_name}")
 
         except Exception as e:

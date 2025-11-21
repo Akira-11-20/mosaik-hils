@@ -24,15 +24,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 # Import common plot configuration
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from plot_config import (
-    COLOR_PALETTE,
-    BASELINE_STYLE,
     BASELINE_DEVIATION_STYLE,
-    SCENARIO_STYLE,
-    FONT_SETTINGS,
+    BASELINE_STYLE,
+    COLOR_PALETTE,
     FIGURE_SETTINGS,
+    FONT_SETTINGS,
     GRID_SETTINGS,
-    get_scenario_color,
-    get_scenario_style,
+    SCENARIO_STYLE,
 )
 
 
@@ -209,16 +207,16 @@ def create_comparison_plots(sweep_dir: Path):
     if scenarios_low_delay:
         print(f"\n📈 Creating main comparison plot (delays: {[s['cmd_delay'] for s in scenarios_low_delay]}ms)...")
         plot_comprehensive_comparison(
-            scenarios_low_delay, baseline_data, baseline_config, baseline_dir,
-            output_dir, suffix="_low_delay"
+            scenarios_low_delay, baseline_data, baseline_config, baseline_dir, output_dir, suffix="_low_delay"
         )
 
     # Create separate plot for high delays (200ms+)
     if scenarios_high_delay:
-        print(f"\n📈 Creating high-delay comparison plot (delays: {[s['cmd_delay'] for s in scenarios_high_delay]}ms)...")
+        print(
+            f"\n📈 Creating high-delay comparison plot (delays: {[s['cmd_delay'] for s in scenarios_high_delay]}ms)..."
+        )
         plot_comprehensive_comparison(
-            scenarios_high_delay, baseline_data, baseline_config, baseline_dir,
-            output_dir, suffix="_high_delay"
+            scenarios_high_delay, baseline_data, baseline_config, baseline_dir, output_dir, suffix="_high_delay"
         )
 
     # Print summary statistics (all scenarios)
@@ -270,8 +268,10 @@ def plot_comprehensive_comparison(scenarios, baseline_data, baseline_config, bas
 
     ax.set_xlabel("Time [s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_ylabel("Position [m]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_title("(a) Position Trajectories", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"])
-    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc='best')
+    ax.set_title(
+        "(a) Position Trajectories", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"]
+    )
+    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc="best")
     ax.grid(True, **GRID_SETTINGS)
 
     # === Row 2: Position Deviation from RT ===
@@ -298,8 +298,12 @@ def plot_comprehensive_comparison(scenarios, baseline_data, baseline_config, bas
 
     ax.set_xlabel("Time [s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_ylabel("Position Error [m]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_title("(b) Position Deviation from RT Baseline", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"])
-    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc='best')
+    ax.set_title(
+        "(b) Position Deviation from RT Baseline",
+        fontsize=FONT_SETTINGS["title_size"],
+        fontweight=FONT_SETTINGS["title_weight"],
+    )
+    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc="best")
     ax.grid(True, **GRID_SETTINGS)
 
     # === Row 3: Velocity Trajectory ===
@@ -327,8 +331,10 @@ def plot_comprehensive_comparison(scenarios, baseline_data, baseline_config, bas
 
     ax.set_xlabel("Time [s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_ylabel("Velocity [m/s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_title("(c) Velocity Trajectories", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"])
-    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc='best')
+    ax.set_title(
+        "(c) Velocity Trajectories", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"]
+    )
+    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc="best")
     ax.grid(True, **GRID_SETTINGS)
 
     # === Row 4: Velocity Deviation from RT ===
@@ -354,9 +360,15 @@ def plot_comprehensive_comparison(scenarios, baseline_data, baseline_config, bas
             )
 
     ax.set_xlabel("Time [s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_ylabel("Velocity Error [m/s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_title("(d) Velocity Deviation from RT Baseline", fontsize=FONT_SETTINGS["title_size"], fontweight=FONT_SETTINGS["title_weight"])
-    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc='best')
+    ax.set_ylabel(
+        "Velocity Error [m/s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"]
+    )
+    ax.set_title(
+        "(d) Velocity Deviation from RT Baseline",
+        fontsize=FONT_SETTINGS["title_size"],
+        fontweight=FONT_SETTINGS["title_weight"],
+    )
+    ax.legend(fontsize=FONT_SETTINGS["legend_size"], loc="best")
     ax.grid(True, **GRID_SETTINGS)
 
     plt.tight_layout()
@@ -405,8 +417,12 @@ def print_summary_statistics(scenarios, baseline_data, baseline_config, baseline
     csv_data = []
     csv_headers = [
         "CMD_Delay[ms]",
-        "Pos_RMSE[m]", "Pos_MAE[m]", "Pos_MaxErr[m]",
-        "Vel_RMSE[m/s]", "Vel_MAE[m/s]", "Vel_MaxErr[m/s]"
+        "Pos_RMSE[m]",
+        "Pos_MAE[m]",
+        "Pos_MaxErr[m]",
+        "Vel_RMSE[m/s]",
+        "Vel_MAE[m/s]",
+        "Vel_MaxErr[m/s]",
     ]
 
     # Calculate metrics for each scenario
@@ -421,15 +437,17 @@ def print_summary_statistics(scenarios, baseline_data, baseline_config, baseline
         vel_metrics = calculate_error_metrics(rt_velocity, data["velocity"])
 
         # Store for CSV
-        csv_data.append([
-            f"{cmd_delay:.0f}",
-            f"{pos_metrics['rmse']:.6f}",
-            f"{pos_metrics['mae']:.6f}",
-            f"{pos_metrics['max_error']:.6f}",
-            f"{vel_metrics['rmse']:.6f}",
-            f"{vel_metrics['mae']:.6f}",
-            f"{vel_metrics['max_error']:.6f}",
-        ])
+        csv_data.append(
+            [
+                f"{cmd_delay:.0f}",
+                f"{pos_metrics['rmse']:.6f}",
+                f"{pos_metrics['mae']:.6f}",
+                f"{pos_metrics['max_error']:.6f}",
+                f"{vel_metrics['rmse']:.6f}",
+                f"{vel_metrics['mae']:.6f}",
+                f"{vel_metrics['max_error']:.6f}",
+            ]
+        )
 
         scenario_info = [
             f"\nCMD Delay = {cmd_delay:.0f}ms:",

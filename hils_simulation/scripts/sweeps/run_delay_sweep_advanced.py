@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from config.parameters import SimulationParameters
-from scenarios import HILSScenario, InverseCompScenario, InverseCompDualFeedbackScenario
+from scenarios import HILSScenario, InverseCompDualFeedbackScenario, InverseCompScenario
 
 
 class DelayConfig:

@@ -90,7 +90,7 @@ time_constant_noises = [
 ]
 
 # Define whether to test with/without inverse compensation
-test_inverse_comp = [True]*10
+test_inverse_comp = [True] * 10
 
 comp_positions = ["post"]  # Compensation position: "pre" or "post"
 

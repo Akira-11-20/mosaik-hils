@@ -131,7 +131,9 @@ def plot_comparison(scenarios, baseline_data, output_file, title_suffix=""):
         deviation = scenario["data"]["position"][:min_len] - baseline_data["position"][:min_len]
         ax.plot(scenario["data"]["time_s"][:min_len], deviation, **style)
     ax.set_xlabel("Time [s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_ylabel("Position Deviation [m]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
+    ax.set_ylabel(
+        "Position Deviation [m]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"]
+    )
     ax.set_title(
         f"(b) Position Deviation from RT Baseline{title_suffix}",
         fontsize=FONT_SETTINGS["title_size"],
@@ -174,7 +176,9 @@ def plot_comparison(scenarios, baseline_data, output_file, title_suffix=""):
         deviation = scenario["data"]["velocity"][:min_len] - baseline_data["velocity"][:min_len]
         ax.plot(scenario["data"]["time_s"][:min_len], deviation, **style)
     ax.set_xlabel("Time [s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
-    ax.set_ylabel("Velocity Deviation [m/s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
+    ax.set_ylabel(
+        "Velocity Deviation [m/s]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"]
+    )
     ax.set_title(
         f"(d) Velocity Deviation from RT Baseline{title_suffix}",
         fontsize=FONT_SETTINGS["title_size"],
@@ -213,7 +217,7 @@ def main():
     for scenario_info in scenario_dirs:
         dir_path = scenario_info["dir"]
         tau = scenario_info["tau"]
-        alpha  = int(tau/10)
+        alpha = int(tau / 10)
 
         print(f"\nLoading tau={tau}ms from: {dir_path.name}")
         data = load_hdf5_data(dir_path / "hils_data.h5")

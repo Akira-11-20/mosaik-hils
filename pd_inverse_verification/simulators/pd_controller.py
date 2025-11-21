@@ -2,6 +2,7 @@
 PD Controller Simulator
 Simple PD controller for position tracking
 """
+
 import mosaik_api_v3 as mosaik_api
 
 
@@ -63,19 +64,21 @@ class PDControllerSimulator(mosaik_api.Simulator):
     """Mosaik simulator for PD controller"""
 
     def __init__(self):
-        super().__init__({
-            'models': {
-                'PDController': {
-                    'public': True,
-                    'params': ['kp', 'kd', 'dt', 'initial_position'],
-                    'attrs': ['target_position', 'position', 'control_output', 'velocity', 'error'],
+        super().__init__(
+            {
+                "models": {
+                    "PDController": {
+                        "public": True,
+                        "params": ["kp", "kd", "dt", "initial_position"],
+                        "attrs": ["target_position", "position", "control_output", "velocity", "error"],
+                    },
                 },
-            },
-        })
+            }
+        )
         self.sid = None
         self.time_resolution = None
         self.entities = {}
-        self.eid_prefix = 'PDController_'
+        self.eid_prefix = "PDController_"
 
     def init(self, sid, time_resolution=1.0, **sim_params):
         self.sid = sid
@@ -86,18 +89,18 @@ class PDControllerSimulator(mosaik_api.Simulator):
         entities = []
 
         for _ in range(num):
-            eid = f'{self.eid_prefix}{len(self.entities)}'
+            eid = f"{self.eid_prefix}{len(self.entities)}"
 
             # Create controller instance
             controller = PDController(
-                kp=model_params.get('kp', 1.0),
-                kd=model_params.get('kd', 0.1),
-                dt=model_params.get('dt', 0.01),
-                initial_position=model_params.get('initial_position', 0.0)
+                kp=model_params.get("kp", 1.0),
+                kd=model_params.get("kd", 0.1),
+                dt=model_params.get("dt", 0.01),
+                initial_position=model_params.get("initial_position", 0.0),
             )
 
             self.entities[eid] = controller
-            entities.append({'eid': eid, 'type': model})
+            entities.append({"eid": eid, "type": model})
 
         return entities
 
@@ -108,8 +111,8 @@ class PDControllerSimulator(mosaik_api.Simulator):
 
             # Get target position from plant (default to 10.0)
             target_position = 10.0
-            if 'target_position' in entity_inputs:
-                target_values = list(entity_inputs['target_position'].values())
+            if "target_position" in entity_inputs:
+                target_values = list(entity_inputs["target_position"].values())
                 if target_values:
                     target_position = target_values[0]
 
@@ -127,20 +130,20 @@ class PDControllerSimulator(mosaik_api.Simulator):
             controller = self.entities[eid]
 
             for attr in attrs:
-                if attr == 'position':
+                if attr == "position":
                     data[eid][attr] = controller.position
-                elif attr == 'control_output':
+                elif attr == "control_output":
                     data[eid][attr] = controller.control_output
-                elif attr == 'velocity':
+                elif attr == "velocity":
                     data[eid][attr] = controller.velocity
-                elif attr == 'error':
+                elif attr == "error":
                     data[eid][attr] = controller.get_error()
-                elif attr == 'target_position':
+                elif attr == "target_position":
                     # Echo back for debugging
                     data[eid][attr] = 0.0
 
         return data
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     mosaik_api.start_simulation(PDControllerSimulator())
