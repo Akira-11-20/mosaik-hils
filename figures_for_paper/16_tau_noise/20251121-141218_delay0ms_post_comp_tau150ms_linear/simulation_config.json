@@ -1,0 +1,59 @@
+{
+  "simulation": {
+    "simulation_time_s": 5.0,
+    "time_resolution_s": 0.0001,
+    "simulation_steps": 50000,
+    "rt_factor": null,
+    "type": "HILS+InverseComp"
+  },
+  "communication": {
+    "cmd_delay_s": 0.0,
+    "cmd_jitter_s": 0.0,
+    "cmd_loss_rate": 0.0,
+    "sense_delay_s": 0.0,
+    "sense_jitter_s": 0.0,
+    "sense_loss_rate": 0.0
+  },
+  "control": {
+    "control_period_s": 0.01,
+    "kp": 15.0,
+    "ki": 5.0,
+    "kd": 8.0,
+    "target_position_m": 5.0,
+    "min_thrust_N": -100.0,
+    "max_thrust_N": 100.0,
+    "integral_limit": 100.0
+  },
+  "simulators": {
+    "env_sim_period_s": 0.001,
+    "plant_sim_period_s": 0.01
+  },
+  "spacecraft": {
+    "mass_kg": 1.0,
+    "initial_position_m": 0.0,
+    "initial_velocity_m_s": 0.0,
+    "gravity_m_s2": 9.81
+  },
+  "plant": {
+    "time_constant_s": 0.15,
+    "time_constant_std_s": 0.0,
+    "time_constant_noise_s": 0.0,
+    "enable_lag": true,
+    "tau_model_type": "constant",
+    "tau_model_params": {}
+  },
+  "inverse_compensation": {
+    "enabled": true,
+    "gain": 15,
+    "tau_to_gain_ratio": 0.1,
+    "base_tau_ms": 150,
+    "tau_model_type": "constant",
+    "tau_model_params": {},
+    "position": "post"
+  },
+  "metadata": {
+    "timestamp": "2025-11-21T14:12:18.215277",
+    "description": "HILS+InverseComp 1-DOF Spacecraft Control Simulation",
+    "note": "All time units are in seconds (s)"
+  }
+}
