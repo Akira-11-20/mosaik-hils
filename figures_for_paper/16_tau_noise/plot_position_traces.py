@@ -3,46 +3,50 @@
 Plot position traces comparing baseline RT with different tau and noise conditions.
 """
 
-import h5py
-import numpy as np
-import matplotlib.pyplot as plt
 import os
 import re
 from pathlib import Path
 
+import h5py
+import matplotlib.pyplot as plt
+import numpy as np
+
 # Set style
-plt.rcParams['font.size'] = 11
-plt.rcParams['axes.grid'] = True
-plt.rcParams['grid.alpha'] = 0.3
+plt.rcParams["font.size"] = 11
+plt.rcParams["axes.grid"] = True
+plt.rcParams["grid.alpha"] = 0.3
+
 
 def parse_directory_name(dirname):
     """Parse directory name to extract tau and noise parameters."""
     # Baseline case
-    if 'baseline_rt' in dirname:
+    if "baseline_rt" in dirname:
         return None, None
 
     # Extract tau (time constant in ms)
-    tau_match = re.search(r'tau(\d+)ms', dirname)
+    tau_match = re.search(r"tau(\d+)ms", dirname)
     tau = float(tau_match.group(1)) if tau_match else None
 
     # Extract noise (in ms)
-    noise_match = re.search(r'noise(\d+)ms', dirname)
+    noise_match = re.search(r"noise(\d+)ms", dirname)
     noise = float(noise_match.group(1)) if noise_match else 0.0
 
     return tau, noise
 
+
 def load_position_data(h5_path):
     """Load position and time data from HDF5 file."""
-    with h5py.File(h5_path, 'r') as f:
-        position = f['EnvSim-0_Spacecraft1DOF_0']['position'][:]
-        time = f['time']['time_s'][:]
+    with h5py.File(h5_path, "r") as f:
+        position = f["EnvSim-0_Spacecraft1DOF_0"]["position"][:]
+        time = f["time"]["time_s"][:]
     return time, position
+
 
 def main():
     base_dir = Path("/home/akira/mosaik-hils/figures_for_paper/16_tau_noise")
 
     # Find baseline directory
-    baseline_dirs = [d for d in os.listdir(base_dir) if 'baseline_rt' in d]
+    baseline_dirs = [d for d in os.listdir(base_dir) if "baseline_rt" in d]
     if not baseline_dirs:
         print("Error: No baseline_rt directory found!")
         return
@@ -56,8 +60,7 @@ def main():
     print(f"Baseline: time shape={baseline_time.shape}, position shape={baseline_position.shape}")
 
     # Collect all simulation results
-    all_dirs = sorted([d for d in os.listdir(base_dir)
-                       if os.path.isdir(base_dir / d) and 'baseline_rt' not in d])
+    all_dirs = sorted([d for d in os.listdir(base_dir) if os.path.isdir(base_dir / d) and "baseline_rt" not in d])
 
     # Select representative conditions for plotting
     # We'll plot: one run per (tau, noise) combination
@@ -97,22 +100,19 @@ def main():
                 time, position = load_position_data(h5_path)
 
                 # Plot baseline
-                ax.plot(baseline_time, baseline_position, 'k-', linewidth=2,
-                       label='Baseline RT', alpha=0.7)
+                ax.plot(baseline_time, baseline_position, "k-", linewidth=2, label="Baseline RT", alpha=0.7)
 
                 # Plot test condition
-                ax.plot(time, position, 'r-', linewidth=1.5,
-                       label=f'τ={tau:.0f}ms, noise={noise:.0f}ms', alpha=0.8)
+                ax.plot(time, position, "r-", linewidth=1.5, label=f"τ={tau:.0f}ms, noise={noise:.0f}ms", alpha=0.8)
 
                 # Calculate RMSE
                 min_len = min(len(baseline_position), len(position))
                 rmse = np.sqrt(np.mean((baseline_position[:min_len] - position[:min_len]) ** 2))
 
-                ax.set_title(f'τ={tau:.0f}ms, Noise={noise:.0f}ms (RMSE={rmse:.4f}m)',
-                           fontweight='bold', fontsize=12)
-                ax.set_xlabel('Time [s]', fontsize=10)
-                ax.set_ylabel('Position [m]', fontsize=10)
-                ax.legend(loc='best', fontsize=9)
+                ax.set_title(f"τ={tau:.0f}ms, Noise={noise:.0f}ms (RMSE={rmse:.4f}m)", fontweight="bold", fontsize=12)
+                ax.set_xlabel("Time [s]", fontsize=10)
+                ax.set_ylabel("Position [m]", fontsize=10)
+                ax.legend(loc="best", fontsize=9)
                 ax.grid(True, alpha=0.3)
 
                 # Set y-axis limits for consistency
@@ -120,20 +120,26 @@ def main():
 
             except Exception as e:
                 print(f"Error plotting {dirname}: {e}")
-                ax.text(0.5, 0.5, f'Error loading\nτ={tau}ms, noise={noise}ms',
-                       ha='center', va='center', transform=ax.transAxes)
+                ax.text(
+                    0.5,
+                    0.5,
+                    f"Error loading\nτ={tau}ms, noise={noise}ms",
+                    ha="center",
+                    va="center",
+                    transform=ax.transAxes,
+                )
         else:
-            ax.text(0.5, 0.5, f'No data\nτ={tau}ms, noise={noise}ms',
-                   ha='center', va='center', transform=ax.transAxes)
-            ax.set_title(f'τ={tau:.0f}ms, Noise={noise:.0f}ms (No Data)', fontweight='bold')
+            ax.text(0.5, 0.5, f"No data\nτ={tau}ms, noise={noise}ms", ha="center", va="center", transform=ax.transAxes)
+            ax.set_title(f"τ={tau:.0f}ms, Noise={noise:.0f}ms (No Data)", fontweight="bold")
 
-    plt.suptitle('Position Trajectories: Baseline RT vs Different Plant Dynamics',
-                 fontsize=16, fontweight='bold', y=0.995)
+    plt.suptitle(
+        "Position Trajectories: Baseline RT vs Different Plant Dynamics", fontsize=16, fontweight="bold", y=0.995
+    )
     plt.tight_layout()
 
     # Save figure
     output_path = base_dir / "position_traces_comparison.png"
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
     print(f"\nPosition traces saved to: {output_path}")
 
     # Create a zoomed-in version for better detail (first 0.5 seconds)
@@ -158,37 +164,46 @@ def main():
                 zoom_baseline_position = baseline_position[baseline_time <= 0.5]
 
                 # Plot baseline
-                ax.plot(zoom_baseline_time, zoom_baseline_position, 'k-', linewidth=2,
-                       label='Baseline RT', alpha=0.7)
+                ax.plot(zoom_baseline_time, zoom_baseline_position, "k-", linewidth=2, label="Baseline RT", alpha=0.7)
 
                 # Plot test condition
-                ax.plot(zoom_time, zoom_position, 'r-', linewidth=1.5,
-                       label=f'τ={tau:.0f}ms, noise={noise:.0f}ms', alpha=0.8)
+                ax.plot(
+                    zoom_time,
+                    zoom_position,
+                    "r-",
+                    linewidth=1.5,
+                    label=f"τ={tau:.0f}ms, noise={noise:.0f}ms",
+                    alpha=0.8,
+                )
 
                 # Calculate RMSE
                 min_len = min(len(baseline_position), len(position))
                 rmse = np.sqrt(np.mean((baseline_position[:min_len] - position[:min_len]) ** 2))
 
-                ax.set_title(f'τ={tau:.0f}ms, Noise={noise:.0f}ms (RMSE={rmse:.4f}m)',
-                           fontweight='bold', fontsize=12)
-                ax.set_xlabel('Time [s]', fontsize=10)
-                ax.set_ylabel('Position [m]', fontsize=10)
-                ax.legend(loc='best', fontsize=9)
+                ax.set_title(f"τ={tau:.0f}ms, Noise={noise:.0f}ms (RMSE={rmse:.4f}m)", fontweight="bold", fontsize=12)
+                ax.set_xlabel("Time [s]", fontsize=10)
+                ax.set_ylabel("Position [m]", fontsize=10)
+                ax.legend(loc="best", fontsize=9)
                 ax.grid(True, alpha=0.3)
                 ax.set_xlim([0, 0.5])
 
             except Exception as e:
                 print(f"Error plotting {dirname}: {e}")
 
-    plt.suptitle('Position Trajectories (Zoomed: 0-0.5s): Baseline RT vs Different Plant Dynamics',
-                 fontsize=16, fontweight='bold', y=0.995)
+    plt.suptitle(
+        "Position Trajectories (Zoomed: 0-0.5s): Baseline RT vs Different Plant Dynamics",
+        fontsize=16,
+        fontweight="bold",
+        y=0.995,
+    )
     plt.tight_layout()
 
     output_path2 = base_dir / "position_traces_comparison_zoom.png"
-    plt.savefig(output_path2, dpi=300, bbox_inches='tight')
+    plt.savefig(output_path2, dpi=300, bbox_inches="tight")
     print(f"Zoomed position traces saved to: {output_path2}")
 
     plt.show()
+
 
 if __name__ == "__main__":
     main()

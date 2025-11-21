@@ -4,20 +4,22 @@ Create heatmap of position RMSE from baseline RT vs plant tau and noise level.
 Averages across multiple Monte Carlo runs with the same conditions.
 """
 
-import h5py
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 import os
 import re
 from collections import defaultdict
 from pathlib import Path
 
+import h5py
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+
 # Set style
 sns.set_style("white")
-plt.rcParams['font.size'] = 12
-plt.rcParams['figure.figsize'] = (10, 8)
-plt.rcParams['axes.grid'] = False
+plt.rcParams["font.size"] = 12
+plt.rcParams["figure.figsize"] = (10, 8)
+plt.rcParams["axes.grid"] = False
+
 
 def parse_directory_name(dirname):
     """
@@ -29,25 +31,27 @@ def parse_directory_name(dirname):
     - 20251121-124205_delay0ms_post_comp_tau50ms_linear_noise5ms -> tau=50.0, noise=5.0
     """
     # Baseline case
-    if 'baseline_rt' in dirname:
+    if "baseline_rt" in dirname:
         return None, None
 
     # Extract tau (time constant in ms)
-    tau_match = re.search(r'tau(\d+)ms', dirname)
+    tau_match = re.search(r"tau(\d+)ms", dirname)
     tau = float(tau_match.group(1)) if tau_match else None
 
     # Extract noise (in ms)
-    noise_match = re.search(r'noise(\d+)ms', dirname)
+    noise_match = re.search(r"noise(\d+)ms", dirname)
     noise = float(noise_match.group(1)) if noise_match else 0.0
 
     return tau, noise
 
+
 def load_position_data(h5_path):
     """Load position data from HDF5 file."""
-    with h5py.File(h5_path, 'r') as f:
-        position = f['EnvSim-0_Spacecraft1DOF_0']['position'][:]
-        time = f['time']['time_s'][:]
+    with h5py.File(h5_path, "r") as f:
+        position = f["EnvSim-0_Spacecraft1DOF_0"]["position"][:]
+        time = f["time"]["time_s"][:]
     return time, position
+
 
 def calculate_rmse(baseline_pos, test_pos):
     """Calculate RMSE between baseline and test position."""
@@ -60,11 +64,12 @@ def calculate_rmse(baseline_pos, test_pos):
     rmse = np.sqrt(np.mean((baseline_pos - test_pos) ** 2))
     return rmse
 
+
 def main():
     base_dir = Path("/home/akira/mosaik-hils/figures_for_paper/16_tau_noise")
 
     # Find baseline directory
-    baseline_dirs = [d for d in os.listdir(base_dir) if 'baseline_rt' in d]
+    baseline_dirs = [d for d in os.listdir(base_dir) if "baseline_rt" in d]
     if not baseline_dirs:
         print("Error: No baseline_rt directory found!")
         return
@@ -81,8 +86,7 @@ def main():
     results = defaultdict(list)  # (tau, noise) -> [rmse1, rmse2, ...]
 
     # Process all directories
-    all_dirs = sorted([d for d in os.listdir(base_dir)
-                       if os.path.isdir(base_dir / d) and 'baseline_rt' not in d])
+    all_dirs = sorted([d for d in os.listdir(base_dir) if os.path.isdir(base_dir / d) and "baseline_rt" not in d])
 
     print(f"\nProcessing {len(all_dirs)} simulation directories...")
 
@@ -120,7 +124,7 @@ def main():
 
     print(f"\nFound {len(all_taus)} unique tau values: {all_taus}")
     print(f"Found {len(all_noises)} unique noise values: {all_noises}")
-    print(f"\nNumber of Monte Carlo runs per condition:")
+    print("\nNumber of Monte Carlo runs per condition:")
     for (tau, noise), rmse_list in sorted(results.items()):
         print(f"  tau={tau}ms, noise={noise}ms: {len(rmse_list)} runs")
 
@@ -143,78 +147,95 @@ def main():
 
     # Plot 1: Mean RMSE
     ax1 = axes[0]
-    im1 = ax1.imshow(heatmap_data, cmap='YlOrRd', aspect='auto', origin='lower')
+    im1 = ax1.imshow(heatmap_data, cmap="YlOrRd", aspect="auto", origin="lower")
 
     # Set ticks and labels
     ax1.set_xticks(range(len(all_taus)))
     ax1.set_yticks(range(len(all_noises)))
-    ax1.set_xticklabels([f'{int(tau)}' for tau in all_taus])
-    ax1.set_yticklabels([f'{int(noise)}' for noise in all_noises])
+    ax1.set_xticklabels([f"{int(tau)}" for tau in all_taus])
+    ax1.set_yticklabels([f"{int(noise)}" for noise in all_noises])
 
-    ax1.set_xlabel('Plant Time Constant τ [ms]', fontsize=14, fontweight='bold')
-    ax1.set_ylabel('Plant Noise Std Dev [ms]', fontsize=14, fontweight='bold')
-    ax1.set_title('Mean Position RMSE from Baseline RT\n(Averaged across Monte Carlo runs)',
-                  fontsize=14, fontweight='bold')
+    ax1.set_xlabel("Plant Time Constant τ [ms]", fontsize=14, fontweight="bold")
+    ax1.set_ylabel("Plant Noise Std Dev [ms]", fontsize=14, fontweight="bold")
+    ax1.set_title(
+        "Mean Position RMSE from Baseline RT\n(Averaged across Monte Carlo runs)", fontsize=14, fontweight="bold"
+    )
 
     # Add colorbar
     cbar1 = plt.colorbar(im1, ax=ax1)
-    cbar1.set_label('RMSE [m]', fontsize=12, fontweight='bold')
+    cbar1.set_label("RMSE [m]", fontsize=12, fontweight="bold")
 
     # Add text annotations
     for i in range(len(all_noises)):
         for j in range(len(all_taus)):
             if not np.isnan(heatmap_data[i, j]):
-                text = ax1.text(j, i, f'{heatmap_data[i, j]:.5f}',
-                               ha="center", va="center", color="black", fontsize=11, fontweight='bold')
+                text = ax1.text(
+                    j,
+                    i,
+                    f"{heatmap_data[i, j]:.5f}",
+                    ha="center",
+                    va="center",
+                    color="black",
+                    fontsize=11,
+                    fontweight="bold",
+                )
 
     # Plot 2: Standard deviation
     ax2 = axes[1]
-    im2 = ax2.imshow(heatmap_std, cmap='Purples', aspect='auto', origin='lower')
+    im2 = ax2.imshow(heatmap_std, cmap="Purples", aspect="auto", origin="lower")
 
     ax2.set_xticks(range(len(all_taus)))
     ax2.set_yticks(range(len(all_noises)))
-    ax2.set_xticklabels([f'{int(tau)}' for tau in all_taus])
-    ax2.set_yticklabels([f'{int(noise)}' for noise in all_noises])
+    ax2.set_xticklabels([f"{int(tau)}" for tau in all_taus])
+    ax2.set_yticklabels([f"{int(noise)}" for noise in all_noises])
 
-    ax2.set_xlabel('Plant Time Constant τ [ms]', fontsize=14, fontweight='bold')
-    ax2.set_ylabel('Plant Noise Std Dev [ms]', fontsize=14, fontweight='bold')
-    ax2.set_title('Standard Deviation of RMSE\n(Across Monte Carlo runs)',
-                  fontsize=14, fontweight='bold')
+    ax2.set_xlabel("Plant Time Constant τ [ms]", fontsize=14, fontweight="bold")
+    ax2.set_ylabel("Plant Noise Std Dev [ms]", fontsize=14, fontweight="bold")
+    ax2.set_title("Standard Deviation of RMSE\n(Across Monte Carlo runs)", fontsize=14, fontweight="bold")
 
     cbar2 = plt.colorbar(im2, ax=ax2)
-    cbar2.set_label('Std Dev [m]', fontsize=12, fontweight='bold')
+    cbar2.set_label("Std Dev [m]", fontsize=12, fontweight="bold")
 
     # Add text annotations
     for i in range(len(all_noises)):
         for j in range(len(all_taus)):
             if not np.isnan(heatmap_std[i, j]):
-                text = ax2.text(j, i, f'{heatmap_std[i, j]:.6f}',
-                               ha="center", va="center", color="black", fontsize=11, fontweight='bold')
+                text = ax2.text(
+                    j,
+                    i,
+                    f"{heatmap_std[i, j]:.6f}",
+                    ha="center",
+                    va="center",
+                    color="black",
+                    fontsize=11,
+                    fontweight="bold",
+                )
 
     plt.tight_layout()
 
     # Save figure
     output_path = base_dir / "tau_noise_heatmap.png"
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
     print(f"\nHeatmap saved to: {output_path}")
 
     # Create a single combined heatmap showing mean ± std
     fig2, ax = plt.subplots(figsize=(12, 8))
 
-    im = ax.imshow(heatmap_data, cmap='YlOrRd', aspect='auto', origin='lower')
+    im = ax.imshow(heatmap_data, cmap="YlOrRd", aspect="auto", origin="lower")
 
     ax.set_xticks(range(len(all_taus)))
     ax.set_yticks(range(len(all_noises)))
-    ax.set_xticklabels([f'{int(tau)}' for tau in all_taus])
-    ax.set_yticklabels([f'{int(noise)}' for noise in all_noises])
+    ax.set_xticklabels([f"{int(tau)}" for tau in all_taus])
+    ax.set_yticklabels([f"{int(noise)}" for noise in all_noises])
 
-    ax.set_xlabel('Plant Time Constant τ [ms]', fontsize=14, fontweight='bold')
-    ax.set_ylabel('Plant Noise Std Dev [ms]', fontsize=14, fontweight='bold')
-    ax.set_title('Position RMSE from Baseline RT\n(Mean ± Std Dev across Monte Carlo runs)',
-                 fontsize=14, fontweight='bold')
+    ax.set_xlabel("Plant Time Constant τ [ms]", fontsize=14, fontweight="bold")
+    ax.set_ylabel("Plant Noise Std Dev [ms]", fontsize=14, fontweight="bold")
+    ax.set_title(
+        "Position RMSE from Baseline RT\n(Mean ± Std Dev across Monte Carlo runs)", fontsize=14, fontweight="bold"
+    )
 
     cbar = plt.colorbar(im, ax=ax)
-    cbar.set_label('Mean RMSE [m]', fontsize=12, fontweight='bold')
+    cbar.set_label("Mean RMSE [m]", fontsize=12, fontweight="bold")
 
     # Add text annotations with mean ± std
     for i in range(len(all_noises)):
@@ -222,13 +243,21 @@ def main():
             if not np.isnan(heatmap_data[i, j]):
                 mean_val = heatmap_data[i, j]
                 std_val = heatmap_std[i, j]
-                text = ax.text(j, i, f'{mean_val:.5f}\n±{std_val:.6f}',
-                              ha="center", va="center", color="black", fontsize=10, fontweight='bold')
+                text = ax.text(
+                    j,
+                    i,
+                    f"{mean_val:.5f}\n±{std_val:.6f}",
+                    ha="center",
+                    va="center",
+                    color="black",
+                    fontsize=10,
+                    fontweight="bold",
+                )
 
     plt.tight_layout()
 
     output_path2 = base_dir / "tau_noise_heatmap_combined.png"
-    plt.savefig(output_path2, dpi=300, bbox_inches='tight')
+    plt.savefig(output_path2, dpi=300, bbox_inches="tight")
     print(f"Combined heatmap saved to: {output_path2}")
 
     # Print summary statistics
@@ -255,6 +284,7 @@ def main():
     print(f"Best case: tau={best_tau}ms, noise={best_noise}ms, RMSE={best_rmse:.6f}m")
 
     plt.show()
+
 
 if __name__ == "__main__":
     main()
