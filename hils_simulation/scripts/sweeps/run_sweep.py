@@ -82,17 +82,17 @@ time_constants = [
 ]
 
 # Define noise levels to test
-# time_constant_noises = [
-#     5,
-#     10,
-#     15,
-#     20,
-# ]
+time_constant_noises = [
+    0,
+    5,
+    10,
+    15,
+]
 
 # Define whether to test with/without inverse compensation
-test_inverse_comp = [True]
+test_inverse_comp = [True]*10
 
-comp_positions = ["pre", "post"]  # Compensation position: "pre" or "post"
+comp_positions = ["post"]  # Compensation position: "pre" or "post"
 
 # ============================================================================
 # Plant Time Constant Model Configuration
@@ -162,8 +162,8 @@ INVERSE_COMP_TAU_MODEL_PARAMS = None
 
 # Generate all combinations using itertools.product
 configs = []
-for use_inverse, comp_position, time_constant in product(
-    test_inverse_comp, comp_positions, time_constants
+for use_inverse, comp_position, time_constant, time_constant_noise in product(
+    test_inverse_comp, comp_positions, time_constants, time_constant_noises
 ):  # product( #, (tau, gain), noise, use_inv
     # command_delay,
     # time_constants,
@@ -174,7 +174,7 @@ for use_inverse, comp_position, time_constant in product(
             cmd_delay=0.0,
             sense_delay=0.0,
             plant_time_constant=time_constant[0],
-            plant_time_constant_noise=0,
+            plant_time_constant_noise=time_constant_noise,
             comp_gain=time_constant[1],
             plant_enable_lag=True,  # Enable first-order lag
             use_inverse_comp=use_inverse,
