@@ -1,0 +1,39 @@
+================================================================================
+FORMATION FLYING COMPARISON: SUMMARY STATISTICS
+================================================================================
+
+Baseline:
+  Final Relative Distance: 0.002034 m
+  Final Relative X: 0.001456 m
+  Final Relative Y: 0.001219 m
+  Final Relative Z: 0.000728 m
+  Chaser Final Altitude: 408000.001911 m
+--------------------------------------------------------------------------------
+
+Scenario: τ=100s, Inv=True, gain=100
+  Directory: 002_inv_comp=True_gain=100.0_tau=100.0_controller_type=formation
+  Relative Distance vs Baseline:
+    RMSE: 0.000000 m
+    MAE:  0.000000 m
+    Max Deviation: 0.000000 m
+  Relative Position Components RMSE:
+    X: 0.000000 m
+    Y: 0.000000 m
+    Z: 0.000000 m
+  Thrust vs Baseline:
+    RMSE: 0.000000 N
+
+Scenario: τ=100s, Inv=False, gain=100
+  Directory: 003_inv_comp=False_gain=100.0_tau=100.0_controller_type=formation
+  Relative Distance vs Baseline:
+    RMSE: 19.519090 m
+    MAE:  8.748462 m
+    Max Deviation: 107.045652 m
+  Relative Position Components RMSE:
+    X: 18.488679 m
+    Y: 18.879133 m
+    Z: 10.294094 m
+  Thrust vs Baseline:
+    RMSE: 3.216275 N
+
+================================================================================

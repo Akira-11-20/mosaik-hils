@@ -497,7 +497,7 @@ if __name__ == "__main__":
         "INVERSE_COMPENSATION": [True, False],
         "INVERSE_COMPENSATION_GAIN": [100.0],
         "PLANT_TIME_CONSTANT": [100.0],
-        "CONTROLLER_TYPE": ["hohmann"],
+        "CONTROLLER_TYPE": ["formation"],
     }
 
     # Example 3: Controller gain sweep

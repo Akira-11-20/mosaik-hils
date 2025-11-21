@@ -1,0 +1,40 @@
+================================================================================
+HOHMANN TRANSFER COMPARISON: SUMMARY STATISTICS
+================================================================================
+
+Baseline:
+  Final Altitude: 1002259.090772 km
+  Final Velocity Norm: 7347.712469 km/s
+  Final Semi-major Axis: 7377783.813733 km
+  Final Eccentricity: 0.000379
+--------------------------------------------------------------------------------
+
+Scenario: τ=100ms, Inv=True, gain=100
+  Directory: 002_inv_comp=True_gain=100.0_tau=100.0_controller_type=hohmann
+  Altitude vs Baseline:
+    RMSE: 0.000000 km
+    MAE:  0.000000 km
+    Max Deviation: 0.000000 km
+  Velocity Norm vs Baseline:
+    RMSE: 0.000000 km/s
+    MAE:  0.000000 km/s
+    Max Deviation: 0.000000 km/s
+  Orbital Elements:
+    Semi-major Axis RMSE: 0.000000 km
+    Eccentricity RMSE: 0.000000
+
+Scenario: τ=100ms, Inv=False, gain=100
+  Directory: 003_inv_comp=False_gain=100.0_tau=100.0_controller_type=hohmann
+  Altitude vs Baseline:
+    RMSE: 14316.623869 km
+    MAE:  9788.651574 km
+    Max Deviation: 28505.383860 km
+  Velocity Norm vs Baseline:
+    RMSE: 16.259763 km/s
+    MAE:  12.291188 km/s
+    Max Deviation: 29.945278 km/s
+  Orbital Elements:
+    Semi-major Axis RMSE: 18105.813620 km
+    Eccentricity RMSE: 0.002427
+
+================================================================================
