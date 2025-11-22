@@ -75,10 +75,11 @@ from scripts.sweeps.run_delay_sweep_advanced import DelayConfig, print_summary, 
 
 # Format: (time_constant_ms, corresponding_compensation_gain)
 time_constants = [
-    (50, 5),
+    (100, 8),
+    (100, 9),
     (100, 10),
-    (150, 15),
-    (200, 20),
+    (100, 11),
+    (100, 12),
 ]
 
 # Define noise levels to test
