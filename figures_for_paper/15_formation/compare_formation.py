@@ -943,7 +943,7 @@ def plot_relative_trajectories_rtn_zoomed(scenarios, baseline_data, output_dir):
     ax.set_xlabel("Radial (R) [m]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_ylabel("Along-track (T) [m]", fontsize=FONT_SETTINGS["label_size"], fontweight=FONT_SETTINGS["label_weight"])
     ax.set_title(
-        "RT Plane (Zoomed 25m × 25m) - Formation Flying Relative Motion",
+        "RT Plane (Zoomed 10m × 10m) - Formation Flying Relative Motion",
         fontsize=FONT_SETTINGS["title_size"],
         fontweight=FONT_SETTINGS["title_weight"],
     )
