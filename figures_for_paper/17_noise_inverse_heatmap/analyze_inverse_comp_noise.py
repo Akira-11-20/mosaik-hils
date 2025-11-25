@@ -19,6 +19,11 @@ import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+import sys
+
+# Add parent directory to path for plot_config
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from plot_config import save_figure_both_sizes
 
 # Set style
 sns.set_style("white")
@@ -273,7 +278,7 @@ def main():
 
     plt.tight_layout()
     output_path1 = base_dir / "inverse_comp_noise_metrics.png"
-    plt.savefig(output_path1, dpi=300, bbox_inches="tight")
+    save_figure_both_sizes(plt, Path("."), base_name="output_path1")
     print(f"\nMetrics plot saved to: {output_path1}")
 
     # Plot 2: Box plots for Monte Carlo distribution
@@ -330,7 +335,7 @@ def main():
 
     plt.tight_layout()
     output_path2 = base_dir / "inverse_comp_noise_distributions.png"
-    plt.savefig(output_path2, dpi=300, bbox_inches="tight")
+    save_figure_both_sizes(plt, Path("."), base_name="output_path2")
     print(f"Distribution plot saved to: {output_path2}")
 
     # Plot 3: Create a simple bar chart for comparison
@@ -365,7 +370,7 @@ def main():
 
     plt.tight_layout()
     output_path3 = base_dir / "inverse_comp_noise_bar_chart.png"
-    plt.savefig(output_path3, dpi=300, bbox_inches="tight")
+    save_figure_both_sizes(plt, Path("."), base_name="output_path3")
     print(f"Bar chart saved to: {output_path3}")
 
     plt.show()

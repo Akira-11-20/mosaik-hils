@@ -13,6 +13,7 @@ import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+from plot_config import save_figure_both_sizes
 
 sns.set_style("whitegrid")
 plt.rcParams["font.size"] = 11
@@ -197,7 +198,7 @@ def main():
     plt.tight_layout()
 
     output_path = Path("/home/akira/mosaik-hils/figures_for_paper/deviation_by_gain_comparison.png")
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    save_figure_both_sizes(plt, output_path.parent, base_name=output_path.stem)
     print(f"\nFigure saved: {output_path}")
 
     # Create zoomed version (first 2 seconds)
@@ -270,7 +271,7 @@ def main():
     plt.tight_layout()
 
     output_path_zoom = Path("/home/akira/mosaik-hils/figures_for_paper/deviation_by_gain_comparison_zoom.png")
-    plt.savefig(output_path_zoom, dpi=300, bbox_inches='tight')
+    save_figure_both_sizes(plt, output_path_zoom.parent, base_name=output_path_zoom.stem)
     print(f"Zoomed figure saved: {output_path_zoom}")
 
     # Print summary statistics

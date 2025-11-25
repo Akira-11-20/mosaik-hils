@@ -11,6 +11,11 @@ from pathlib import Path
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
+
+# Add parent directory to path for plot_config
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from plot_config import save_figure_both_sizes
 
 # Set style
 plt.rcParams["font.size"] = 11
@@ -175,7 +180,7 @@ def main():
     plt.tight_layout()
 
     output_path = base_dir / "deviation_from_baseline_all_runs.png"
-    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    save_figure_both_sizes(plt, Path("."), base_name="output_path")
     print(f"\nDeviation plot saved to: {output_path}")
 
     # Create zoomed version (0-0.5s)
@@ -259,7 +264,7 @@ def main():
     plt.tight_layout()
 
     output_path2 = base_dir / "deviation_from_baseline_all_runs_zoom.png"
-    plt.savefig(output_path2, dpi=300, bbox_inches="tight")
+    save_figure_both_sizes(plt, Path("."), base_name="output_path2")
     print(f"Zoomed deviation plot saved to: {output_path2}")
 
     plt.show()

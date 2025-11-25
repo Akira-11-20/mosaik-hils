@@ -13,6 +13,11 @@ import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+import sys
+
+# Add parent directory to path for plot_config
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from plot_config import save_figure_both_sizes
 
 # Set style
 sns.set_style("whitegrid")
@@ -159,7 +164,7 @@ def main():
 
     plt.tight_layout()
     output_path1 = base_dir / "position_traces_by_noise.png"
-    plt.savefig(output_path1, dpi=300, bbox_inches='tight')
+    save_figure_both_sizes(plt, output_path1.parent, base_name=output_path1.stem)
     print(f"\nPosition traces saved to: {output_path1}")
 
     # ========== Plot 2: Deviation from Baseline ==========
@@ -196,7 +201,7 @@ def main():
 
     plt.tight_layout()
     output_path2 = base_dir / "deviation_from_baseline_by_noise.png"
-    plt.savefig(output_path2, dpi=300, bbox_inches='tight')
+    save_figure_both_sizes(plt, output_path2.parent, base_name=output_path2.stem)
     print(f"Deviation plot saved to: {output_path2}")
 
     # ========== Plot 3: Statistical Comparison ==========
@@ -271,7 +276,7 @@ def main():
     ax5.legend(fontsize=11, loc='upper left')
     ax5.grid(True, alpha=0.3)
 
-    plt.savefig(base_dir / "statistical_comparison.png", dpi=300, bbox_inches='tight')
+    save_figure_both_sizes(plt, base_dir, base_name="statistical_comparison")
     print(f"Statistical comparison saved to: {base_dir / 'statistical_comparison.png'}")
 
     # ========== Print Numerical Summary ==========

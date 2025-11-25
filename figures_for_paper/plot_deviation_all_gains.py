@@ -13,6 +13,7 @@ import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+from plot_config import save_figure_both_sizes
 
 sns.set_style("whitegrid")
 plt.rcParams["font.size"] = 11
@@ -201,7 +202,7 @@ def main():
     plt.tight_layout()
 
     output_path = base_dir / "deviation_all_gains_comparison.png"
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    save_figure_both_sizes(plt, output_path.parent, base_name=output_path.stem)
     print(f"\nFigure saved: {output_path}")
 
     # Create summary statistics table

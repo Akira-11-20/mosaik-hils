@@ -11,11 +11,16 @@ each containing a hils_data.h5 file.
 """
 
 import json
+import sys
 from pathlib import Path
 
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
+
+# Add parent directory to path for plot_config
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from plot_config import save_figure_both_sizes
 
 
 def load_simulation_data(h5_file_path: Path):
@@ -193,7 +198,7 @@ def create_comparison_plot(mosaik_data, pure_data, mosaik_label, pure_label, out
     ax.grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    save_figure_both_sizes(plt, output_path.parent, base_name=output_path.stem)
     plt.close()
 
     print(f"Comparison plot saved: {output_path}")

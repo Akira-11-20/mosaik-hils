@@ -32,6 +32,7 @@ try:
         FONT_SETTINGS,
         GRID_SETTINGS,
         SCENARIO_STYLE,
+        save_figure_both_sizes,
     )
 except ImportError:
     # Fallback if plot_config doesn't exist
@@ -48,6 +49,17 @@ except ImportError:
     }
     FIGURE_SETTINGS = {"dpi": 300, "bbox_inches": "tight"}
     GRID_SETTINGS = {"alpha": 0.3}
+
+    # Fallback: simple version that only saves normal size
+    def save_figure_both_sizes(fig, output_path, base_name=None):
+        """Fallback: save only normal version."""
+        output_path = Path(output_path)
+        if base_name is None:
+            base_name = "output"
+        normal_path = output_path / f"{base_name}.png"
+        fig.savefig(normal_path, **FIGURE_SETTINGS)
+        print(f"Saved: {normal_path}")
+        return normal_path, normal_path
 
 
 def load_formation_data(result_dir: Path):
@@ -317,7 +329,7 @@ def plot_3d_relative_trajectories(scenarios, baseline_data, output_dir):
 
     plt.tight_layout()
     output_file = output_dir / "formation_3d_relative.png"
-    plt.savefig(output_file, **FIGURE_SETTINGS)
+    save_figure_both_sizes(plt, output_file.parent, base_name=output_file.stem)
     plt.close()
     print(f"  ✅ Saved: {output_file.name}")
 
@@ -505,7 +517,7 @@ def plot_relative_distance_thrust(scenarios, baseline_data, output_dir):
 
     plt.tight_layout()
     output_file = output_dir / "formation_distance_thrust.png"
-    plt.savefig(output_file, **FIGURE_SETTINGS)
+    save_figure_both_sizes(plt, output_file.parent, base_name=output_file.stem)
     plt.close()
     print(f"  ✅ Saved: {output_file.name}")
 
@@ -625,7 +637,7 @@ def plot_relative_trajectories_2d(scenarios, baseline_data, output_dir):
 
     plt.tight_layout()
     output_file = output_dir / "formation_relative_2d_planes.png"
-    plt.savefig(output_file, **FIGURE_SETTINGS)
+    save_figure_both_sizes(plt, output_file.parent, base_name=output_file.stem)
     plt.close()
     print(f"  ✅ Saved: {output_file.name}")
 
@@ -832,7 +844,7 @@ def plot_relative_trajectories_rtn(scenarios, baseline_data, output_dir):
 
     plt.tight_layout()
     output_file = output_dir / "formation_relative_rt_plane.png"
-    plt.savefig(output_file, **FIGURE_SETTINGS)
+    save_figure_both_sizes(plt, output_file.parent, base_name=output_file.stem)
     plt.close()
     print(f"  ✅ Saved: {output_file.name}")
 
@@ -953,7 +965,7 @@ def plot_relative_trajectories_rtn_zoomed(scenarios, baseline_data, output_dir):
 
     plt.tight_layout()
     output_file = output_dir / "formation_relative_rt_plane_zoomed.png"
-    plt.savefig(output_file, **FIGURE_SETTINGS)
+    save_figure_both_sizes(plt, output_file.parent, base_name=output_file.stem)
     plt.close()
     print(f"  ✅ Saved: {output_file.name}")
 
@@ -1026,7 +1038,7 @@ def plot_altitude_comparison(scenarios, baseline_data, output_dir):
 
     plt.tight_layout()
     output_file = output_dir / "formation_altitude.png"
-    plt.savefig(output_file, **FIGURE_SETTINGS)
+    save_figure_both_sizes(plt, output_file.parent, base_name=output_file.stem)
     plt.close()
     print(f"  ✅ Saved: {output_file.name}")
 

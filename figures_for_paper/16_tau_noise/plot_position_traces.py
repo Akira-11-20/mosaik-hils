@@ -10,6 +10,11 @@ from pathlib import Path
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
+
+# Add parent directory to path for plot_config
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from plot_config import save_figure_both_sizes
 
 # Set style
 plt.rcParams["font.size"] = 11
@@ -139,7 +144,7 @@ def main():
 
     # Save figure
     output_path = base_dir / "position_traces_comparison.png"
-    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    save_figure_both_sizes(plt, Path("."), base_name="output_path")
     print(f"\nPosition traces saved to: {output_path}")
 
     # Create a zoomed-in version for better detail (first 0.5 seconds)
@@ -199,7 +204,7 @@ def main():
     plt.tight_layout()
 
     output_path2 = base_dir / "position_traces_comparison_zoom.png"
-    plt.savefig(output_path2, dpi=300, bbox_inches="tight")
+    save_figure_both_sizes(plt, Path("."), base_name="output_path2")
     print(f"Zoomed position traces saved to: {output_path2}")
 
     plt.show()

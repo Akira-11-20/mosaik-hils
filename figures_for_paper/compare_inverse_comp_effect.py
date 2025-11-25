@@ -16,6 +16,7 @@ import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+from plot_config import save_figure_both_sizes
 
 sns.set_style("whitegrid")
 plt.rcParams["font.size"] = 11
@@ -208,7 +209,7 @@ def main():
 
     plt.tight_layout()
     output_path1 = Path("/home/akira/mosaik-hils/figures_for_paper/inverse_comp_comparison.png")
-    plt.savefig(output_path1, dpi=300, bbox_inches='tight')
+    save_figure_both_sizes(plt, output_path1.parent, base_name=output_path1.stem)
     print(f"\nComparison plot saved to: {output_path1}")
 
     # Plot 2: Box plots comparison
@@ -245,7 +246,7 @@ def main():
     plt.tight_layout()
 
     output_path2 = Path("/home/akira/mosaik-hils/figures_for_paper/inverse_comp_distributions.png")
-    plt.savefig(output_path2, dpi=300, bbox_inches='tight')
+    save_figure_both_sizes(plt, output_path2.parent, base_name=output_path2.stem)
     print(f"Distribution comparison saved to: {output_path2}")
 
     # Plot 3: Trend lines
@@ -276,7 +277,7 @@ def main():
 
     plt.tight_layout()
     output_path3 = Path("/home/akira/mosaik-hils/figures_for_paper/inverse_comp_trend.png")
-    plt.savefig(output_path3, dpi=300, bbox_inches='tight')
+    save_figure_both_sizes(plt, output_path3.parent, base_name=output_path3.stem)
     print(f"Trend plot saved to: {output_path3}")
 
     print("\n" + "="*70)

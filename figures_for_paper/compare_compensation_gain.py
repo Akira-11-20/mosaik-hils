@@ -17,6 +17,7 @@ import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+from plot_config import save_figure_both_sizes
 
 sns.set_style("whitegrid")
 plt.rcParams["font.size"] = 11
@@ -251,7 +252,7 @@ def main():
     plt.tight_layout()
 
     output_path1 = Path("/home/akira/mosaik-hils/figures_for_paper/gain_comparison_metrics.png")
-    plt.savefig(output_path1, dpi=300, bbox_inches='tight')
+    save_figure_both_sizes(plt, output_path1.parent, base_name=output_path1.stem)
     print(f"\nメトリクス比較図を保存: {output_path1}")
 
     # Figure 2: Box plot comparison for each noise level
@@ -304,7 +305,7 @@ def main():
     plt.tight_layout()
 
     output_path2 = Path("/home/akira/mosaik-hils/figures_for_paper/gain_comparison_distributions.png")
-    plt.savefig(output_path2, dpi=300, bbox_inches='tight')
+    save_figure_both_sizes(plt, output_path2.parent, base_name=output_path2.stem)
     print(f"分布比較図を保存: {output_path2}")
 
     # Figure 3: Performance difference (gain10 - gain8)
@@ -359,7 +360,7 @@ def main():
     plt.tight_layout()
 
     output_path3 = Path("/home/akira/mosaik-hils/figures_for_paper/gain_comparison_difference.png")
-    plt.savefig(output_path3, dpi=300, bbox_inches='tight')
+    save_figure_both_sizes(plt, output_path3.parent, base_name=output_path3.stem)
     print(f"性能差図を保存: {output_path3}")
 
     # Print final summary

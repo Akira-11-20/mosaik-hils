@@ -31,6 +31,7 @@ from plot_config import (
     FONT_SETTINGS,
     GRID_SETTINGS,
     SCENARIO_STYLE,
+    save_figure_both_sizes,
 )
 
 
@@ -375,7 +376,7 @@ def plot_comprehensive_comparison(scenarios, baseline_data, baseline_config, bas
 
     # Save figure with suffix
     output_file = output_dir / f"delay_sweep_comparison{suffix}.png"
-    plt.savefig(output_file, **FIGURE_SETTINGS)
+    save_figure_both_sizes(plt, output_file.parent, base_name=output_file.stem)
     plt.close()
     print(f"  ✅ Saved: {output_file.name}")
 

@@ -25,6 +25,7 @@ from plot_config import (
     FIGURE_SETTINGS,
     FONT_SETTINGS,
     GRID_SETTINGS,
+    save_figure_both_sizes,
 )
 
 
@@ -209,7 +210,7 @@ def plot_rmse_vs_tau(scenarios, output_file):
     ax2.grid(True, alpha=GRID_SETTINGS["alpha"])
 
     plt.tight_layout()
-    plt.savefig(output_file, **FIGURE_SETTINGS)
+    save_figure_both_sizes(plt, output_file.parent, base_name=output_file.stem)
     plt.close()
     print(f"Saved RMSE vs tau plot: {output_file}")
 
@@ -309,7 +310,7 @@ def plot_comparison(scenarios, baseline_data, output_file, title_suffix=""):
     ax.grid(True, alpha=GRID_SETTINGS["alpha"])
 
     plt.tight_layout()
-    plt.savefig(output_file, **FIGURE_SETTINGS)
+    save_figure_both_sizes(plt, output_file.parent, base_name=output_file.stem)
     plt.close()
     print(f"Saved plot: {output_file}")
 

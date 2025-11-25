@@ -13,6 +13,11 @@ import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+import sys
+
+# Add parent directory to path for plot_config
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from plot_config import save_figure_both_sizes
 
 # Set style
 sns.set_style("white")
@@ -215,7 +220,7 @@ def main():
 
     # Save figure
     output_path = base_dir / "tau_noise_heatmap.png"
-    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    save_figure_both_sizes(plt, Path("."), base_name="output_path")
     print(f"\nHeatmap saved to: {output_path}")
 
     # Create a single combined heatmap showing mean ± std
@@ -257,7 +262,7 @@ def main():
     plt.tight_layout()
 
     output_path2 = base_dir / "tau_noise_heatmap_combined.png"
-    plt.savefig(output_path2, dpi=300, bbox_inches="tight")
+    save_figure_both_sizes(plt, Path("."), base_name="output_path2")
     print(f"Combined heatmap saved to: {output_path2}")
 
     # Print summary statistics
